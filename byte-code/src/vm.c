@@ -28,6 +28,8 @@
 VM vm; // [one]
 //> Calls and Functions clock-native
 static Value clockNative(int argCount, Value* args) {
+  (void)argCount;
+  (void)args;
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 //< Calls and Functions clock-native

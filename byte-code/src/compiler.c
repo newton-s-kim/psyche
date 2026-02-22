@@ -585,6 +585,7 @@ static uint8_t argumentList() {
 //< Calls and Functions argument-list
 //> Jumping Back and Forth and
 static void and_(bool canAssign) {
+  (void)canAssign;
   int endJump = emitJump(OP_JUMP_IF_FALSE);
 
   emitByte(OP_POP);
@@ -599,6 +600,7 @@ static void binary() {
 */
 //> Global Variables binary
 static void binary(bool canAssign) {
+  (void)canAssign;
 //< Global Variables binary
   TokenType operatorType = parser.previous.type;
   ParseRule* rule = getRule(operatorType);
@@ -623,6 +625,7 @@ static void binary(bool canAssign) {
 //< Compiling Expressions binary
 //> Calls and Functions compile-call
 static void call(bool canAssign) {
+  (void)canAssign;
   uint8_t argCount = argumentList();
   emitBytes(OP_CALL, argCount);
 }
@@ -652,6 +655,7 @@ static void literal() {
 */
 //> Global Variables parse-literal
 static void literal(bool canAssign) {
+  (void)canAssign;
 //< Global Variables parse-literal
   switch (parser.previous.type) {
     case TOKEN_FALSE: emitByte(OP_FALSE); break;
@@ -667,6 +671,7 @@ static void grouping() {
 */
 //> Global Variables grouping
 static void grouping(bool canAssign) {
+  (void)canAssign;
 //< Global Variables grouping
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
@@ -678,6 +683,7 @@ static void number() {
 //> Compiling Expressions number
 //> Global Variables number
 static void number(bool canAssign) {
+  (void)canAssign;
 //< Global Variables number
   double value = strtod(parser.previous.start, NULL);
 /* Compiling Expressions number < Types of Values const-number-val
@@ -690,6 +696,7 @@ static void number(bool canAssign) {
 //< Compiling Expressions number
 //> Jumping Back and Forth or
 static void or_(bool canAssign) {
+  (void)canAssign;
   int elseJump = emitJump(OP_JUMP_IF_FALSE);
   int endJump = emitJump(OP_JUMP);
 
@@ -706,6 +713,7 @@ static void string() {
 //> Strings parse-string
 //> Global Variables string
 static void string(bool canAssign) {
+  (void)canAssign;
 //< Global Variables string
   emitConstant(OBJ_VAL(copyString(parser.previous.start + 1,
                                   parser.previous.length - 2)));
@@ -787,6 +795,7 @@ static Token syntheticToken(const char* text) {
 //< Superclasses synthetic-token
 //> Superclasses super
 static void super_(bool canAssign) {
+  (void)canAssign;
 //> super-errors
   if (currentClass == NULL) {
     error("Can't use 'super' outside of a class.");
@@ -821,6 +830,7 @@ static void super_(bool canAssign) {
 //< Superclasses super
 //> Methods and Initializers this
 static void this_(bool canAssign) {
+  (void)canAssign;
 //> this-outside-class
   if (currentClass == NULL) {
     error("Can't use 'this' outside of a class.");
@@ -837,6 +847,7 @@ static void unary() {
 */
 //> Global Variables unary
 static void unary(bool canAssign) {
+  (void)canAssign;
 //< Global Variables unary
   TokenType operatorType = parser.previous.type;
 

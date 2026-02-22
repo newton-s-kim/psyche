@@ -18,7 +18,7 @@ bm:
 
 distclean:
 	rm Makefile
-	rm byte-code/src/common.hpp
+	rm byte-code/src/common.h
 	rm -rf $(BUILD_DIR)
 	find test -name "*.gmon" -exec rm {} \;
 	find test -name "*.png" -exec rm {} \;

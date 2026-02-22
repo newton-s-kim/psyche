@@ -40,7 +40,7 @@ from os.path import relpath
 # To generate a baseline file, run this script with "--generate-baseline".
 
 WREN_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-WREN_BIN = os.path.join("build", "sciche")
+WREN_BIN = os.path.join("build", "psyche")
 BENCHMARK_DIR = os.path.join("test", "wren", "benchmark")
 BENCHMARK_DIR = relpath(BENCHMARK_DIR).replace("\\", "/")
 
@@ -109,7 +109,7 @@ BENCHMARK("map_string", r"""12799920000""")
 BENCHMARK("string_equals", r"""3000000""")
 
 LANGUAGES = [
-    ("wren", [os.path.join(WREN_BIN, "sciche")], ".wren"),
+    ("wren", [os.path.join(WREN_BIN, "psyche")], ".wren"),
     ("dart", ["fletch", "run"], ".dart"),
     ("lua", ["lua"], ".lua"),
     ("luajit (-joff)", ["luajit", "-joff"], ".lua"),
