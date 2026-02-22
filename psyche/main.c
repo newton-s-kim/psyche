@@ -83,6 +83,24 @@ static void runFile(const char* path)
 }
 //< Scanning on Demand run-file
 
+static Value printLnNative(int argCount, Value* args)
+{
+    for (int idx = 0; idx < argCount; idx++) {
+        printValue(args[idx]);
+    }
+    printf("\n");
+    return NIL_VAL;
+}
+
+static Value exitNative(int argCount, Value* args)
+{
+    int n = 0;
+    if (argCount == 1 && IS_NUMBER(args[0]))
+        n = AS_NUMBER(args[0]);
+    exit(n);
+    return NIL_VAL;
+}
+
 int main(int argc, const char* argv[])
 {
     //> A Virtual Machine main-init-vm
@@ -138,6 +156,8 @@ int main(int argc, const char* argv[])
       interpret(&chunk);
     */
     //> Scanning on Demand args
+    defineNative("println", printLnNative);
+    defineNative("exit", exitNative);
     if (argc == 1) {
         repl();
     }

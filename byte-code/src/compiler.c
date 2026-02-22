@@ -43,6 +43,7 @@ typedef enum {
     PREC_TERM,       // + -
     PREC_FACTOR,     // * /
     PREC_UNARY,      // ! -
+    PREC_EXPNENT,    // ^
     PREC_CALL,       // . ()
     PREC_PRIMARY
 } Precedence;
@@ -679,6 +680,12 @@ static void binary(bool canAssign)
     case TOKEN_SLASH:
         emitByte(OP_DIVIDE);
         break;
+    case TOKEN_PERCENT:
+        emitByte(OP_MODULO);
+        break;
+    case TOKEN_CARET:
+        emitByte(OP_EXPONENT);
+        break;
     default:
         return; // Unreachable.
     }
@@ -984,6 +991,8 @@ ParseRule rules[] = {
     [TOKEN_SEMICOLON] = {NULL, NULL, PREC_NONE},
     [TOKEN_SLASH] = {NULL, binary, PREC_FACTOR},
     [TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
+    [TOKEN_PERCENT] = {NULL, binary, PREC_FACTOR},
+    [TOKEN_CARET] = {NULL, binary, PREC_EXPNENT},
     /* Compiling Expressions rules < Types of Values table-not
       [TOKEN_BANG]          = {NULL,     NULL,   PREC_NONE},
     */

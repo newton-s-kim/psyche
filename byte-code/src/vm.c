@@ -10,6 +10,7 @@
 //> Calls and Functions vm-include-time
 #include <time.h>
 //< Calls and Functions vm-include-time
+#include <math.h>
 
 //< vm-include-stdio
 #include "common.h"
@@ -92,7 +93,7 @@ static void runtimeError(const char* format, ...)
 }
 //< Types of Values runtime-error
 //> Calls and Functions define-native
-static void defineNative(const char* name, NativeFn function)
+void defineNative(const char* name, NativeFn function)
 {
     push(OBJ_VAL(copyString(name, (int)strlen(name))));
     push(OBJ_VAL(newNative(function)));
@@ -462,6 +463,18 @@ static InterpretResult run()
     } while (false)
     //< Types of Values binary-op
 
+#define POWER_OP(valueType, fn)                                                                                        \
+    do {                                                                                                               \
+        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {                                                              \
+            runtimeError("Operands must be numbers.");                                                                 \
+            return INTERPRET_RUNTIME_ERROR;                                                                            \
+        }                                                                                                              \
+        double b = AS_NUMBER(pop());                                                                                   \
+        double a = AS_NUMBER(pop());                                                                                   \
+        push(valueType(fn(a, b)));                                                                                     \
+    } while (false)
+    //< Types of Values binary-op
+
     for (;;) {
 //> trace-execution
 #ifdef DEBUG_TRACE_EXECUTION
@@ -704,6 +717,12 @@ static InterpretResult run()
             break;
         case OP_DIVIDE:
             BINARY_OP(NUMBER_VAL, /);
+            break;
+        case OP_MODULO:
+            POWER_OP(NUMBER_VAL, fmod);
+            break;
+        case OP_EXPONENT:
+            POWER_OP(NUMBER_VAL, pow);
             break;
             //< Types of Values op-arithmetic
             //> Types of Values op-not

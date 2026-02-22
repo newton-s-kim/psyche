@@ -88,6 +88,7 @@ typedef enum { INTERPRET_OK, INTERPRET_COMPILE_ERROR, INTERPRET_RUNTIME_ERROR } 
 //> Strings extern-vm
 extern VM vm;
 
+void defineNative(const char* name, NativeFn function);
 //< Strings extern-vm
 void initVM();
 void freeVM();

@@ -282,6 +282,10 @@ Token scanToken()
         return makeToken(TOKEN_PLUS);
     case '/':
         return makeToken(TOKEN_SLASH);
+    case '%':
+        return makeToken(TOKEN_PERCENT);
+    case '^':
+        return makeToken(TOKEN_CARET);
     case '*':
         return makeToken(TOKEN_STAR);
         //> two-char
