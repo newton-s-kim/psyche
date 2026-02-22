@@ -1,0 +1,104 @@
+#!/bin/bash
+
+#set -e
+
+PROJECT=$(git rev-parse --show-toplevel)
+BUILD="$PROJECT/build"
+
+BUILD_TYPE_FILE_PATH="$BUILD/BUILD_TYPE"
+BUILD_TYPE="Release"
+OLD_BUILD_TYPE=""
+
+CLEAN_FORCED=no
+DEBUG_TRACE=no
+DEBUG_PRINT_CODE=no
+PROFILING=no
+LOGGING=no
+
+function print_help(){
+   echo $1 written by Newton Kim
+   echo "USAGE: $1 [OPTION...]"
+   echo "OPTION:"
+   echo "  -d, --debug  builds in debug mode"
+   echo "  -c, --clean  forces cleaning up"
+   echo "  -h, --help  prints this screen"
+   echo "  -l, --log  enables logging"
+   echo "  -p, --print-code  prints code"
+   echo "  -t, --trace  enables stack tracing mode"
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -r|--profiling)
+      PROFILING=yes
+      ;;
+    -p|--print-code)
+      DEBUG_PRINT_CODE=yes
+      ;;
+    -t|--trace)
+      DEBUG_TRACE=yes
+      ;;
+    -d|--debug)
+      BUILD_TYPE="Debug"
+      ;;
+    -c|--clean)
+      CLEAN_FORCED=yes
+      ;;
+    -h|--help)
+      print_help $0
+      exit 0
+      ;;
+    -l|--log)
+      LOGGING=yes
+      ;;
+    *) # unknown option - skip
+      ;;
+  esac
+  shift
+done
+
+function config_common_h() {
+  COMMON_H=byte-code/src/common.h
+  COMMON_H_IN=${COMMON_H}.in
+  cp $COMMON_H_IN $COMMON_H
+  if [ "$DEBUG_PRINT_CODE" != "yes" ]; then
+    echo "#undef DEBUG_PRINT_CODE" >> $COMMON_H
+  fi
+  if [ "$DEBUG_TRACE" != "yes" ]; then
+    echo "#undef DEBUG_TRACE_EXECUTION" >> $COMMON_H
+  fi
+  echo "#undef DEBUG_STRESS_GC" >> $COMMON_H
+  echo "#undef DEBUG_LOG_GC" >> $COMMON_H
+  if [ "$LOGGING" != "yes" ]; then
+    echo "#undef LAX_DEBUG" >> $COMMON_H
+  fi
+  echo "//< omit" >> $COMMON_H
+}
+
+buildtype_mismatch() {
+  if [ -f "$BUILD_TYPE_FILE_PATH" ]; then
+    OLD_BUILD_TYPE=`cat $BUILD_TYPE_FILE_PATH`
+    if [ "$OLD_BUILD_TYPE" == $BUILD_TYPE ]; then
+      return 1
+    fi
+  fi
+  return 0
+}
+
+config_common_h
+
+if [ $CLEAN_FORCED == "yes" ] || buildtype_mismatch ; then
+  rm -rf "$BUILD"
+fi
+
+if [ $PROFILING == "yes" ]; then
+  PROF=ON
+fi
+
+# generate Makefiles
+mkdir -p "$BUILD" && pushd "$BUILD" && cmake -DENABLE_GPROF=$PROF -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Unix Makefiles" .. && popd > /dev/null
+
+# store current build type
+printf "$BUILD_TYPE" > "$BUILD_TYPE_FILE_PATH"
+
+sed "s#@__build_dir__@#$BUILD#g" < Makefile.in > Makefile

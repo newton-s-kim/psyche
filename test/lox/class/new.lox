@@ -1,0 +1,8 @@
+class Foo {
+  f() {
+    return "hello";
+  }
+}
+
+var f = Foo();
+print f.f();  // expect: hello

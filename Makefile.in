@@ -1,0 +1,24 @@
+BUILD_DIR=@__build_dir__@
+PROGRAMME=psyche
+
+all:
+	$(MAKE) -C $(BUILD_DIR) -j`nproc`
+
+clean:
+	$(MAKE) -C $(BUILD_DIR) clean/fast
+
+run:
+	$(BUILD_DIR)/$(PROGRAMME)
+
+tc:
+	./tool/run-test.py
+
+bm:
+	./tool/benchmark.py
+
+distclean:
+	rm Makefile
+	rm byte-code/src/common.hpp
+	rm -rf $(BUILD_DIR)
+	find test -name "*.gmon" -exec rm {} \;
+	find test -name "*.png" -exec rm {} \;

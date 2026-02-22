@@ -1,0 +1,7 @@
+fun foo() {}
+var start = 20;
+println(foo); // expect: <fn foo>
+
+println(clock); // expect: <native fn>
+var end = 30 - start;
+println("elapsed time is ", end, "."); // expect: elapsed time is 10.
