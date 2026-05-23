@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIRS="psyche byte-code"
-EXTS="h c"
+EXTS="h cc hh hpp cpp c"
 
 find . -name "*~" -exec rm {} \;
 find . -name ".*~" -exec rm {} \;
