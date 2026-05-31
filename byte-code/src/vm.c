@@ -48,7 +48,7 @@ static void resetStack()
 }
 //< reset-stack
 //> Types of Values runtime-error
-static void runtimeError(const char* format, ...)
+void runtimeError(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -92,15 +92,22 @@ static void runtimeError(const char* format, ...)
     resetStack();
 }
 //< Types of Values runtime-error
-//> Calls and Functions define-native
-void defineNative(const char* name, NativeFn function)
+
+static void defineValue(const char* name, Value value)
 {
     push(OBJ_VAL(copyString(name, (int)strlen(name))));
-    push(OBJ_VAL(newNative(function)));
+    push(value);
     tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
     pop();
     pop();
 }
+
+//> Calls and Functions define-native
+void defineNative(const char* name, NativeFn function)
+{
+    defineValue(name, OBJ_VAL(newNative(function)));
+}
+
 //< Calls and Functions define-native
 
 void initVM()
@@ -139,6 +146,9 @@ void initVM()
 
     defineNative("clock", clockNative);
     //< Calls and Functions define-native-clock
+    vm.dls = NULL;
+    vm.dlCount = 0;
+    vm.dlCapacity = 0;
 }
 
 void freeVM()
@@ -155,6 +165,12 @@ void freeVM()
     //> Strings call-free-objects
     freeObjects();
     //< Strings call-free-objects
+    if (vm.dls) {
+        for (size_t i = 0; i < vm.dlCount; i++) {
+            dlFree(vm.dls[i]);
+        }
+        FREE_ARRAY(DL, vm.dls, vm.dlCapacity);
+    }
 }
 //> push
 void push(Value value)
@@ -988,4 +1004,27 @@ InterpretResult interpret(const char* source)
     //< Calls and Functions end-interpret
     //< Compiling Expressions interpret-chunk
 }
+
+bool loadLibrary(Path* path, String* dl_name)
+{
+    const char** names;
+    Value* values = NULL;
+
+    if (NULL == vm.dls) {
+        vm.dlCapacity = GROW_CAPACITY(vm.dlCapacity);
+        vm.dls = ALLOCATE(DL*, vm.dlCapacity);
+    }
+    else if (vm.dlCount == vm.dlCapacity) {
+        vm.dlCapacity++;
+        vm.dlCapacity = GROW_CAPACITY(vm.dlCapacity);
+        vm.dls = GROW_ARRAY(DL*, vm.dls, vm.dlCount, vm.dlCapacity);
+    }
+    DL* dl = dlNew(path, dl_name);
+    vm.dls[vm.dlCount++] = dl;
+    dlSymbols(dl, &names, &values);
+    for (size_t i = 0; NULL != names[i]; i++)
+        defineValue(names[i], values[i]);
+    return true;
+}
+
 //< interpret

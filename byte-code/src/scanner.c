@@ -163,7 +163,15 @@ static TokenType identifierType()
         break;
         //< keyword-f
     case 'i':
-        return checkKeyword(1, 1, "f", TOKEN_IF);
+        if (scanner.current - scanner.start > 1) {
+            switch (scanner.start[1]) {
+            case 'f':
+                return TOKEN_IF;
+            case 'n':
+                return checkKeyword(2, 5, "clude", TOKEN_INCLUDE);
+            }
+        }
+        break;
     case 'n':
         return checkKeyword(1, 2, "il", TOKEN_NIL);
     case 'o':
@@ -270,6 +278,10 @@ Token scanToken()
         return makeToken(TOKEN_LEFT_BRACE);
     case '}':
         return makeToken(TOKEN_RIGHT_BRACE);
+    case '[':
+        return makeToken(TOKEN_LEFT_BRACKET);
+    case ']':
+        return makeToken(TOKEN_RIGHT_BRACKET);
     case ';':
         return makeToken(TOKEN_SEMICOLON);
     case ',':

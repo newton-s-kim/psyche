@@ -6,14 +6,80 @@
 //> Local Variables compiler-include-string
 #include <string.h>
 //< Local Variables compiler-include-string
+#include <unistd.h>
 
 #include "common.h"
 #include "compiler.h"
 //> Garbage Collection compiler-include-memory
 #include "memory.h"
 //< Garbage Collection compiler-include-memory
+#include "path.h"
 #include "scanner.h"
 //> Compiling Expressions include-debug
+
+// clang-format off
+/*
+program        → declaration* EOF ;
+
+declaration    → classDecl
+               | funDecl
+               | varDecl
+               | incDecl
+               | statement ;
+
+classDecl      → "class" IDENTIFIER ( "<" IDENTIFIER )?
+                 "{" function* "}" ;
+funDecl        → "fun" function ;
+varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ; 
+
+statement      → exprStmt
+               | forStmt
+               | ifStmt
+               | printStmt
+               | returnStmt
+               | whileStmt
+               | block ;
+
+exprStmt       → expression ";" ;
+forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
+                           expression? ";"
+                           expression? ")" statement ;
+ifStmt         → "if" "(" expression ")" statement
+                 ( "else" statement )? ;
+printStmt      → "print" expression ";" ;
+returnStmt     → "return" expression? ";" ;
+whileStmt      → "while" "(" expression ")" statement ;
+block          → "{" declaration* "}" ;
+
+expression     → assignment ;
+
+assignment     → ( call "." )? IDENTIFIER "=" assignment
+               | logic_or ;
+
+logic_or       → logic_and ( "or" logic_and )* ;
+logic_and      → equality ( "and" equality )* ;
+equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term           → factor ( ( "-" | "+" ) factor )* ;
+factor         → unary ( ( "/" | "*" ) unary )* ;
+
+unary          → ( "!" | "-" ) unary | call ;
+call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
+primary        → "true" | "false" | "nil" | "this"
+               | NUMBER | STRING | IDENTIFIER | "(" expression ")"
+               | "super" "." IDENTIFIER ;
+
+function       → IDENTIFIER "(" parameters? ")" block ;
+parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
+arguments      → expression ( "," expression )* ;
+
+NUMBER         → DIGIT+ ( "." DIGIT+ )? ;
+STRING         → "\"" <any char except "\"">* "\"" ;
+IDENTIFIER     → ALPHA ( ALPHA | DIGIT )* ;
+ALPHA          → "a" ... "z" | "A" ... "Z" | "_" ;
+DIGIT          → "0" ... "9" ;
+*/
+// clang-format on
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -1321,6 +1387,48 @@ static void varDeclaration()
     defineVariable(global);
 }
 //< Global Variables var-declaration
+static Path* findPath(Path* file)
+{
+    Path* path = NULL;
+    const char* dirs[] = {"./build/libs/math", "./build/libs/container", "./build/libs/sigpack", "./build/libs/json",
+                          "./build/libs/io",   "/usr/local/lib/psyche",  "/usr/lib/psyche",      NULL};
+    for (int i = 0; NULL != dirs[i]; i++) {
+        if (path)
+            pathFree(path);
+        path = pathNew(dirs[i]);
+        pathJoin(path, pathToString(file));
+        if (0 == access(pathToString(path), F_OK)) {
+            return path;
+        }
+    }
+    pathFree(path);
+    return NULL;
+}
+
+static void incDeclaration()
+{
+    String* name = strNewWithLength(parser.current.start + 1, parser.current.length - 2);
+    Path* file_name = NULL;
+    if (match(TOKEN_STRING)) {
+        consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+        Path* path = NULL;
+        file_name = pathNew("libsc");
+        pathAppendString(file_name, name->c_str);
+        pathAppendString(file_name, ".so");
+        path = findPath(file_name);
+        if (NULL != path) {
+            if (false == loadLibrary(path, name))
+                error("failed loading library");
+        }
+        pathFree(file_name);
+        if (path)
+            pathFree(path);
+    }
+    else {
+        strFree(name);
+        error("Expect string.");
+    }
+}
 //> Global Variables expression-statement
 static void expressionStatement()
 {
@@ -1532,6 +1640,9 @@ static void declaration()
         //< Calls and Functions match-fun
         //> match-var
         varDeclaration();
+    }
+    else if (match(TOKEN_INCLUDE)) {
+        incDeclaration();
     }
     else {
         statement();

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIRS="psyche byte-code"
+DIRS="psyche byte-code libs"
 EXTS="h cc hh hpp cpp c"
 
 find . -name "*~" -exec rm {} \;

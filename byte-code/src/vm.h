@@ -17,6 +17,8 @@
 //> stack-max
 
 //< stack-max
+#include "dl.h"
+
 /* A Virtual Machine stack-max < Calls and Functions frame-max
 #define STACK_MAX 256
 */
@@ -79,6 +81,9 @@ typedef struct {
     int grayCapacity;
     Obj** grayStack;
     //< Garbage Collection vm-gray-stack
+    DL** dls;
+    size_t dlCount;
+    size_t dlCapacity;
 } VM;
 
 //> interpret-result
@@ -102,5 +107,7 @@ InterpretResult interpret(const char* source);
 void push(Value value);
 Value pop();
 //< push-pop
+bool loadLibrary(Path* path, String* dl_name);
+void runtimeError(const char* format, ...);
 
 #endif
