@@ -1,10 +1,12 @@
-fun fib(n) {
-    if (n < 2) return n;
-    return fib(n - 1) + fib(n - 2);
+class Fib {
+  static get(n) {
+    if (n < 2) return n
+    return get(n - 1) + get(n - 2)
+  }
 }
 
-var start = clock();
-for (var i = 1; i < 6 ; i = i + 1) {
-    print fib(28);
+var start = System.clock
+for (i in 1..5) {
+  System.print(Fib.get(28))
 }
-println("elapsed: ", clock() - start);
+System.print("elapsed: %(System.clock - start)")

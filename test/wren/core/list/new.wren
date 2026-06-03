@@ -1,6 +1,6 @@
-var list = List();
+var list = List.new()
 
-print list.size; // expect: 0
-print list; // expect: []
-list.add(1);
-print list; // expect: [1]
+System.print(list.count) // expect: 0
+System.print(list) // expect: []
+list.add(1)
+System.print(list) // expect: [1]

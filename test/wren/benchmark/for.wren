@@ -1,12 +1,10 @@
-var list = List();
+var list = []
 
-var start = clock();
-for (var i = 0; i < 1000000; i = i + 1) list.add(i);
+var start = System.clock
+for (i in 0...1000000) list.add(i)
 
-var sum = 0;
-for(var i = 0 ; i < list.size; i = i + 1) {
-  sum = sum + list[i];
-}
+var sum = 0
+for (i in list) sum = sum + i
 
-print sum;
-println("elapsed: ", clock() - start);
+System.print(sum)
+System.print("elapsed: %(System.clock - start)")

@@ -1,3 +1,3 @@
-print List().size;     // expect: 0
-print List(1).size;     // expect: 1
-print List(1,2,3,4).size;     // expect: 4
+System.print([].count)           // expect: 0
+System.print([1].count)          // expect: 1
+System.print([1, 2, 3, 4].count) // expect: 4

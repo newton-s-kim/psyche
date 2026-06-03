@@ -1,3 +1,3 @@
-print !true;    // expect: false
-print !false;   // expect: true
-print !!true;   // expect: true
+System.print(!true)    // expect: false
+System.print(!false)   // expect: true
+System.print(!!true)   // expect: true

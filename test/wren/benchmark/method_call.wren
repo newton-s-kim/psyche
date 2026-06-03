@@ -1,68 +1,68 @@
 class Toggle {
-  init(startState) {
-    this._state = startState;
+  construct new(startState) {
+    _state = startState
   }
 
-  value() { return this._state; }
-  activate() {
-    this._state = !this._state;
-    return this;
+  value { _state }
+  activate {
+    _state = !_state
+    return this
   }
 }
 
-class NthToggle < Toggle {
-  init(startState, maxCounter) {
-    super.init(startState);
-    this._countMax = maxCounter;
-    this._count = 0;
+class NthToggle is Toggle {
+  construct new(startState, maxCounter) {
+    super(startState)
+    _countMax = maxCounter
+    _count = 0
   }
 
-  activate() {
-    this._count = this._count + 1;
-    if (this._count >= this._countMax) {
-      super.activate();
-      this._count = 0;
+  activate {
+    _count = _count + 1
+    if (_count >= _countMax) {
+      super.activate
+      _count = 0
     }
 
-    return this;
+    return this
   }
 }
 
-var start = clock();
-var n = 100000;
-var val = true;
-var toggle = Toggle(val);
+var start = System.clock
+var n = 100000
+var val = true
+var toggle = Toggle.new(val)
 
-for (var i = 0; i < n; i = i + 1) {
-  val = toggle.activate().value();
-  val = toggle.activate().value();
-  val = toggle.activate().value();
-  val = toggle.activate().value();
-  val = toggle.activate().value();
-  val = toggle.activate().value();
-  val = toggle.activate().value();
-  val = toggle.activate().value();
-  val = toggle.activate().value();
-  val = toggle.activate().value();
+for (i in 0...n) {
+  val = toggle.activate.value
+  val = toggle.activate.value
+  val = toggle.activate.value
+  val = toggle.activate.value
+  val = toggle.activate.value
+  val = toggle.activate.value
+  val = toggle.activate.value
+  val = toggle.activate.value
+  val = toggle.activate.value
+  val = toggle.activate.value
 }
 
-print toggle.value();
+System.print(toggle.value)
 
-val = true;
-var ntoggle = NthToggle(val, 3);
+val = true
+var ntoggle = NthToggle.new(val, 3)
 
-for (var i = 0; i < n; i = i + 1) {
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
-  val = ntoggle.activate().value();
+for (i in 0...n) {
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
+  val = ntoggle.activate.value
 }
 
-print ntoggle.value();
-println("elapsed: ", clock() - start);
+System.print(ntoggle.value)
+System.print("elapsed: %(System.clock - start)")

@@ -1,4 +1,4 @@
-var map = Map();
+var map = Map.new()
 
-print map.size; // expect: 0
-print map; // expect: {}
+System.print(map.count) // expect: 0
+System.print(map) // expect: {}

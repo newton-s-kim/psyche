@@ -1,1 +1,1 @@
-List.filled("not num", nil); // expect runtime error: Size must be a number.
+List.filled("not num", null) // expect runtime error: Size must be a number.

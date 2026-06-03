@@ -1,4 +1,3 @@
-include "math";
-print tan(0);            // expect: 0
-print tan(pi / 4);       // expect: 1
-print tan(-pi / 4);      // expect: -1
+System.print(0.tan)             // expect: 0
+System.print((Num.pi / 4).tan)  // expect: 1
+System.print((-Num.pi / 4).tan) // expect: -1

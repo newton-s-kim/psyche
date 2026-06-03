@@ -1,7 +1,3 @@
-var words = "";
-var a = List("One", "Two", "Three");
-a.each(fun (word) {
-  //println(words,"+=",word);
-  words = words + word;
-});
-print words; // expect: OneTwoThree
+var words = ""
+["One", "Two", "Three"].each {|word| words = words + word }
+System.print(words) // expect: OneTwoThree

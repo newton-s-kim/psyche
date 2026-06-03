@@ -1,7 +1,7 @@
-var a = List(1, 2, 3);
-a.clear();
-print a;       // expect: []
-print a.size; // expect: 0
+var a = [1, 2, 3]
+a.clear()
+System.print(a)       // expect: []
+System.print(a.count) // expect: 0
 
 // Returns null.
-print List(1, 2).clear(); // expect: nil
+System.print([1, 2].clear()) // expect: null

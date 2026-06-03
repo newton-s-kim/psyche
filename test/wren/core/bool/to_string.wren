@@ -1,2 +1,2 @@
-print true;  // expect: true
-print false; // expect: false
+System.print(true.toString)  // expect: true
+System.print(false.toString) // expect: false

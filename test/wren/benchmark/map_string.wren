@@ -1,8 +1,8 @@
-var adverbs = List(
+var adverbs = [
   "moderately", "really", "slightly", "very"
-);
+]
 
-var adjectives = List(
+var adjectives = [
   "abandoned", "able", "absolute", "academic", "acceptable", "acclaimed",
   "accomplished", "accurate", "aching", "acidic", "acrobatic", "active",
   "actual", "adept", "admirable", "admired", "adolescent", "adorable", "adored",
@@ -34,9 +34,9 @@ var adjectives = List(
   "constant", "content", "conventional", "cooked", "cool", "cooperative",
   "coordinated", "corny", "corrupt", "costly", "courageous", "courteous",
   "crafty"
-);
+]
 
-var animals = List(
+var animals = [
   "aardvark", "african buffalo", "albatross", "alligator", "alpaca", "ant",
   "anteater", "antelope", "ape", "armadillo", "baboon", "badger", "barracuda",
   "bat", "bear", "beaver", "bee", "bison", "black panther", "blue jay", "boar",
@@ -66,35 +66,35 @@ var animals = List(
   "scorpion", "sea lion", "sea urchin", "seahorse", "shark", "sheep", "shrew",
   "skunk", "snail", "snake", "sparrow", "spider", "spoonbill", "squid",
   "wallaby", "wildebeest"
-);
+]
 
-var keys = List();
-for (var animal = 0; animal < animals.size; animal = animal + 1) {
-  for (var adjective = 0; adjective < adjectives.size; adjective = adjective + 1) {
-    for (var adverb = 0; adverb < adverbs.size; adverb = adverb + 1) {
-      keys.add(adverbs[adverb] + " " + adjectives[adjective] + " " + animals[animal]);
+var keys = []
+for (animal in animals) {
+  for (adjective in adjectives) {
+    for (adverb in adverbs) {
+      keys.add(adverb + " " + adjective + " " + animal)
     }
   }
 }
 
-var start = clock();
+var start = System.clock
 
-var map = Map();
+var map = {}
 
-var i = 0;
-for (var key = 0; key < keys.size; key = key + 1) {
-  map[keys[key]] = i;
-  i = i + 1;
+var i = 0
+for (key in keys) {
+  map[key] = i
+  i = i + 1
 }
 
-var sum = 0;
-for (var key = 0; key < keys.size; key = key + 1) {
-  sum = sum + map[keys[key]];
+var sum = 0
+for (key in keys) {
+  sum = sum + map[key]
 }
 
-for (var key = 0; key < keys.size; key = key + 1) {
-  map.remove(keys[key]);
+for (key in keys) {
+  map.remove(key)
 }
 
-print sum;
-println("elapsed: ", clock() - start);
+System.print(sum)
+System.print("elapsed: %(System.clock - start)")

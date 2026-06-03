@@ -1,3 +1,2 @@
-include "math";
-print atan(0);        // expect: 0
-print atan(1);        // expect: 0.78539816339745
+System.print(0.atan)        // expect: 0
+System.print(1.atan)        // expect: 0.78539816339745

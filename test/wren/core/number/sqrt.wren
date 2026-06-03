@@ -1,11 +1,10 @@
-include "math";
-print sqrt(4);        // expect: 2
-print sqrt(1000000);  // expect: 1000
-print sqrt(1);        // expect: 1
-print sqrt(-0);       // expect: -0
-print sqrt(0);        // expect: 0
-print sqrt(2);        // expect: 1.4142135623731
+System.print(4.sqrt)        // expect: 2
+System.print(1000000.sqrt)  // expect: 1000
+System.print(1.sqrt)        // expect: 1
+System.print((-0).sqrt)     // expect: -0
+System.print(0.sqrt)        // expect: 0
+System.print(2.sqrt)        // expect: 1.4142135623731
 
-print sqrt(-4);       // expect: 2j
+System.print((-4).sqrt.isNan) // expect: true
 
 // TODO: Tests for sin and cos.

@@ -1,7 +1,7 @@
-var fiber = thread(fun (thd) {
-  thd.abort("Error message.");
-});
+var fiber = Fiber.new {
+  Fiber.abort("Error message.")
+}
 
-print fiber.try(); // expect: Error message.
-print fiber.isDone; // expect: true
-print fiber.error; // expect: Error message.
+System.print(fiber.try()) // expect: Error message.
+System.print(fiber.isDone) // expect: true
+System.print(fiber.error) // expect: Error message.

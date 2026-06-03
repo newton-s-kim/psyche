@@ -1,3 +1,3 @@
-var i = 0;
-List().each(fun(item) { i = i + 1; });
-print i; // expect: 0
+var i = 0
+[].each {|item| i = i + 1 }
+System.print(i) // expect: 0

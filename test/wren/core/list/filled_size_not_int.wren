@@ -1,1 +1,1 @@
-List.filled(1.2, nil); // expect runtime error: Size must be an integer.
+List.filled(1.2, null) // expect runtime error: Size must be an integer.

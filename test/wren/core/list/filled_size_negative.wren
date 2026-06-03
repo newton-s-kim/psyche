@@ -1,1 +1,1 @@
-List.filled(-1, nil); // expect runtime error: Size cannot be negative.
+List.filled(-1, null) // expect runtime error: Size cannot be negative.
