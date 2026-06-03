@@ -309,6 +309,12 @@ static void emitBytes(uint8_t byte1, uint8_t byte2)
     emitByte(byte1);
     emitByte(byte2);
 }
+static void emitShort(uint8_t byte1, uint16_t addr)
+{
+    emitByte(byte1);
+    emitByte(addr >> 8);
+    emitByte(addr & 0xff);
+}
 //< Compiling Expressions emit-bytes
 //> Jumping Back and Forth emit-loop
 static void emitLoop(int loopStart)
@@ -340,7 +346,7 @@ static void emitReturn()
     */
     //> Methods and Initializers return-this
     if (current->type == TYPE_INITIALIZER) {
-        emitBytes(OP_GET_LOCAL, 0);
+        emitShort(OP_GET_LOCAL, 0);
     }
     else {
         emitByte(OP_NIL);
@@ -351,21 +357,21 @@ static void emitReturn()
 }
 //< Compiling Expressions emit-return
 //> Compiling Expressions make-constant
-static uint8_t makeConstant(Value value)
+static uint16_t makeConstant(Value value)
 {
     int constant = addConstant(currentChunk(), value);
-    if (constant > UINT8_MAX) {
+    if (constant > UINT16_MAX) {
         error("Too many constants in one chunk.");
         return 0;
     }
 
-    return (uint8_t)constant;
+    return (uint16_t)constant;
 }
 //< Compiling Expressions make-constant
 //> Compiling Expressions emit-constant
 static void emitConstant(Value value)
 {
-    emitBytes(OP_CONSTANT, makeConstant(value));
+    emitShort(OP_CONSTANT, makeConstant(value));
 }
 //< Compiling Expressions emit-constant
 //> Jumping Back and Forth patch-jump
@@ -505,7 +511,7 @@ static void parsePrecedence(Precedence precedence);
 
 //< Compiling Expressions forward-declarations
 //> Global Variables identifier-constant
-static uint8_t identifierConstant(Token* name)
+static uint16_t identifierConstant(Token* name)
 {
     return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
@@ -657,7 +663,7 @@ static void markInitialized()
 }
 //< Local Variables mark-initialized
 //> Global Variables define-variable
-static void defineVariable(uint8_t global)
+static void defineVariable(uint16_t global)
 {
     //> Local Variables define-variable
     if (current->scopeDepth > 0) {
@@ -668,7 +674,7 @@ static void defineVariable(uint8_t global)
     }
 
     //< Local Variables define-variable
-    emitBytes(OP_DEFINE_GLOBAL, global);
+    emitShort(OP_DEFINE_GLOBAL, global);
 }
 //< Global Variables define-variable
 //> Calls and Functions argument-list
@@ -807,21 +813,21 @@ static void member(bool canAssign)
 static void dot(bool canAssign)
 {
     consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
-    uint8_t name = identifierConstant(&parser.previous);
+    uint16_t name = identifierConstant(&parser.previous);
 
     if (canAssign && match(TOKEN_EQUAL)) {
         expression();
-        emitBytes(OP_SET_PROPERTY, name);
+        emitShort(OP_SET_PROPERTY, name);
         //> Methods and Initializers parse-call
     }
     else if (match(TOKEN_LEFT_PAREN)) {
         uint8_t argCount = argumentList();
-        emitBytes(OP_INVOKE, name);
+        emitShort(OP_INVOKE, name);
         emitByte(argCount);
         //< Methods and Initializers parse-call
     }
     else {
-        emitBytes(OP_GET_PROPERTY, name);
+        emitShort(OP_GET_PROPERTY, name);
     }
 }
 //< Classes and Instances compile-dot
@@ -958,7 +964,7 @@ static void namedVariable(Token name, bool canAssign)
             emitBytes(OP_SET_GLOBAL, arg);
         */
         //> Local Variables emit-set
-        emitBytes(setOp, (uint8_t)arg);
+        emitShort(setOp, (uint16_t)arg);
         //< Local Variables emit-set
     }
     else {
@@ -966,7 +972,7 @@ static void namedVariable(Token name, bool canAssign)
             emitBytes(OP_GET_GLOBAL, arg);
         */
         //> Local Variables emit-get
-        emitBytes(getOp, (uint8_t)arg);
+        emitShort(getOp, (uint16_t)arg);
         //< Local Variables emit-get
     }
     //< named-variable
@@ -1020,12 +1026,12 @@ static void super_(bool canAssign)
     if (match(TOKEN_LEFT_PAREN)) {
         uint8_t argCount = argumentList();
         namedVariable(syntheticToken("super"), false);
-        emitBytes(OP_SUPER_INVOKE, name);
+        emitShort(OP_SUPER_INVOKE, name);
         emitByte(argCount);
     }
     else {
         namedVariable(syntheticToken("super"), false);
-        emitBytes(OP_GET_SUPER, name);
+        emitShort(OP_GET_SUPER, name);
     }
     //< super-invoke
 }
@@ -1302,7 +1308,7 @@ static void function(FunctionType type)
       emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
     */
     //> Closures emit-closure
-    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+    emitShort(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
     //< Closures emit-closure
     //> Closures capture-upvalues
 
@@ -1317,7 +1323,7 @@ static void function(FunctionType type)
 static void method()
 {
     consume(TOKEN_IDENTIFIER, "Expect method name.");
-    uint8_t constant = identifierConstant(&parser.previous);
+    uint16_t constant = identifierConstant(&parser.previous);
     //> method-body
 
     //< method-body
@@ -1336,7 +1342,7 @@ static void method()
     //> method-body
     function(type);
     //< method-body
-    emitBytes(OP_METHOD, constant);
+    emitShort(OP_METHOD, constant);
 }
 //< Methods and Initializers method
 //> Classes and Instances class-declaration
@@ -1346,10 +1352,10 @@ static void classDeclaration()
     //> Methods and Initializers class-name
     Token className = parser.previous;
     //< Methods and Initializers class-name
-    uint8_t nameConstant = identifierConstant(&parser.previous);
+    uint16_t nameConstant = identifierConstant(&parser.previous);
     declareVariable();
 
-    emitBytes(OP_CLASS, nameConstant);
+    emitShort(OP_CLASS, nameConstant);
     defineVariable(nameConstant);
 
     //> Methods and Initializers create-class-compiler
