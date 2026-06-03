@@ -39,8 +39,8 @@ from os.path import relpath
 #
 # To generate a baseline file, run this script with "--generate-baseline".
 
-WREN_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-WREN_BIN = os.path.join("build", "psyche")
+PSYCHE_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+PSYCHE_BIN = os.path.join("build", "psyche")
 BENCHMARK_DIR = os.path.join("test", "wren", "benchmark")
 BENCHMARK_DIR = relpath(BENCHMARK_DIR).replace("\\", "/")
 
@@ -109,7 +109,8 @@ BENCHMARK("map_string", r"""12799920000""")
 BENCHMARK("string_equals", r"""3000000""")
 
 LANGUAGES = [
-    ("wren", [os.path.join(WREN_BIN, "psyche")], ".wren"),
+    ("psyche", [os.path.join(PSYCHE_BIN, "psyche")], ".psy"),
+    ("wren", ["../wren-cli/bin/wren_cli"], ".wren"),
     ("dart", ["fletch", "run"], ".dart"),
     ("lua", ["lua"], ".lua"),
     ("luajit (-joff)", ["luajit", "-joff"], ".lua"),
@@ -217,7 +218,7 @@ def run_benchmark_language(benchmark, language, benchmark_result):
     score = get_score(best)
 
     comparison = ""
-    if language[0] == "wren":
+    if language[0] == "psyche":
         if benchmark[2] != None:
             ratio = 100 * score / benchmark[2]
             comparison = "{:6.2f}% relative to baseline".format(ratio)
@@ -228,9 +229,9 @@ def run_benchmark_language(benchmark, language, benchmark_result):
         else:
             comparison = "no baseline"
     else:
-        # Hack: assumes wren gets run first.
-        wren_score = benchmark_result["wren"]["score"]
-        ratio = 100.0 * wren_score / score
+        # Hack: assumes psyche gets run first.
+        psy_score = benchmark_result["psyche"]["score"]
+        ratio = 100.0 * psy_score / score
         comparison = "{:6.2f}%".format(ratio)
         if ratio > 105:
             comparison = green(comparison)
@@ -334,8 +335,8 @@ def print_html():
             time = float(min(result["times"]))
             ratio = int(100 * time / highest)
             css_class = "chart-bar"
-            if language == "wren":
-                css_class += " wren"
+            if language == "psyche":
+                css_class += " psyche"
             print("  <tr>")
             print(
                 '    <th>{}</th><td><div class="{}" style="width: {}%;">{:4.2f}s&nbsp;</div></td>'.format(
