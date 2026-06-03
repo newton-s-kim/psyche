@@ -67,8 +67,10 @@ unary          → ( "!" | "-" ) unary | call ;
 call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 primary        → "true" | "false" | "nil" | "this"
                | NUMBER | STRING | IDENTIFIER | "(" expression ")"
-               | "super" "." IDENTIFIER ;
+               | "super" "." IDENTIFIER
+	       | list;
 
+list           → "[" (arguments )? "]";
 function       → IDENTIFIER "(" parameters? ")" block ;
 parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
 arguments      → expression ( "," expression )* ;
@@ -688,6 +690,23 @@ static uint8_t argumentList()
     return argCount;
 }
 //< Calls and Functions argument-list
+static uint8_t listArgList()
+{
+    uint8_t argCount = 0;
+    if (!check(TOKEN_RIGHT_BRACKET)) {
+        do {
+            expression();
+            //> arg-limit
+            if (argCount == UINT8_MAX) {
+                error("Can't have more than 255 arguments.");
+            }
+            //< arg-limit
+            argCount++;
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_BRACKET, "Expect ']' after arguments.");
+    return argCount;
+}
 //> Jumping Back and Forth and
 static void and_(bool canAssign)
 {
@@ -765,6 +784,25 @@ static void call(bool canAssign)
     emitBytes(OP_CALL, argCount);
 }
 //< Calls and Functions compile-call
+/*
+static void list(bool canAssign)
+{
+    (void)canAssign;
+    uint8_t argCount = listArgList();
+    emitBytes(OP_LIST, argCount);
+}
+*/
+static void member(bool canAssign)
+{
+    uint8_t argCount = listArgList();
+    if (canAssign && match(TOKEN_EQUAL)) {
+        expression();
+        emitBytes(OP_SET_ELEMENT, argCount);
+    }
+    else {
+        emitBytes(OP_GET_ELEMENT, argCount);
+    }
+}
 //> Classes and Instances compile-dot
 static void dot(bool canAssign)
 {
@@ -811,6 +849,12 @@ static void literal(bool canAssign)
     }
 }
 //< Types of Values parse-literal
+static void function(FunctionType type);
+static void fun(bool canAssign)
+{
+    (void)canAssign;
+    function(TYPE_FUNCTION);
+}
 //> Compiling Expressions grouping
 /* Compiling Expressions grouping < Global Variables grouping
 static void grouping() {
@@ -1045,6 +1089,8 @@ ParseRule rules[] = {
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE}, // [big]
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_LEFT_BRACKET] = {NULL, member, PREC_CALL}, // [big]
+    [TOKEN_RIGHT_BRACKET] = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
     /* Compiling Expressions rules < Classes and Instances table-dot
       [TOKEN_DOT]           = {NULL,     NULL,   PREC_NONE},
@@ -1054,6 +1100,7 @@ ParseRule rules[] = {
     //< Classes and Instances table-dot
     [TOKEN_MINUS] = {unary, binary, PREC_TERM},
     [TOKEN_PLUS] = {NULL, binary, PREC_TERM},
+    [TOKEN_COLON] = {NULL, NULL, PREC_NONE},
     [TOKEN_SEMICOLON] = {NULL, NULL, PREC_NONE},
     [TOKEN_SLASH] = {NULL, binary, PREC_FACTOR},
     [TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
@@ -1091,6 +1138,7 @@ ParseRule rules[] = {
     */
     //> Global Variables table-identifier
     [TOKEN_IDENTIFIER] = {variable, NULL, PREC_NONE},
+    [TOKEN_INCLUDE] = {NULL, NULL, PREC_NONE},
     //< Global Variables table-identifier
     /* Compiling Expressions rules < Strings table-string
       [TOKEN_STRING]        = {NULL,     NULL,   PREC_NONE},
@@ -1099,6 +1147,7 @@ ParseRule rules[] = {
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
     //< Strings table-string
     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
+    [TOKEN_COMPLEX_NUMBER] = {number, NULL, PREC_NONE},
     /* Compiling Expressions rules < Jumping Back and Forth table-and
       [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
     */
@@ -1114,7 +1163,7 @@ ParseRule rules[] = {
     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
     //< Types of Values table-false
     [TOKEN_FOR] = {NULL, NULL, PREC_NONE},
-    [TOKEN_FUN] = {NULL, NULL, PREC_NONE},
+    [TOKEN_FUN] = {fun, NULL, PREC_NONE},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
     /* Compiling Expressions rules < Types of Values table-nil
       [TOKEN_NIL]           = {NULL,     NULL,   PREC_NONE},

@@ -215,6 +215,7 @@ static Token identifier()
 //> number
 static Token number()
 {
+    TokenType token_type = TOKEN_NUMBER;
     while (isDigit(peek()))
         advance();
 
@@ -226,8 +227,19 @@ static Token number()
         while (isDigit(peek()))
             advance();
     }
+    if (peek() == 'e') {
+        advance();
+        if (peek() == '+' || peek() == '-')
+            advance();
+        while (isDigit(peek()))
+            advance();
+    }
+    if ('j' == peek()) {
+        token_type = TOKEN_COMPLEX_NUMBER;
+        advance();
+    }
 
-    return makeToken(TOKEN_NUMBER);
+    return makeToken(token_type);
 }
 //< number
 //> string
@@ -282,6 +294,8 @@ Token scanToken()
         return makeToken(TOKEN_LEFT_BRACKET);
     case ']':
         return makeToken(TOKEN_RIGHT_BRACKET);
+    case ':':
+        return makeToken(TOKEN_COLON);
     case ';':
         return makeToken(TOKEN_SEMICOLON);
     case ',':

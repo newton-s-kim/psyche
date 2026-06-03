@@ -14,6 +14,8 @@
 #include "debug.h"
 #include <stdio.h>
 #endif
+#include "log.h"
+
 //< Garbage Collection debug-log-includes
 //> Garbage Collection heap-grow-factor
 
@@ -127,6 +129,8 @@ static void blackenObject(Obj* object)
         markObject((Obj*)klass->name);
         //> Methods and Initializers mark-methods
         markTable(&klass->methods);
+        if (klass->call)
+            markObject((Obj*)klass->call);
         //< Methods and Initializers mark-methods
         break;
     }
@@ -163,8 +167,21 @@ static void blackenObject(Obj* object)
         break;
         //< blacken-upvalue
     case OBJ_NATIVE:
+    case OBJ_NATIVE_BOUND_METHOD:
     case OBJ_STRING:
+    case OBJ_COMPLEX:
         break;
+    case OBJ_LIST: {
+        ObjList* list = (ObjList*)object;
+        markObject((Obj*)list->klass);
+        markArray(&list->array);
+        break;
+    }
+    case OBJ_MAP: {
+        ObjMap* map = (ObjMap*)object;
+        markObject((Obj*)map->klass);
+        markTable(&map->map);
+    }
     }
 }
 //< Garbage Collection blacken-object
@@ -224,8 +241,12 @@ static void freeObject(Obj* object)
         FREE(ObjNative, object);
         break;
         //< Calls and Functions free-native
+    case OBJ_NATIVE_BOUND_METHOD:
+        FREE(ObjNativeBoundMethod, object);
+        break;
     case OBJ_STRING: {
         ObjString* string = (ObjString*)object;
+        LAX_LOG("free \"%s\"", string->chars);
         FREE_ARRAY(char, string->chars, string->length + 1);
         FREE(ObjString, object);
         break;
@@ -235,6 +256,19 @@ static void freeObject(Obj* object)
         FREE(ObjUpvalue, object);
         break;
         //< Closures free-upvalue
+    case OBJ_COMPLEX:
+        FREE(ObjComplex, object);
+        break;
+    case OBJ_LIST:
+        ObjList* list = (ObjList*)object;
+        freeValueArray(&list->array);
+        FREE(ObjList, object);
+        break;
+    case OBJ_MAP:
+        ObjMap* map = (ObjMap*)object;
+        freeTable(&map->map);
+        FREE(ObjMap, object);
+        break;
     }
 }
 //< Strings free-object

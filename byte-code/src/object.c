@@ -10,6 +10,8 @@
 #include "value.h"
 #include "vm.h"
 //> allocate-obj
+#include "common.h"
+#include "log.h"
 
 #define ALLOCATE_OBJ(type, objectType) (type*)allocateObject(sizeof(type), objectType)
 //< allocate-obj
@@ -54,6 +56,7 @@ ObjClass* newClass(ObjString* name)
                         //> Methods and Initializers init-methods
     initTable(&klass->methods);
     //< Methods and Initializers init-methods
+    klass->call = NULL;
     return klass;
 }
 //< Classes and Instances new-class
@@ -106,6 +109,12 @@ ObjNative* newNative(NativeFn function)
     return native;
 }
 //< Calls and Functions new-native
+ObjNativeBoundMethod* newNativeBoundMethod(NativeBoundMethod function)
+{
+    ObjNativeBoundMethod* native = ALLOCATE_OBJ(ObjNativeBoundMethod, OBJ_NATIVE_BOUND_METHOD);
+    native->method = function;
+    return native;
+}
 
 /* Strings allocate-string < Hash Tables allocate-string
 static ObjString* allocateString(char* chars, int length) {
@@ -201,6 +210,61 @@ ObjUpvalue* newUpvalue(Value* slot)
     return upvalue;
 }
 //< Closures new-upvalue
+ObjComplex* newComplex(double complex v)
+{
+    ObjComplex* cmplx = ALLOCATE_OBJ(ObjComplex, OBJ_COMPLEX);
+    cmplx->value = v;
+    return cmplx;
+}
+Value list_size(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjList* list = AS_LIST(receiver);
+    return NUMBER_VAL(list->array.count);
+}
+Value list_add(Value receiver, int argc, Value* argv)
+{
+    LAX_LOG("list_add(%d)", argc);
+    if (0 == argc)
+        return NIL_VAL;
+    ObjList* list = AS_LIST(receiver);
+    for (int index = 0; index < argc; index++)
+        writeValueArray(&list->array, argv[index]);
+    LAX_LOG("list size: %d", list->array.count);
+    return argv[0];
+}
+static Value list_new(Value receiver, int argc, Value* argv)
+{
+    ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
+    list->klass = AS_CLASS(receiver);
+    initValueArray(&list->array);
+    if (0 < argc)
+        for (int index = 0; index < argc; index++)
+            writeValueArray(&list->array, argv[index]);
+    return OBJ_VAL(list);
+}
+ObjClass* newListClass()
+{
+    ObjString* name = copyString("list", 4);
+    ObjClass* klass = newClass(name);
+    ObjString* method = copyString("add", 3);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_add)));
+    method = copyString("size", 4);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_size)));
+    klass->call = newNativeBoundMethod(list_new);
+    return klass;
+}
+ObjClass* newMapClass()
+{
+    return NULL;
+}
+ObjMap* newMap()
+{
+    ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
+    initTable(&map->map);
+    return map;
+}
 //> Calls and Functions print-function-helper
 static void printFunction(ObjFunction* function)
 {
@@ -247,6 +311,9 @@ void printObject(Value value)
         printf("<native fn>");
         break;
         //< Calls and Functions print-native
+    case OBJ_NATIVE_BOUND_METHOD:
+        printf("<native method>");
+        break;
     case OBJ_STRING:
         printf("%s", AS_CSTRING(value));
         break;
@@ -255,6 +322,15 @@ void printObject(Value value)
         printf("upvalue");
         break;
         //< Closures print-upvalue
+    case OBJ_COMPLEX:
+        printf("%f + %fi", creal(AS_COMPLEX(value)->value), cimag(AS_COMPLEX(value)->value));
+        break;
+    case OBJ_LIST:
+        printf("list");
+        break;
+    case OBJ_MAP:
+        printf("map");
+        break;
     }
 }
 //< print-object

@@ -12,6 +12,8 @@
 #include "value.h"
 //> obj-type-macro
 
+#include <complex.h>
+
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 //< obj-type-macro
 //> is-string
@@ -33,10 +35,14 @@
 //< Classes and Instances is-instance
 //> Calls and Functions is-native
 #define IS_NATIVE(value) isObjType(value, OBJ_NATIVE)
+#define IS_NATIVE_BOUND_METHOD(value) isObjType(value, OBJ_NATIVE_BOUND_METHOD)
 //< Calls and Functions is-native
 #define IS_STRING(value) isObjType(value, OBJ_STRING)
 //< is-string
+#define IS_COMPLEX(value) isObjType(value, OBJ_COMPLEX)
 //> as-string
+#define IS_LIST(value) isObjType(value, OBJ_LIST)
+#define IS_MAP(value) isObjType(value, OBJ_MAP)
 
 //> Methods and Initializers as-bound-method
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
@@ -55,11 +61,15 @@
 //< Classes and Instances as-instance
 //> Calls and Functions as-native
 #define AS_NATIVE(value) (((ObjNative*)AS_OBJ(value))->function)
+#define AS_NATIVE_BOUND_METHOD(value) (((ObjNativeBoundMethod*)AS_OBJ(value))->method)
 //< Calls and Functions as-native
 #define AS_STRING(value) ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
 //< as-string
+#define AS_COMPLEX(value) ((ObjComplex*)AS_OBJ(value))
 //> obj-type
+#define AS_LIST(value) ((ObjList*)AS_OBJ(value))
+#define AS_MAP(value) ((ObjMap*)AS_OBJ(value))
 
 typedef enum {
     //> Methods and Initializers obj-type-bound-method
@@ -79,11 +89,15 @@ typedef enum {
     //< Classes and Instances obj-type-instance
     //> Calls and Functions obj-type-native
     OBJ_NATIVE,
+    OBJ_NATIVE_BOUND_METHOD,
     //< Calls and Functions obj-type-native
     OBJ_STRING,
     //> Closures obj-type-upvalue
-    OBJ_UPVALUE
+    OBJ_UPVALUE,
     //< Closures obj-type-upvalue
+    OBJ_COMPLEX,
+    OBJ_LIST,
+    OBJ_MAP
 } ObjType;
 //< obj-type
 
@@ -152,12 +166,20 @@ typedef struct {
 //< Closures obj-closure
 //> Classes and Instances obj-class
 
+typedef Value (*NativeBoundMethod)(Value receiver, int argCount, Value* args);
+
+typedef struct {
+    Obj obj;
+    NativeBoundMethod method;
+} ObjNativeBoundMethod;
+
 typedef struct {
     Obj obj;
     ObjString* name;
     //> Methods and Initializers class-methods
     Table methods;
     //< Methods and Initializers class-methods
+    ObjNativeBoundMethod* call;
 } ObjClass;
 //< Classes and Instances obj-class
 //> Classes and Instances obj-instance
@@ -175,6 +197,24 @@ typedef struct {
     Value receiver;
     ObjClosure* method;
 } ObjBoundMethod;
+
+typedef struct {
+    Obj obj;
+    ObjClass klass;
+    double _Complex value;
+} ObjComplex;
+
+typedef struct {
+    Obj obj;
+    ObjClass* klass;
+    ValueArray array;
+} ObjList;
+
+typedef struct {
+    Obj obj;
+    ObjClass* klass;
+    Table map;
+} ObjMap;
 
 //< Methods and Initializers obj-bound-method
 //> Methods and Initializers new-bound-method-h
@@ -194,6 +234,7 @@ ObjInstance* newInstance(ObjClass* klass);
 //< Classes and Instances new-instance-h
 //> Calls and Functions new-native-h
 ObjNative* newNative(NativeFn function);
+ObjNativeBoundMethod* newNativeBoundMethod(NativeBoundMethod function);
 //< Calls and Functions new-native-h
 //> take-string-h
 ObjString* takeString(char* chars, int length);
@@ -203,6 +244,9 @@ ObjString* copyString(const char* chars, int length);
 //> Closures new-upvalue-h
 ObjUpvalue* newUpvalue(Value* slot);
 //< Closures new-upvalue-h
+ObjComplex* newComplex(double _Complex v);
+ObjClass* newListClass();
+ObjClass* newMapClass();
 //> print-object-h
 void printObject(Value value);
 //< print-object-h

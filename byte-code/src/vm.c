@@ -26,6 +26,8 @@
 //< Strings vm-include-object-memory
 #include "vm.h"
 
+#include "log.h"
+
 VM vm; // [one]
 //> Calls and Functions clock-native
 static Value clockNative(int argCount, Value* args)
@@ -145,6 +147,7 @@ void initVM()
     //> Calls and Functions define-native-clock
 
     defineNative("clock", clockNative);
+    defineValue("List", OBJ_VAL(newListClass()));
     //< Calls and Functions define-native-clock
     vm.dls = NULL;
     vm.dlCount = 0;
@@ -251,7 +254,14 @@ static bool callValue(Value callee, int argCount)
             //> Classes and Instances call-class
         case OBJ_CLASS: {
             ObjClass* klass = AS_CLASS(callee);
-            vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
+            Value instance = NIL_VAL;
+            if (klass->call) {
+                instance = klass->call->method(callee, argCount, vm.stackTop - argCount);
+            }
+            else {
+                instance = OBJ_VAL(newInstance(klass));
+            }
+            vm.stackTop[-argCount - 1] = instance;
             //> Methods and Initializers call-init
             Value initializer;
             if (tableGet(&klass->methods, vm.initString, &initializer)) {
@@ -300,7 +310,26 @@ static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount)
         runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
-    return call(AS_CLOSURE(method), argCount);
+    return callValue(method, argCount);
+}
+static bool invokeNativeFromClass(Value receiver, ObjClass* klass, ObjString* name, int argCount)
+{
+    Value method;
+    if (!tableGet(&klass->methods, name, &method)) {
+        runtimeError("Undefined property '%s'.", name->chars);
+        return false;
+    }
+    bool retVal = false;
+    if (IS_BOUND_METHOD(method)) {
+        retVal = callValue(method, argCount);
+    }
+    else if (IS_NATIVE_BOUND_METHOD(method)) {
+        Value result = AS_NATIVE_BOUND_METHOD(method)(receiver, argCount, vm.stackTop - argCount);
+        vm.stackTop -= argCount + 1;
+        push(result);
+        retVal = true;
+    }
+    return retVal;
 }
 //< Methods and Initializers invoke-from-class
 //> Methods and Initializers invoke
@@ -309,23 +338,28 @@ static bool invoke(ObjString* name, int argCount)
     Value receiver = peek(argCount);
     //> invoke-check-type
 
-    if (!IS_INSTANCE(receiver)) {
+    if (IS_INSTANCE(receiver)) {
+        //< invoke-check-type
+        ObjInstance* instance = AS_INSTANCE(receiver);
+        //> invoke-field
+
+        Value value;
+        if (tableGet(&instance->fields, name, &value)) {
+            vm.stackTop[-argCount - 1] = value;
+            return callValue(value, argCount);
+        }
+
+        //< invoke-field
+        return invokeFromClass(instance->klass, name, argCount);
+    }
+    else if (IS_LIST(receiver)) {
+        ObjList* list = AS_LIST(receiver);
+        return invokeNativeFromClass(receiver, list->klass, name, argCount);
+    }
+    else {
         runtimeError("Only instances have methods.");
         return false;
     }
-
-    //< invoke-check-type
-    ObjInstance* instance = AS_INSTANCE(receiver);
-    //> invoke-field
-
-    Value value;
-    if (tableGet(&instance->fields, name, &value)) {
-        vm.stackTop[-argCount - 1] = value;
-        return callValue(value, argCount);
-    }
-
-    //< invoke-field
-    return invokeFromClass(instance->klass, name, argCount);
 }
 //< Methods and Initializers invoke
 //> Methods and Initializers bind-method
@@ -467,7 +501,7 @@ static InterpretResult run()
     } while (false)
 */
 //> Types of Values binary-op
-#define BINARY_OP(valueType, op)                                                                                       \
+#define BINARY_CMP(valueType, op)                                                                                      \
     do {                                                                                                               \
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {                                                              \
             runtimeError("Operands must be numbers.");                                                                 \
@@ -476,6 +510,45 @@ static InterpretResult run()
         double b = AS_NUMBER(pop());                                                                                   \
         double a = AS_NUMBER(pop());                                                                                   \
         push(valueType(a op b));                                                                                       \
+    } while (false)
+    //< Types of Values binary-op
+
+#define BINARY_OP(valueType, op)                                                                                       \
+    do {                                                                                                               \
+        if (IS_NUMBER(peek(0))) {                                                                                      \
+            double b = AS_NUMBER(pop());                                                                               \
+            if (IS_NUMBER(peek(0))) {                                                                                  \
+                double a = AS_NUMBER(pop());                                                                           \
+                push(NUMBER_VAL(a op b));                                                                              \
+            }                                                                                                          \
+            else if (IS_COMPLEX(peek(0))) {                                                                            \
+                ObjComplex* a = AS_COMPLEX(pop());                                                                     \
+                push(OBJ_VAL(newComplex(a->value op b)));                                                              \
+            }                                                                                                          \
+            else {                                                                                                     \
+                runtimeError("Operands must be numbers.");                                                             \
+                return INTERPRET_RUNTIME_ERROR;                                                                        \
+            }                                                                                                          \
+        }                                                                                                              \
+        else if (IS_COMPLEX(peek(0))) {                                                                                \
+            ObjComplex* b = AS_COMPLEX(pop());                                                                         \
+            if (IS_NUMBER(peek(0))) {                                                                                  \
+                double a = AS_NUMBER(pop());                                                                           \
+                push(OBJ_VAL(newComplex(a op b->value)));                                                              \
+            }                                                                                                          \
+            else if (IS_COMPLEX(peek(0))) {                                                                            \
+                ObjComplex* a = AS_COMPLEX(pop());                                                                     \
+                push(OBJ_VAL(newComplex(a->value op b->value)));                                                       \
+            }                                                                                                          \
+            else {                                                                                                     \
+                runtimeError("Operands must be numbers.");                                                             \
+                return INTERPRET_RUNTIME_ERROR;                                                                        \
+            }                                                                                                          \
+        }                                                                                                              \
+        else {                                                                                                         \
+            runtimeError("Operands must be numbers.");                                                                 \
+            return INTERPRET_RUNTIME_ERROR;                                                                            \
+        }                                                                                                              \
     } while (false)
     //< Types of Values binary-op
 
@@ -668,6 +741,67 @@ static InterpretResult run()
             break;
         }
             //< Classes and Instances interpret-set-property
+        case OP_GET_ELEMENT: {
+            size_t argCount = READ_BYTE();
+            Value value = NIL_VAL;
+            if (1 == argCount) {
+                if (IS_NUMBER(peek(0))) {
+                    double index = AS_NUMBER(peek(0));
+                    if (IS_LIST(peek(1))) {
+                        ObjList* list = AS_LIST(peek(1));
+                        if (index < list->array.count) {
+                            value = list->array.values[(int)index];
+                        }
+                        else {
+                            runtimeError("Out of bound");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    }
+                }
+                else {
+                    runtimeError("Invalid index");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                pop();
+                pop();
+            }
+            else {
+                runtimeError("Invalid index");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            push(value);
+            break;
+        }
+        case OP_SET_ELEMENT: {
+            size_t argCount = READ_BYTE();
+            if (1 == argCount) {
+                if (IS_NUMBER(peek(1))) {
+                    double index = AS_NUMBER(peek(1));
+                    if (IS_LIST(peek(2))) {
+                        ObjList* list = AS_LIST(peek(2));
+                        if (index < list->array.count) {
+                            list->array.values[(int)index] = peek(0);
+                        }
+                        else {
+                            runtimeError("Out of bound");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    }
+                    else {
+                        runtimeError("Invalid index");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                }
+                else {
+                    runtimeError("Invalid index");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                pop();
+                pop();
+                pop();
+            }
+            break;
+        }
             //> Superclasses interpret-get-super
         case OP_GET_SUPER: {
             ObjString* name = READ_STRING();
@@ -689,10 +823,10 @@ static InterpretResult run()
             //< Types of Values interpret-equal
             //> Types of Values interpret-comparison
         case OP_GREATER:
-            BINARY_OP(BOOL_VAL, >);
+            BINARY_CMP(BOOL_VAL, >);
             break;
         case OP_LESS:
-            BINARY_OP(BOOL_VAL, <);
+            BINARY_CMP(BOOL_VAL, <);
             break;
             //< Types of Values interpret-comparison
             /* A Virtual Machine op-binary < Types of Values op-arithmetic
@@ -709,13 +843,38 @@ static InterpretResult run()
             */
             //> Strings add-strings
         case OP_ADD: {
-            if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
-                concatenate();
-            }
-            else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+            if (IS_NUMBER(peek(0))) {
                 double b = AS_NUMBER(pop());
-                double a = AS_NUMBER(pop());
-                push(NUMBER_VAL(a + b));
+                if (IS_NUMBER(peek(0))) {
+                    double a = AS_NUMBER(pop());
+                    push(NUMBER_VAL(a + b));
+                }
+                else if (IS_COMPLEX(peek(0))) {
+                    ObjComplex* a = AS_COMPLEX(pop());
+                    push(OBJ_VAL(newComplex(a->value + b)));
+                }
+                else {
+                    runtimeError("Operands must be two numbers or two strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else if (IS_COMPLEX(peek(0))) {
+                ObjComplex* b = AS_COMPLEX(pop());
+                if (IS_NUMBER(peek(0))) {
+                    double a = AS_NUMBER(pop());
+                    push(OBJ_VAL(newComplex(a + b->value)));
+                }
+                else if (IS_COMPLEX(peek(0))) {
+                    ObjComplex* a = AS_COMPLEX(pop());
+                    push(OBJ_VAL(newComplex(a->value + b->value)));
+                }
+                else {
+                    runtimeError("Operands must be two numbers or two strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+                concatenate();
             }
             else {
                 runtimeError("Operands must be two numbers or two strings.");

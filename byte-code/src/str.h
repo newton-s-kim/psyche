@@ -1,6 +1,7 @@
 #ifndef clox_str_h
 #define clox_str_h
 
+#include <stdbool.h>
 #include <stddef.h>
 
 typedef struct {
