@@ -210,6 +210,7 @@ static bool call(ObjClosure* closure, int argCount)
     */
     //> Closures check-arity
     if (argCount != closure->function->arity) {
+        LAX_LOG("Expected %d arguments but got %d.", closure->function->arity, argCount);
         runtimeError("Expected %d arguments but got %d.", closure->function->arity, argCount);
         //< Closures check-arity
         //> check-arity
@@ -268,11 +269,14 @@ static bool callValue(Value callee, int argCount)
                 return call(AS_CLOSURE(initializer), argCount);
                 //> no-init-arity-error
             }
+	    /*
             else if (argCount != 0) {
+                LAX_LOG("Expected 0 arguments but got %d.", argCount);
                 runtimeError("Expected 0 arguments but got %d.", argCount);
                 return false;
                 //< no-init-arity-error
             }
+	    */
             //< Methods and Initializers call-init
             return true;
         }
