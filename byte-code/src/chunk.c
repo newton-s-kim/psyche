@@ -64,10 +64,53 @@ int addConstant(Chunk* chunk, Value value)
     //> Garbage Collection add-constant-push
     push(value);
     //< Garbage Collection add-constant-push
-    writeValueArray(&chunk->constants, value);
+    int found = -1;
+    if(IS_STRING(value)) {
+        ObjString* str = AS_STRING(value);
+        for(int i = 0 ; i < chunk->constants.count ; i++) {
+            if(!IS_STRING(chunk->constants.values[i])) continue;
+	    ObjString* cstr = AS_STRING(chunk->constants.values[i]);
+	    if(str->hash != cstr->hash) continue;
+	    if(!strcmp(str->chars, cstr->chars)) {
+		    found = i;
+		    break;
+	    }
+        }
+    } else if(IS_NUMBER(value)) {
+        double num = AS_NUMBER(value);
+        for(int i = 0 ; i < chunk->constants.count ; i++) {
+            if(!IS_NUMBER(chunk->constants.values[i])) continue;
+	    double cnum = AS_NUMBER(chunk->constants.values[i]);
+	    if(num == cnum) {
+		    found = i;
+		    break;
+	    }
+        }
+    } else if(IS_BOOL(value)) {
+        bool tf = AS_BOOL(value);
+        for(int i = 0 ; i < chunk->constants.count ; i++) {
+            if(!IS_BOOL(chunk->constants.values[i])) continue;
+	    bool ctf = AS_BOOL(chunk->constants.values[i]);
+	    if(tf == ctf) {
+		    found = i;
+		    break;
+	    }
+	}
+    } else if(IS_NIL(value)) {
+        for(int i = 0 ; i < chunk->constants.count ; i++) {
+	    if(IS_NIL(chunk->constants.values[i])) {
+		    found = i;
+		    break;
+	    }
+	}
+    }
+    if(-1 == found) {
+	    writeValueArray(&chunk->constants, value);
+	    found = chunk->constants.count - 1;
+    }
     //> Garbage Collection add-constant-pop
     pop();
     //< Garbage Collection add-constant-pop
-    return chunk->constants.count - 1;
+    return found;
 }
 //< add-constant
