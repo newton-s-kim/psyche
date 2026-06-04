@@ -148,6 +148,7 @@ void initVM()
 
     defineNative("clock", clockNative);
     defineValue("List", OBJ_VAL(newListClass()));
+    defineValue("Map", OBJ_VAL(newMapClass()));
     //< Calls and Functions define-native-clock
     vm.dls = NULL;
     vm.dlCount = 0;
@@ -258,8 +259,8 @@ static bool callValue(Value callee, int argCount)
             Value instance = NIL_VAL;
             if (klass->call) {
                 instance = klass->call->method(callee, argCount, vm.stackTop - argCount);
-		vm.stackTop -= argCount;
-		argCount = 0;
+                vm.stackTop -= argCount;
+                argCount = 0;
             }
             else {
                 instance = OBJ_VAL(newInstance(klass));
@@ -360,6 +361,10 @@ static bool invoke(ObjString* name, int argCount)
     else if (IS_LIST(receiver)) {
         ObjList* list = AS_LIST(receiver);
         return invokeNativeFromClass(receiver, list->klass, name, argCount);
+    }
+    else if (IS_MAP(receiver)) {
+        ObjMap* map = AS_MAP(receiver);
+        return invokeNativeFromClass(receiver, map->klass, name, argCount);
     }
     else {
         runtimeError("Only instances have methods.");
@@ -762,6 +767,24 @@ static InterpretResult run()
                             return INTERPRET_RUNTIME_ERROR;
                         }
                     }
+                    else {
+                        runtimeError("Expects List");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                }
+                else if (IS_STRING(peek(0))) {
+                    ObjString* key = AS_STRING(peek(0));
+                    if (IS_MAP(peek(1))) {
+                        ObjMap* map = AS_MAP(peek(1));
+                        if (!tableGet(&map->map, key, &value)) {
+                            runtimeError("Invalid key");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    }
+                    else {
+                        runtimeError("Expects Map");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
                 }
                 else {
                     runtimeError("Invalid index");
@@ -771,7 +794,7 @@ static InterpretResult run()
                 pop();
             }
             else {
-                runtimeError("Invalid index");
+                runtimeError("Invalid index dimension");
                 return INTERPRET_RUNTIME_ERROR;
             }
             push(value);
@@ -793,12 +816,23 @@ static InterpretResult run()
                         }
                     }
                     else {
-                        runtimeError("Invalid index");
+                        runtimeError("Expects List");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                }
+                else if (IS_STRING(peek(1))) {
+                    ObjString* key = AS_STRING(peek(1));
+                    if (IS_MAP(peek(2))) {
+                        ObjMap* map = AS_MAP(peek(2));
+                        tableSet(&map->map, key, peek(0));
+                    }
+                    else {
+                        runtimeError("Expects Map");
                         return INTERPRET_RUNTIME_ERROR;
                     }
                 }
                 else {
-                    runtimeError("Invalid index");
+                    runtimeError("Invalid index dimension");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 pop();

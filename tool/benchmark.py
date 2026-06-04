@@ -104,9 +104,9 @@ false""",
 
 BENCHMARK("map_numeric", r"""2000001000000""")
 
-BENCHMARK("map_string", r"""12799920000""")
-
 BENCHMARK("string_equals", r"""3000000""")
+
+BENCHMARK("map_string", r"""12799920000""")
 
 LANGUAGES = [
     ("psyche", [os.path.join(PSYCHE_BIN, "psyche")], ".psy"),

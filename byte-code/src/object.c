@@ -257,15 +257,39 @@ ObjClass* newListClass()
     klass->call = newNativeBoundMethod(list_new);
     return klass;
 }
+Value map_remove(Value receiver, int argc, Value* argv)
+{
+    LAX_LOG("map_remove(%d)", argc);
+    if (0 == argc)
+        return NIL_VAL;
+    ObjMap* map = AS_MAP(receiver);
+    for (int index = 0; index < argc; index++) {
+        if(!IS_STRING(argv[index])) {
+		runtimeError("Exepects a string");
+		return NIL_VAL;
+	}
+        tableDelete(&map->map, AS_STRING(argv[index]));
+    }
+    return NIL_VAL;
+}
+static Value map_new(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    LAX_LOG("map_new(%d)", argc);
+    ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
+    map->klass = AS_CLASS(receiver);
+    initTable(&map->map);
+    return OBJ_VAL(map);
+}
 ObjClass* newMapClass()
 {
-    return NULL;
-}
-ObjMap* newMap()
-{
-    ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
-    initTable(&map->map);
-    return map;
+    ObjString* name = copyString("Map", 3);
+    ObjClass* klass = newClass(name);
+    ObjString* method = copyString("remove", 6);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)));
+    klass->call = newNativeBoundMethod(map_new);
+    return klass;
 }
 //> Calls and Functions print-function-helper
 static void printFunction(ObjFunction* function)
