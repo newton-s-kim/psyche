@@ -639,7 +639,7 @@ static void declareVariable()
 }
 //< Local Variables declare-variable
 //> Global Variables parse-variable
-static uint8_t parseVariable(const char* errorMessage)
+static uint16_t parseVariable(const char* errorMessage)
 {
     consume(TOKEN_IDENTIFIER, errorMessage);
     //> Local Variables parse-local
@@ -1294,7 +1294,7 @@ static void function(FunctionType type)
             if (current->function->arity > 255) {
                 errorAtCurrent("Can't have more than 255 parameters.");
             }
-            uint8_t constant = parseVariable("Expect parameter name.");
+            uint16_t constant = parseVariable("Expect parameter name.");
             defineVariable(constant);
         } while (match(TOKEN_COMMA));
     }
@@ -1420,7 +1420,7 @@ static void classDeclaration()
 //> Calls and Functions fun-declaration
 static void funDeclaration()
 {
-    uint8_t global = parseVariable("Expect function name.");
+    uint16_t global = parseVariable("Expect function name.");
     markInitialized();
     function(TYPE_FUNCTION);
     defineVariable(global);
@@ -1429,7 +1429,7 @@ static void funDeclaration()
 //> Global Variables var-declaration
 static void varDeclaration()
 {
-    uint8_t global = parseVariable("Expect variable name.");
+    uint16_t global = parseVariable("Expect variable name.");
 
     if (match(TOKEN_EQUAL)) {
         expression();
