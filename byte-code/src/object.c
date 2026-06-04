@@ -236,17 +236,19 @@ Value list_add(Value receiver, int argc, Value* argv)
 }
 static Value list_new(Value receiver, int argc, Value* argv)
 {
+    LAX_LOG("list_new(%d)", argc);
     ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
     list->klass = AS_CLASS(receiver);
     initValueArray(&list->array);
     if (0 < argc)
         for (int index = 0; index < argc; index++)
             writeValueArray(&list->array, argv[index]);
+    LAX_LOG("list type: %d", list->obj.type);
     return OBJ_VAL(list);
 }
 ObjClass* newListClass()
 {
-    ObjString* name = copyString("list", 4);
+    ObjString* name = copyString("List", 4);
     ObjClass* klass = newClass(name);
     ObjString* method = copyString("add", 3);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_add)));

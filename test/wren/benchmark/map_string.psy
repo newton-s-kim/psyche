@@ -70,8 +70,8 @@ var animals = List(
 
 var keys = List();
 for (var animal = 0; animal < animals.size(); animal = animal + 1) {
-  for (var adjective = 0; adjective < adjectives.size; adjective = adjective + 1) {
-    for (var adverb = 0; adverb < adverbs.size; adverb = adverb + 1) {
+  for (var adjective = 0; adjective < adjectives.size(); adjective = adjective + 1) {
+    for (var adverb = 0; adverb < adverbs.size(); adverb = adverb + 1) {
       keys.add(adverbs[adverb] + " " + adjectives[adjective] + " " + animals[animal]);
     }
   }

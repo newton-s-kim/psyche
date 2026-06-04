@@ -258,6 +258,8 @@ static bool callValue(Value callee, int argCount)
             Value instance = NIL_VAL;
             if (klass->call) {
                 instance = klass->call->method(callee, argCount, vm.stackTop - argCount);
+		vm.stackTop -= argCount;
+		argCount = 0;
             }
             else {
                 instance = OBJ_VAL(newInstance(klass));
@@ -269,14 +271,12 @@ static bool callValue(Value callee, int argCount)
                 return call(AS_CLOSURE(initializer), argCount);
                 //> no-init-arity-error
             }
-	    /*
             else if (argCount != 0) {
                 LAX_LOG("Expected 0 arguments but got %d.", argCount);
                 runtimeError("Expected 0 arguments but got %d.", argCount);
                 return false;
                 //< no-init-arity-error
             }
-	    */
             //< Methods and Initializers call-init
             return true;
         }
@@ -342,6 +342,7 @@ static bool invoke(ObjString* name, int argCount)
     Value receiver = peek(argCount);
     //> invoke-check-type
 
+    LAX_LOG("receiver type: %d", AS_OBJ(receiver)->type);
     if (IS_INSTANCE(receiver)) {
         //< invoke-check-type
         ObjInstance* instance = AS_INSTANCE(receiver);
