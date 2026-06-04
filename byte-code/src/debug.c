@@ -9,6 +9,8 @@
 #include "value.h"
 //< debug-include-value
 
+#define READ_ADDRESS() ((uint16_t)((chunk->code[offset + 1] << 8) | chunk->code[offset + 2]))
+
 void disassembleChunk(Chunk* chunk, const char* name)
 {
     printf("== %s ==\n", name);
@@ -20,24 +22,24 @@ void disassembleChunk(Chunk* chunk, const char* name)
 //> constant-instruction
 static int constantInstruction(const char* name, Chunk* chunk, int offset)
 {
-    uint8_t constant = chunk->code[offset + 1];
+    uint16_t constant = READ_ADDRESS();
     printf("%-16s %4d '", name, constant);
     printValue(chunk->constants.values[constant]);
     printf("'\n");
     //> return-after-operand
-    return offset + 2;
+    return offset + 3;
     //< return-after-operand
 }
 //< constant-instruction
 //> Methods and Initializers invoke-instruction
 static int invokeInstruction(const char* name, Chunk* chunk, int offset)
 {
-    uint8_t constant = chunk->code[offset + 1];
-    uint8_t argCount = chunk->code[offset + 2];
+    uint16_t constant = READ_ADDRESS();
+    uint8_t argCount = chunk->code[offset + 3];
     printf("%-16s (%d args) %4d '", name, argCount, constant);
     printValue(chunk->constants.values[constant]);
     printf("'\n");
-    return offset + 3;
+    return offset + 4;
 }
 //< Methods and Initializers invoke-instruction
 //> simple-instruction
@@ -54,12 +56,17 @@ static int byteInstruction(const char* name, Chunk* chunk, int offset)
     printf("%-16s %4d\n", name, slot);
     return offset + 2; // [debug]
 }
+static int shortInstruction(const char* name, Chunk* chunk, int offset)
+{
+    uint16_t slot = READ_ADDRESS();
+    printf("%-16s %4d\n", name, slot);
+    return offset + 3; // [debug]
+}
 //< Local Variables byte-instruction
 //> Jumping Back and Forth jump-instruction
 static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset)
 {
-    uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
-    jump |= chunk->code[offset + 2];
+    uint16_t jump = READ_ADDRESS();
     printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
@@ -97,27 +104,27 @@ int disassembleInstruction(Chunk* chunk, int offset)
         //< Global Variables disassemble-pop
         //> Local Variables disassemble-local
     case OP_GET_LOCAL:
-        return byteInstruction("OP_GET_LOCAL", chunk, offset);
+        return shortInstruction("OP_GET_LOCAL", chunk, offset);
     case OP_SET_LOCAL:
-        return byteInstruction("OP_SET_LOCAL", chunk, offset);
+        return shortInstruction("OP_SET_LOCAL", chunk, offset);
         //< Local Variables disassemble-local
         //> Global Variables disassemble-get-global
     case OP_GET_GLOBAL:
-        return constantInstruction("OP_GET_GLOBAL", chunk, offset);
+        return shortInstruction("OP_GET_GLOBAL", chunk, offset);
         //< Global Variables disassemble-get-global
         //> Global Variables disassemble-define-global
     case OP_DEFINE_GLOBAL:
-        return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
+        return shortInstruction("OP_DEFINE_GLOBAL", chunk, offset);
         //< Global Variables disassemble-define-global
         //> Global Variables disassemble-set-global
     case OP_SET_GLOBAL:
-        return constantInstruction("OP_SET_GLOBAL", chunk, offset);
+        return shortInstruction("OP_SET_GLOBAL", chunk, offset);
         //< Global Variables disassemble-set-global
         //> Closures disassemble-upvalue-ops
     case OP_GET_UPVALUE:
-        return byteInstruction("OP_GET_UPVALUE", chunk, offset);
+        return shortInstruction("OP_GET_UPVALUE", chunk, offset);
     case OP_SET_UPVALUE:
-        return byteInstruction("OP_SET_UPVALUE", chunk, offset);
+        return shortInstruction("OP_SET_UPVALUE", chunk, offset);
         //< Closures disassemble-upvalue-ops
         //> Classes and Instances disassemble-property-ops
     case OP_GET_PROPERTY:
@@ -126,6 +133,10 @@ int disassembleInstruction(Chunk* chunk, int offset)
         return constantInstruction("OP_SET_PROPERTY", chunk, offset);
         //< Classes and Instances disassemble-property-ops
         //> Superclasses disassemble-get-super
+    case OP_GET_ELEMENT:
+        return simpleInstruction("OP_GET_ELEMENT", offset);
+    case OP_SET_ELEMENT:
+        return simpleInstruction("OP_SET_ELEMENT", offset);
     case OP_GET_SUPER:
         return constantInstruction("OP_GET_SUPER", chunk, offset);
         //< Superclasses disassemble-get-super
@@ -187,8 +198,8 @@ int disassembleInstruction(Chunk* chunk, int offset)
         //< Superclasses disassemble-super-invoke
         //> Closures disassemble-closure
     case OP_CLOSURE: {
-        offset++;
-        uint8_t constant = chunk->code[offset++];
+        uint16_t constant = READ_ADDRESS();
+        offset += 3;
         printf("%-16s %4d ", "OP_CLOSURE", constant);
         printValue(chunk->constants.values[constant]);
         printf("\n");
@@ -215,6 +226,8 @@ int disassembleInstruction(Chunk* chunk, int offset)
     case OP_CLASS:
         return constantInstruction("OP_CLASS", chunk, offset);
         //< Classes and Instances disassemble-class
+    case OP_LIST:
+        return simpleInstruction("OP_LIST", offset);
         //> Superclasses disassemble-inherit
     case OP_INHERIT:
         return simpleInstruction("OP_INHERIT", offset);
