@@ -145,7 +145,7 @@ typedef struct {
 //< Local Variables local-struct
 //> Closures upvalue-struct
 typedef struct {
-    uint8_t index;
+    int16_t index;
     bool isLocal;
 } Upvalue;
 //< Closures upvalue-struct
@@ -543,7 +543,7 @@ static int resolveLocal(Compiler* compiler, Token* name)
 }
 //< Local Variables resolve-local
 //> Closures add-upvalue
-static int addUpvalue(Compiler* compiler, uint8_t index, bool isLocal)
+static int addUpvalue(Compiler* compiler, int index, bool isLocal)
 {
     int upvalueCount = compiler->function->upvalueCount;
     //> existing-upvalue
@@ -579,13 +579,13 @@ static int resolveUpvalue(Compiler* compiler, Token* name)
         //> mark-local-captured
         compiler->enclosing->locals[local].isCaptured = true;
         //< mark-local-captured
-        return addUpvalue(compiler, (uint8_t)local, true);
+        return addUpvalue(compiler, local, true);
     }
 
     //> resolve-upvalue-recurse
     int upvalue = resolveUpvalue(compiler->enclosing, name);
     if (upvalue != -1) {
-        return addUpvalue(compiler, (uint8_t)upvalue, false);
+        return addUpvalue(compiler, upvalue, false);
     }
 
     //< resolve-upvalue-recurse
@@ -1013,7 +1013,7 @@ static void super_(bool canAssign)
     //< super-errors
     consume(TOKEN_DOT, "Expect '.' after 'super'.");
     consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
-    uint8_t name = identifierConstant(&parser.previous);
+    uint16_t name = identifierConstant(&parser.previous);
     //> super-get
 
     namedVariable(syntheticToken("this"), false);

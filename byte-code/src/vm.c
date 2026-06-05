@@ -837,7 +837,6 @@ static InterpretResult run()
                 }
                 pop();
                 pop();
-                pop();
             }
             break;
         }

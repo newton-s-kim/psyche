@@ -6,7 +6,7 @@
 
 String* strNewWithLength(const char* str, const size_t length)
 {
-    LAX_LOG("%s:%lu", str, length);
+    LAX_LOG("strNewWithLength(%s,%lu)", str, length);
     if (NULL == str)
         return NULL;
     String* ret = malloc(sizeof(String));

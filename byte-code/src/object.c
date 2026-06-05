@@ -264,10 +264,10 @@ Value map_remove(Value receiver, int argc, Value* argv)
         return NIL_VAL;
     ObjMap* map = AS_MAP(receiver);
     for (int index = 0; index < argc; index++) {
-        if(!IS_STRING(argv[index])) {
-		runtimeError("Exepects a string");
-		return NIL_VAL;
-	}
+        if (!IS_STRING(argv[index])) {
+            runtimeError("Exepects a string");
+            return NIL_VAL;
+        }
         tableDelete(&map->map, AS_STRING(argv[index]));
     }
     return NIL_VAL;
@@ -345,17 +345,17 @@ void printObject(Value value)
         break;
         //> Closures print-upvalue
     case OBJ_UPVALUE:
-        printf("upvalue");
+        printf("<upvalue>");
         break;
         //< Closures print-upvalue
     case OBJ_COMPLEX:
         printf("%f + %fi", creal(AS_COMPLEX(value)->value), cimag(AS_COMPLEX(value)->value));
         break;
     case OBJ_LIST:
-        printf("list");
+        printf("<list>");
         break;
     case OBJ_MAP:
-        printf("map");
+        printf("<map>");
         break;
     }
 }
