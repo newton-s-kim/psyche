@@ -223,6 +223,31 @@ Value list_size(Value receiver, int argc, Value* argv)
     ObjList* list = AS_LIST(receiver);
     return NUMBER_VAL(list->array.count);
 }
+Value list_insert(Value receiver, int argc, Value* argv)
+{
+    LAX_LOG("list_insert(%d)", argc);
+    if (2 != argc) {
+        runtimeError("Expects 2 arguments");
+        return NIL_VAL;
+    }
+    if (!IS_NUMBER(argv[0])) {
+        runtimeError("Index must be a number.");
+        return NIL_VAL;
+    }
+    double index = AS_NUMBER(argv[0]);
+    ObjList* list = AS_LIST(receiver);
+    if (index < 0 || list->array.count < index) {
+        runtimeError("Index is out of bound.");
+        return NIL_VAL;
+    }
+    if (index != (int)index) {
+        runtimeError("Index must be an integer.");
+        return NIL_VAL;
+    }
+    insertValueArray(&list->array, index, argv[1]);
+    LAX_LOG("list size: %d", list->array.count);
+    return argv[0];
+}
 Value list_add(Value receiver, int argc, Value* argv)
 {
     LAX_LOG("list_add(%d)", argc);
@@ -254,6 +279,8 @@ ObjClass* newListClass()
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_add)));
     method = copyString("size", 4);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_size)));
+    method = copyString("insert", 6);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_insert)));
     klass->call = newNativeBoundMethod(list_new);
     return klass;
 }

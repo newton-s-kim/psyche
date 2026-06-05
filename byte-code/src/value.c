@@ -16,6 +16,23 @@ void initValueArray(ValueArray* array)
     array->capacity = 0;
     array->count = 0;
 }
+void insertValueArray(ValueArray* array, int index, Value value)
+{
+    if (array->capacity < array->count + 1) {
+        int oldCapacity = array->capacity;
+        array->capacity = GROW_CAPACITY(oldCapacity);
+        array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
+    }
+    if (index == array->count) {
+        array->values[index] = value;
+        array->count++;
+    }
+    else if (0 <= index && index < array->count) {
+        memmove(array->values + index, array->values + index + 1, array->count - index);
+        array->values[index] = value;
+        array->count++;
+    }
+}
 //> write-value-array
 void writeValueArray(ValueArray* array, Value value)
 {

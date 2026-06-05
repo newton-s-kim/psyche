@@ -165,6 +165,7 @@ bool valuesEqual(Value a, Value b);
 //< Types of Values values-equal-h
 void initValueArray(ValueArray* array);
 void writeValueArray(ValueArray* array, Value value);
+void insertValueArray(ValueArray* array, int index, Value value);
 void freeValueArray(ValueArray* array);
 //< array-fns-h
 //> print-value-h
