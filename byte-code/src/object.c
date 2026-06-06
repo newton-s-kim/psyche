@@ -216,12 +216,37 @@ ObjComplex* newComplex(double complex v)
     cmplx->value = v;
     return cmplx;
 }
+Value list_clear(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjList* list = AS_LIST(receiver);
+    freeValueArray(&list->array);
+    initValueArray(&list->array);
+    return NIL_VAL;
+}
 Value list_size(Value receiver, int argc, Value* argv)
 {
     (void)argc;
     (void)argv;
     ObjList* list = AS_LIST(receiver);
     return NUMBER_VAL(list->array.count);
+}
+Value list_contains(Value receiver, int argc, Value* argv)
+{
+    bool tf = false;
+    if (1 != argc) {
+        runtimeError("Expects 2 arguments");
+        return NIL_VAL;
+    }
+    ObjList* list = AS_LIST(receiver);
+    for (int index = 0; index < list->array.count; index++) {
+        if (valuesEqual(list->array.values[index], argv[0])) {
+            tf = true;
+            break;
+        }
+    }
+    return BOOL_VAL(tf);
 }
 Value list_insert(Value receiver, int argc, Value* argv)
 {
@@ -236,6 +261,8 @@ Value list_insert(Value receiver, int argc, Value* argv)
     }
     double index = AS_NUMBER(argv[0]);
     ObjList* list = AS_LIST(receiver);
+    if (0 > index)
+        index += list->array.count + 1;
     if (index < 0 || list->array.count < index) {
         runtimeError("Index is out of bound.");
         return NIL_VAL;
@@ -246,7 +273,7 @@ Value list_insert(Value receiver, int argc, Value* argv)
     }
     insertValueArray(&list->array, index, argv[1]);
     LAX_LOG("list size: %d", list->array.count);
-    return argv[0];
+    return argv[1];
 }
 Value list_add(Value receiver, int argc, Value* argv)
 {
@@ -281,6 +308,10 @@ ObjClass* newListClass()
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_size)));
     method = copyString("insert", 6);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_insert)));
+    method = copyString("contains", 8);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_contains)));
+    method = copyString("clear", 5);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)));
     klass->call = newNativeBoundMethod(list_new);
     return klass;
 }
@@ -378,12 +409,57 @@ void printObject(Value value)
     case OBJ_COMPLEX:
         printf("%f + %fi", creal(AS_COMPLEX(value)->value), cimag(AS_COMPLEX(value)->value));
         break;
-    case OBJ_LIST:
-        printf("<list>");
+    case OBJ_LIST: {
+        ObjList* list = AS_LIST(value);
+        printf("[");
+        for (int i = 0; i < list->array.count; i++) {
+            if (0 < i)
+                printf(",");
+            printValue(list->array.values[i]);
+        }
+        printf("]");
         break;
+    }
     case OBJ_MAP:
         printf("<map>");
         break;
     }
+}
+
+bool objectsEqual(Obj* a, Obj* b)
+{
+    bool retVal = false;
+    if (a->type != b->type)
+        return retVal;
+    switch (a->type) {
+    case OBJ_STRING: {
+        ObjString* stra = (ObjString*)a;
+        ObjString* strb = (ObjString*)b;
+        if (stra->hash == strb->hash && !strcmp(stra->chars, strb->chars))
+            retVal = false;
+        break;
+    }
+    case OBJ_LIST: {
+        retVal = true;
+        ObjList* lsta = (ObjList*)a;
+        ObjList* lstb = (ObjList*)b;
+        if (lsta->array.count != lstb->array.count) {
+            retVal = false;
+            break;
+        }
+        else {
+            for (int index = 0; index < lsta->array.count; index++) {
+                if (!valuesEqual(lsta->array.values[index], lstb->array.values[index])) {
+                    retVal = false;
+                    break;
+                }
+            }
+        }
+        break;
+    }
+    default:
+        retVal = true;
+    }
+    return retVal;
 }
 //< print-object

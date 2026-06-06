@@ -7,6 +7,8 @@
 //> Strings value-include-object
 #include "object.h"
 //< Strings value-include-object
+#include "common.h"
+#include "log.h"
 #include "memory.h"
 #include "value.h"
 
@@ -27,8 +29,18 @@ void insertValueArray(ValueArray* array, int index, Value value)
         array->values[index] = value;
         array->count++;
     }
+    /*
+    else if (index == -1) {
+        //memmove(array->values, array->values + 1, sizeof(Value) * array->count);
+        for(int i = array->count - 1; i >= 0; i--) array->values[i + 1] = array->values[i];
+        array->values[0] = value;
+        array->count++;
+    }
+    */
     else if (0 <= index && index < array->count) {
-        memmove(array->values + index, array->values + index + 1, array->count - index);
+        // memmove(array->values + index, array->values + index + 1, sizeof(Value) * array->count - index);
+        for (int i = array->count - 1; i >= index; i--)
+            array->values[i + 1] = array->values[i];
         array->values[index] = value;
         array->count++;
     }
@@ -49,6 +61,7 @@ void writeValueArray(ValueArray* array, Value value)
 //> free-value-array
 void freeValueArray(ValueArray* array)
 {
+    LAX_LOG("freeValueArray:0x%p", array->values);
     FREE_ARRAY(Value, array->values, array->capacity);
     initValueArray(array);
 }
@@ -134,7 +147,7 @@ bool valuesEqual(Value a, Value b)
          */
         //> Hash Tables equal
     case VAL_OBJ:
-        return AS_OBJ(a) == AS_OBJ(b);
+        return objectsEqual(AS_OBJ(a), AS_OBJ(b));
         //< Hash Tables equal
     default:
         return false; // Unreachable.

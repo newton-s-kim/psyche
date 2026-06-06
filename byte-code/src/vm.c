@@ -759,7 +759,9 @@ static InterpretResult run()
                     double index = AS_NUMBER(peek(0));
                     if (IS_LIST(peek(1))) {
                         ObjList* list = AS_LIST(peek(1));
-                        if (index < list->array.count) {
+                        if (0 > index)
+                            index += list->array.count;
+                        if (0 <= index && index < list->array.count) {
                             value = list->array.values[(int)index];
                         }
                         else {
@@ -802,13 +804,16 @@ static InterpretResult run()
         }
         case OP_SET_ELEMENT: {
             size_t argCount = READ_BYTE();
+            Value value = peek(0);
             if (1 == argCount) {
                 if (IS_NUMBER(peek(1))) {
                     double index = AS_NUMBER(peek(1));
                     if (IS_LIST(peek(2))) {
                         ObjList* list = AS_LIST(peek(2));
-                        if (index < list->array.count) {
-                            list->array.values[(int)index] = peek(0);
+                        if (0 > index)
+                            index += list->array.count;
+                        if (0 <= index && index < list->array.count) {
+                            list->array.values[(int)index] = value;
                         }
                         else {
                             runtimeError("Out of bound");
@@ -837,6 +842,8 @@ static InterpretResult run()
                 }
                 pop();
                 pop();
+                pop();
+                push(value);
             }
             break;
         }

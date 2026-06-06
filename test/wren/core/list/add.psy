@@ -4,5 +4,5 @@ print a; // expect: [1,2]
 a.add(3);
 print a; // expect: [1,2,3]
 
-// Returns the number of added elements.
-print a.add(4); // expect: 1
+// Returns added element.
+print a.add(4); // expect: 4
