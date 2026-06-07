@@ -28,6 +28,11 @@
 
 #include "log.h"
 
+#define PUSH(value) (*vm.stackTop++ = (value))
+#define POP() (--vm.stackTop)
+#define PEEK() (*(vm.stackTop - 1))
+#define NPEEK(n) (*(vm.stackTop - 1 - n))
+
 VM vm; // [one]
 //> Calls and Functions clock-native
 static Value clockNative(int argCount, Value* args)
@@ -97,11 +102,11 @@ void runtimeError(const char* format, ...)
 
 static void defineValue(const char* name, Value value)
 {
-    push(OBJ_VAL(copyString(name, (int)strlen(name))));
-    push(value);
+    PUSH(OBJ_VAL(copyString(name, (int)strlen(name))));
+    PUSH(value);
     tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
-    pop();
-    pop();
+    POP();
+    POP();
 }
 
 //> Calls and Functions define-native
@@ -192,10 +197,12 @@ Value pop()
 }
 //< pop
 //> Types of Values peek
+/*
 static Value peek(int distance)
 {
     return vm.stackTop[-1 - distance];
 }
+*/
 //< Types of Values peek
 /* Calls and Functions call < Closures call-signature
 static bool call(ObjFunction* function, int argCount) {
@@ -296,7 +303,7 @@ static bool callValue(Value callee, int argCount)
             NativeFn native = AS_NATIVE(callee);
             Value result = native(argCount, vm.stackTop - argCount);
             vm.stackTop -= argCount + 1;
-            push(result);
+            PUSH(result);
             return true;
         }
             //< call-native
@@ -332,7 +339,7 @@ static bool invokeNativeFromClass(Value receiver, ObjClass* klass, ObjString* na
     else if (IS_NATIVE_BOUND_METHOD(method)) {
         Value result = AS_NATIVE_BOUND_METHOD(method)(receiver, argCount, vm.stackTop - argCount);
         vm.stackTop -= argCount + 1;
-        push(result);
+        PUSH(result);
         retVal = true;
     }
     return retVal;
@@ -341,7 +348,7 @@ static bool invokeNativeFromClass(Value receiver, ObjClass* klass, ObjString* na
 //> Methods and Initializers invoke
 static bool invoke(ObjString* name, int argCount)
 {
-    Value receiver = peek(argCount);
+    Value receiver = NPEEK(argCount);
     //> invoke-check-type
 
     LAX_LOG("receiver type: %d", AS_OBJ(receiver)->type);
@@ -385,9 +392,9 @@ static bool bindMethod(ObjClass* klass, ObjString* name)
         return false;
     }
 
-    ObjBoundMethod* bound = newBoundMethod(peek(0), AS_CLOSURE(method));
-    pop();
-    push(OBJ_VAL(bound));
+    ObjBoundMethod* bound = newBoundMethod(PEEK(), AS_CLOSURE(method));
+    POP();
+    PUSH(OBJ_VAL(bound));
     return true;
 }
 //< Methods and Initializers bind-method
@@ -436,10 +443,10 @@ static void closeUpvalues(Value* last)
 //> Methods and Initializers define-method
 static void defineMethod(ObjString* name)
 {
-    Value method = peek(0);
-    ObjClass* klass = AS_CLASS(peek(1));
+    Value method = PEEK();
+    ObjClass* klass = AS_CLASS(NPEEK(1));
     tableSet(&klass->methods, name, method);
-    pop();
+    POP();
 }
 //< Methods and Initializers define-method
 //> Types of Values is-falsey
@@ -456,8 +463,8 @@ static void concatenate()
       ObjString* a = AS_STRING(pop());
     */
     //> Garbage Collection concatenate-peek
-    ObjString* b = AS_STRING(peek(0));
-    ObjString* a = AS_STRING(peek(1));
+    ObjString* b = AS_STRING(PEEK());
+    ObjString* a = AS_STRING(NPEEK(1));
     //< Garbage Collection concatenate-peek
 
     int length = a->length + b->length;
@@ -468,10 +475,10 @@ static void concatenate()
 
     ObjString* result = takeString(chars, length);
     //> Garbage Collection concatenate-pop
-    pop();
-    pop();
+    POP();
+    POP();
     //< Garbage Collection concatenate-pop
-    push(OBJ_VAL(result));
+    PUSH(OBJ_VAL(result));
 }
 //< Strings concatenate
 //> run
@@ -511,48 +518,48 @@ static InterpretResult run()
     do { \
       double b = pop(); \
       double a = pop(); \
-      push(a op b); \
+      PUSH(a op b); \
     } while (false)
 */
 //> Types of Values binary-op
 #define BINARY_CMP(valueType, op)                                                                                      \
     do {                                                                                                               \
-        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {                                                              \
+        if (!IS_NUMBER(PEEK()) || !IS_NUMBER(NPEEK(1))) {                                                              \
             runtimeError("Operands must be numbers.");                                                                 \
             return INTERPRET_RUNTIME_ERROR;                                                                            \
         }                                                                                                              \
         double b = AS_NUMBER(pop());                                                                                   \
         double a = AS_NUMBER(pop());                                                                                   \
-        push(valueType(a op b));                                                                                       \
+        PUSH(valueType(a op b));                                                                                       \
     } while (false)
     //< Types of Values binary-op
 
 #define BINARY_OP(valueType, op)                                                                                       \
     do {                                                                                                               \
-        if (IS_NUMBER(peek(0))) {                                                                                      \
+        if (IS_NUMBER(PEEK())) {                                                                                      \
             double b = AS_NUMBER(pop());                                                                               \
-            if (IS_NUMBER(peek(0))) {                                                                                  \
+            if (IS_NUMBER(PEEK())) {                                                                                  \
                 double a = AS_NUMBER(pop());                                                                           \
-                push(NUMBER_VAL(a op b));                                                                              \
+                PUSH(NUMBER_VAL(a op b));                                                                              \
             }                                                                                                          \
-            else if (IS_COMPLEX(peek(0))) {                                                                            \
+            else if (IS_COMPLEX(PEEK())) {                                                                            \
                 ObjComplex* a = AS_COMPLEX(pop());                                                                     \
-                push(OBJ_VAL(newComplex(a->real op b, a->imag)));                                                      \
+                PUSH(OBJ_VAL(newComplex(a->real op b, a->imag)));                                                      \
             }                                                                                                          \
             else {                                                                                                     \
                 runtimeError("Operands must be numbers.");                                                             \
                 return INTERPRET_RUNTIME_ERROR;                                                                        \
             }                                                                                                          \
         }                                                                                                              \
-        else if (IS_COMPLEX(peek(0))) {                                                                                \
+        else if (IS_COMPLEX(PEEK())) {                                                                                \
             ObjComplex* b = AS_COMPLEX(pop());                                                                         \
-            if (IS_NUMBER(peek(0))) {                                                                                  \
+            if (IS_NUMBER(PEEK())) {                                                                                  \
                 double a = AS_NUMBER(pop());                                                                           \
-                push(OBJ_VAL(newComplex(a op b->value)));                                                              \
+                PUSH(OBJ_VAL(newComplex(a op b->value)));                                                              \
             }                                                                                                          \
-            else if (IS_COMPLEX(peek(0))) {                                                                            \
+            else if (IS_COMPLEX(PEEK())) {                                                                            \
                 ObjComplex* a = AS_COMPLEX(pop());                                                                     \
-                push(OBJ_VAL(newComplex(a->value op b->value)));                                                       \
+                PUSH(OBJ_VAL(newComplex(a->value op b->value)));                                                       \
             }                                                                                                          \
             else {                                                                                                     \
                 runtimeError("Operands must be numbers.");                                                             \
@@ -568,13 +575,13 @@ static InterpretResult run()
 
 #define POWER_OP(valueType, fn)                                                                                        \
     do {                                                                                                               \
-        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {                                                              \
+        if (!IS_NUMBER(PEEK()) || !IS_NUMBER(NPEEK(1))) {                                                              \
             runtimeError("Operands must be numbers.");                                                                 \
             return INTERPRET_RUNTIME_ERROR;                                                                            \
         }                                                                                                              \
         double b = AS_NUMBER(pop());                                                                                   \
         double a = AS_NUMBER(pop());                                                                                   \
-        push(valueType(fn(a, b)));                                                                                     \
+        PUSH(valueType(fn(a, b)));                                                                                     \
     } while (false)
     //< Types of Values binary-op
 
@@ -615,35 +622,35 @@ static InterpretResult run()
                     printf("\n");
             */
             //> push-constant
-            push(constant);
+            PUSH(constant);
             //< push-constant
             break;
         }
             //< op-constant
             //> Types of Values interpret-literals
         case OP_NIL:
-            push(NIL_VAL);
+            PUSH(NIL_VAL);
             break;
         case OP_TRUE:
-            push(BOOL_VAL(true));
+            PUSH(BOOL_VAL(true));
             break;
         case OP_FALSE:
-            push(BOOL_VAL(false));
+            PUSH(BOOL_VAL(false));
             break;
             //< Types of Values interpret-literals
             //> Global Variables interpret-pop
         case OP_POP:
-            pop();
+            POP();
             break;
             //< Global Variables interpret-pop
             //> Local Variables interpret-get-local
         case OP_GET_LOCAL: {
             uint16_t slot = READ_SHORT();
             /* Local Variables interpret-get-local < Calls and Functions push-local
-                    push(vm.stack[slot]); // [slot]
+                    PUSH(vm.stack[slot]); // [slot]
             */
             //> Calls and Functions push-local
-            push(frame->slots[slot]);
+            PUSH(frame->slots[slot]);
             //< Calls and Functions push-local
             break;
         }
@@ -652,10 +659,10 @@ static InterpretResult run()
         case OP_SET_LOCAL: {
             uint16_t slot = READ_SHORT();
             /* Local Variables interpret-set-local < Calls and Functions set-local
-                    vm.stack[slot] = peek(0);
+                    vm.stack[slot] = PEEK();
             */
             //> Calls and Functions set-local
-            frame->slots[slot] = peek(0);
+            frame->slots[slot] = PEEK();
             //< Calls and Functions set-local
             break;
         }
@@ -668,22 +675,22 @@ static InterpretResult run()
                 runtimeError("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
-            push(value);
+            PUSH(value);
             break;
         }
             //< Global Variables interpret-get-global
             //> Global Variables interpret-define-global
         case OP_DEFINE_GLOBAL: {
             ObjString* name = READ_STRING();
-            tableSet(&vm.globals, name, peek(0));
-            pop();
+            tableSet(&vm.globals, name, PEEK());
+            POP();
             break;
         }
             //< Global Variables interpret-define-global
             //> Global Variables interpret-set-global
         case OP_SET_GLOBAL: {
             ObjString* name = READ_STRING();
-            if (tableSet(&vm.globals, name, peek(0))) {
+            if (tableSet(&vm.globals, name, PEEK())) {
                 tableDelete(&vm.globals, name); // [delete]
                 runtimeError("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
@@ -694,33 +701,33 @@ static InterpretResult run()
             //> Closures interpret-get-upvalue
         case OP_GET_UPVALUE: {
             uint16_t slot = READ_SHORT();
-            push(*frame->closure->upvalues[slot]->location);
+            PUSH(*frame->closure->upvalues[slot]->location);
             break;
         }
             //< Closures interpret-get-upvalue
             //> Closures interpret-set-upvalue
         case OP_SET_UPVALUE: {
             uint16_t slot = READ_SHORT();
-            *frame->closure->upvalues[slot]->location = peek(0);
+            *frame->closure->upvalues[slot]->location = PEEK();
             break;
         }
             //< Closures interpret-set-upvalue
             //> Classes and Instances interpret-get-property
         case OP_GET_PROPERTY: {
             //> get-not-instance
-            if (!IS_INSTANCE(peek(0))) {
+            if (!IS_INSTANCE(PEEK())) {
                 runtimeError("Only instances have properties.");
                 return INTERPRET_RUNTIME_ERROR;
             }
 
             //< get-not-instance
-            ObjInstance* instance = AS_INSTANCE(peek(0));
+            ObjInstance* instance = AS_INSTANCE(PEEK());
             ObjString* name = READ_STRING();
 
             Value value;
             if (tableGet(&instance->fields, name, &value)) {
-                pop(); // Instance.
-                push(value);
+                POP(); // Instance.
+                PUSH(value);
                 break;
             }
             //> get-undefined
@@ -741,17 +748,17 @@ static InterpretResult run()
             //> Classes and Instances interpret-set-property
         case OP_SET_PROPERTY: {
             //> set-not-instance
-            if (!IS_INSTANCE(peek(1))) {
+            if (!IS_INSTANCE(NPEEK(1))) {
                 runtimeError("Only instances have fields.");
                 return INTERPRET_RUNTIME_ERROR;
             }
 
             //< set-not-instance
-            ObjInstance* instance = AS_INSTANCE(peek(1));
-            tableSet(&instance->fields, READ_STRING(), peek(0));
+            ObjInstance* instance = AS_INSTANCE(NPEEK(1));
+            tableSet(&instance->fields, READ_STRING(), PEEK());
             Value value = pop();
-            pop();
-            push(value);
+            POP();
+            PUSH(value);
             break;
         }
             //< Classes and Instances interpret-set-property
@@ -759,10 +766,10 @@ static InterpretResult run()
             size_t argCount = READ_BYTE();
             Value value = NIL_VAL;
             if (1 == argCount) {
-                if (IS_NUMBER(peek(0))) {
-                    double index = AS_NUMBER(peek(0));
-                    if (IS_LIST(peek(1))) {
-                        ObjList* list = AS_LIST(peek(1));
+                if (IS_NUMBER(PEEK())) {
+                    double index = AS_NUMBER(PEEK());
+                    if (IS_LIST(NPEEK(1))) {
+                        ObjList* list = AS_LIST(NPEEK(1));
                         if (0 > index)
                             index += list->array.count;
                         if (0 <= index && index < list->array.count) {
@@ -778,10 +785,10 @@ static InterpretResult run()
                         return INTERPRET_RUNTIME_ERROR;
                     }
                 }
-                else if (IS_STRING(peek(0))) {
-                    ObjString* key = AS_STRING(peek(0));
-                    if (IS_MAP(peek(1))) {
-                        ObjMap* map = AS_MAP(peek(1));
+                else if (IS_STRING(PEEK())) {
+                    ObjString* key = AS_STRING(PEEK());
+                    if (IS_MAP(NPEEK(1))) {
+                        ObjMap* map = AS_MAP(NPEEK(1));
                         if (!tableGet(&map->map, key, &value)) {
                             runtimeError("Invalid key");
                             return INTERPRET_RUNTIME_ERROR;
@@ -796,24 +803,24 @@ static InterpretResult run()
                     runtimeError("Invalid index");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                pop();
-                pop();
+                POP();
+                POP();
             }
             else {
                 runtimeError("Invalid index dimension");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            push(value);
+            PUSH(value);
             break;
         }
         case OP_SET_ELEMENT: {
             size_t argCount = READ_BYTE();
-            Value value = peek(0);
+            Value value = PEEK();
             if (1 == argCount) {
-                if (IS_NUMBER(peek(1))) {
-                    double index = AS_NUMBER(peek(1));
-                    if (IS_LIST(peek(2))) {
-                        ObjList* list = AS_LIST(peek(2));
+                if (IS_NUMBER(NPEEK(1))) {
+                    double index = AS_NUMBER(NPEEK(1));
+                    if (IS_LIST(NPEEK(2))) {
+                        ObjList* list = AS_LIST(NPEEK(2));
                         if (0 > index)
                             index += list->array.count;
                         if (0 <= index && index < list->array.count) {
@@ -829,10 +836,10 @@ static InterpretResult run()
                         return INTERPRET_RUNTIME_ERROR;
                     }
                 }
-                else if (IS_STRING(peek(1))) {
-                    ObjString* key = AS_STRING(peek(1));
-                    if (IS_MAP(peek(2))) {
-                        ObjMap* map = AS_MAP(peek(2));
+                else if (IS_STRING(NPEEK(1))) {
+                    ObjString* key = AS_STRING(NPEEK(1));
+                    if (IS_MAP(NPEEK(2))) {
+                        ObjMap* map = AS_MAP(NPEEK(2));
                         tableSet(&map->map, key, value);
                     }
                     else {
@@ -844,10 +851,10 @@ static InterpretResult run()
                     runtimeError("Invalid index dimension");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                pop();
-                pop();
-                pop();
-                push(value);
+                POP();
+                POP();
+                POP();
+                PUSH(value);
             }
             break;
         }
@@ -866,7 +873,7 @@ static InterpretResult run()
         case OP_EQUAL: {
             Value b = pop();
             Value a = pop();
-            push(BOOL_VAL(valuesEqual(a, b)));
+            PUSH(BOOL_VAL(valuesEqual(a, b)));
             break;
         }
             //< Types of Values interpret-equal
@@ -885,44 +892,44 @@ static InterpretResult run()
                   case OP_DIVIDE:   BINARY_OP(/); break;
             */
             /* A Virtual Machine op-negate < Types of Values op-negate
-                  case OP_NEGATE:   push(-pop()); break;
+                  case OP_NEGATE:   PUSH(-pop()); break;
             */
             /* Types of Values op-arithmetic < Strings add-strings
                   case OP_ADD:      BINARY_OP(NUMBER_VAL, +); break;
             */
             //> Strings add-strings
         case OP_ADD: {
-            if (IS_NUMBER(peek(0))) {
+            if (IS_NUMBER(PEEK())) {
                 double b = AS_NUMBER(pop());
-                if (IS_NUMBER(peek(0))) {
+                if (IS_NUMBER(PEEK())) {
                     double a = AS_NUMBER(pop());
-                    push(NUMBER_VAL(a + b));
+                    PUSH(NUMBER_VAL(a + b));
                 }
-                else if (IS_COMPLEX(peek(0))) {
+                else if (IS_COMPLEX(PEEK())) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(newComplex(a->real + b, a->imag)));
+                    PUSH(OBJ_VAL(newComplex(a->real + b, a->imag)));
                 }
                 else {
                     runtimeError("Operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
             }
-            else if (IS_COMPLEX(peek(0))) {
+            else if (IS_COMPLEX(PEEK())) {
                 ObjComplex* b = AS_COMPLEX(pop());
-                if (IS_NUMBER(peek(0))) {
+                if (IS_NUMBER(PEEK())) {
                     double a = AS_NUMBER(pop());
-                    push(OBJ_VAL(newComplex(a + b->real, b->imag)));
+                    PUSH(OBJ_VAL(newComplex(a + b->real, b->imag)));
                 }
-                else if (IS_COMPLEX(peek(0))) {
+                else if (IS_COMPLEX(PEEK())) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(newComplex(a->real + b->real, a->imag + b->imag)));
+                    PUSH(OBJ_VAL(newComplex(a->real + b->real, a->imag + b->imag)));
                 }
                 else {
                     runtimeError("Operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
             }
-            else if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+            else if (IS_STRING(PEEK()) && IS_STRING(NPEEK(1))) {
                 concatenate();
             }
             else {
@@ -934,30 +941,30 @@ static InterpretResult run()
             //< Strings add-strings
             //> Types of Values op-arithmetic
         case OP_SUBTRACT: {
-            if (IS_NUMBER(peek(0))) {
+            if (IS_NUMBER(PEEK())) {
                 double b = AS_NUMBER(pop());
-                if (IS_NUMBER(peek(0))) {
+                if (IS_NUMBER(PEEK())) {
                     double a = AS_NUMBER(pop());
-                    push(NUMBER_VAL(a - b));
+                    PUSH(NUMBER_VAL(a - b));
                 }
-                else if (IS_COMPLEX(peek(0))) {
+                else if (IS_COMPLEX(PEEK())) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(newComplex(a->real - b, a->imag)));
+                    PUSH(OBJ_VAL(newComplex(a->real - b, a->imag)));
                 }
                 else {
                     runtimeError("Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
             }
-            else if (IS_COMPLEX(peek(0))) {
+            else if (IS_COMPLEX(PEEK())) {
                 ObjComplex* b = AS_COMPLEX(pop());
-                if (IS_NUMBER(peek(0))) {
+                if (IS_NUMBER(PEEK())) {
                     double a = AS_NUMBER(pop());
-                    push(OBJ_VAL(newComplex(a - b->real, b->imag)));
+                    PUSH(OBJ_VAL(newComplex(a - b->real, b->imag)));
                 }
-                else if (IS_COMPLEX(peek(0))) {
+                else if (IS_COMPLEX(PEEK())) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(newComplex(a->real - b->real, a->imag - b->imag)));
+                    PUSH(OBJ_VAL(newComplex(a->real - b->real, a->imag - b->imag)));
                 }
                 else {
                     runtimeError("Operands must be numbers.");
@@ -971,30 +978,30 @@ static InterpretResult run()
             break;
         }
         case OP_MULTIPLY: {
-            if (IS_NUMBER(peek(0))) {
+            if (IS_NUMBER(PEEK())) {
                 double b = AS_NUMBER(pop());
-                if (IS_NUMBER(peek(0))) {
+                if (IS_NUMBER(PEEK())) {
                     double a = AS_NUMBER(pop());
-                    push(NUMBER_VAL(a * b));
+                    PUSH(NUMBER_VAL(a * b));
                 }
-                else if (IS_COMPLEX(peek(0))) {
+                else if (IS_COMPLEX(PEEK())) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(newComplex(a->real * b, a->imag * b)));
+                    PUSH(OBJ_VAL(newComplex(a->real * b, a->imag * b)));
                 }
                 else {
                     runtimeError("Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
             }
-            else if (IS_COMPLEX(peek(0))) {
+            else if (IS_COMPLEX(PEEK())) {
                 ObjComplex* b = AS_COMPLEX(pop());
-                if (IS_NUMBER(peek(0))) {
+                if (IS_NUMBER(PEEK())) {
                     double a = AS_NUMBER(pop());
-                    push(OBJ_VAL(newComplex(a * b->real, a * b->imag)));
+                    PUSH(OBJ_VAL(newComplex(a * b->real, a * b->imag)));
                 }
-                else if (IS_COMPLEX(peek(0))) {
+                else if (IS_COMPLEX(PEEK())) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(
+                    PUSH(OBJ_VAL(
                         newComplex(a->real * b->real - a->imag * b->imag, a->real * b->imag + a->imag * b->real)));
                 }
                 else {
@@ -1009,32 +1016,32 @@ static InterpretResult run()
             break;
         }
         case OP_DIVIDE: {
-            if (IS_NUMBER(peek(0))) {
+            if (IS_NUMBER(PEEK())) {
                 double b = AS_NUMBER(pop());
-                if (IS_NUMBER(peek(0))) {
+                if (IS_NUMBER(PEEK())) {
                     double a = AS_NUMBER(pop());
-                    push(NUMBER_VAL(a / b));
+                    PUSH(NUMBER_VAL(a / b));
                 }
-                else if (IS_COMPLEX(peek(0))) {
+                else if (IS_COMPLEX(PEEK())) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(newComplex(a->real / b, a->imag / b)));
+                    PUSH(OBJ_VAL(newComplex(a->real / b, a->imag / b)));
                 }
                 else {
                     runtimeError("Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
             }
-            else if (IS_COMPLEX(peek(0))) {
+            else if (IS_COMPLEX(PEEK())) {
                 ObjComplex* b = AS_COMPLEX(pop());
-                if (IS_NUMBER(peek(0))) {
+                if (IS_NUMBER(PEEK())) {
                     double a = AS_NUMBER(pop());
                     double denom = b->real * b->real - b->imag * b->imag;
-                    push(OBJ_VAL(newComplex(a * b->real / denom, -a * b->imag / denom)));
+                    PUSH(OBJ_VAL(newComplex(a * b->real / denom, -a * b->imag / denom)));
                 }
-                else if (IS_COMPLEX(peek(0))) {
+                else if (IS_COMPLEX(PEEK())) {
                     ObjComplex* a = AS_COMPLEX(pop());
                     double denom = b->real * b->real - b->imag * b->imag;
-                    push(OBJ_VAL(newComplex((a->real * b->real + a->imag * b->imag) / denom,
+                    PUSH(OBJ_VAL(newComplex((a->real * b->real + a->imag * b->imag) / denom,
                                             (a->real * b->imag - a->imag * b->real) / denom)));
                 }
                 else {
@@ -1058,16 +1065,16 @@ static InterpretResult run()
             //< Types of Values op-arithmetic
             //> Types of Values op-not
         case OP_NOT:
-            push(BOOL_VAL(isFalsey(pop())));
+            PUSH(BOOL_VAL(isFalsey(pop())));
             break;
             //< Types of Values op-not
             //> Types of Values op-negate
         case OP_NEGATE:
-            if (!IS_NUMBER(peek(0))) {
+            if (!IS_NUMBER(PEEK())) {
                 runtimeError("Operand must be a number.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            push(NUMBER_VAL(-AS_NUMBER(pop())));
+            PUSH(NUMBER_VAL(-AS_NUMBER(pop())));
             break;
             //< Types of Values op-negate
             //> Global Variables interpret-print
@@ -1093,10 +1100,10 @@ static InterpretResult run()
         case OP_JUMP_IF_FALSE: {
             uint16_t offset = READ_SHORT();
             /* Jumping Back and Forth op-jump-if-false < Calls and Functions jump-if-false
-                    if (isFalsey(peek(0))) vm.ip += offset;
+                    if (isFalsey(PEEK())) vm.ip += offset;
             */
             //> Calls and Functions jump-if-false
-            if (isFalsey(peek(0)))
+            if (isFalsey(PEEK()))
                 frame->ip += offset;
             //< Calls and Functions jump-if-false
             break;
@@ -1117,7 +1124,7 @@ static InterpretResult run()
             //> Calls and Functions interpret-call
         case OP_CALL: {
             int argCount = READ_BYTE();
-            if (!callValue(peek(argCount), argCount)) {
+            if (!callValue(NPEEK(argCount), argCount)) {
                 return INTERPRET_RUNTIME_ERROR;
             }
             //> update-frame-after-call
@@ -1153,7 +1160,7 @@ static InterpretResult run()
         case OP_CLOSURE: {
             ObjFunction* function = AS_FUNCTION(READ_CONSTANT());
             ObjClosure* closure = newClosure(function);
-            push(OBJ_VAL(closure));
+            PUSH(OBJ_VAL(closure));
             //> interpret-capture-upvalues
             for (int i = 0; i < closure->upvalueCount; i++) {
                 uint8_t isLocal = READ_BYTE();
@@ -1172,7 +1179,7 @@ static InterpretResult run()
             //> Closures interpret-close-upvalue
         case OP_CLOSE_UPVALUE:
             closeUpvalues(vm.stackTop - 1);
-            pop();
+            POP();
             break;
             //< Closures interpret-close-upvalue
         case OP_RETURN: {
@@ -1193,24 +1200,24 @@ static InterpretResult run()
             //< Closures return-close-upvalues
             vm.frameCount--;
             if (vm.frameCount == 0) {
-                pop();
+                POP();
                 return INTERPRET_OK;
             }
 
             vm.stackTop = frame->slots;
-            push(result);
+            PUSH(result);
             frame = &vm.frames[vm.frameCount - 1];
             break;
             //< Calls and Functions interpret-return
         }
             //> Classes and Instances interpret-class
         case OP_CLASS:
-            push(OBJ_VAL(newClass(READ_STRING())));
+            PUSH(OBJ_VAL(newClass(READ_STRING())));
             break;
             //< Classes and Instances interpret-class
             //> Superclasses interpret-inherit
         case OP_INHERIT: {
-            Value superclass = peek(1);
+            Value superclass = NPEEK(1);
             //> inherit-non-class
             if (!IS_CLASS(superclass)) {
                 runtimeError("Superclass must be a class.");
@@ -1218,9 +1225,9 @@ static InterpretResult run()
             }
 
             //< inherit-non-class
-            ObjClass* subclass = AS_CLASS(peek(0));
+            ObjClass* subclass = AS_CLASS(PEEK());
             tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
-            pop(); // Subclass.
+            POP(); // Subclass.
             break;
         }
             //< Superclasses interpret-inherit
@@ -1288,7 +1295,7 @@ InterpretResult interpret(const char* source)
     if (function == NULL)
         return INTERPRET_COMPILE_ERROR;
 
-    push(OBJ_VAL(function));
+    PUSH(OBJ_VAL(function));
     //< Calls and Functions interpret-stub
     /* Calls and Functions interpret-stub < Calls and Functions interpret
       CallFrame* frame = &vm.frames[vm.frameCount++];
@@ -1301,8 +1308,8 @@ InterpretResult interpret(const char* source)
     */
     //> Closures interpret
     ObjClosure* closure = newClosure(function);
-    pop();
-    push(OBJ_VAL(closure));
+    POP();
+    PUSH(OBJ_VAL(closure));
     call(closure, 0);
     //< Closures interpret
     //< Scanning on Demand vm-interpret-c
