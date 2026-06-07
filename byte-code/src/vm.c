@@ -29,7 +29,8 @@
 #include "log.h"
 
 #define PUSH(value) (*vm.stackTop++ = (value))
-#define POP() (--vm.stackTop)
+#define POP() (*(--vm.stackTop))
+#define DROP() (--vm.stackTop)
 #define PEEK() (*(vm.stackTop - 1))
 #define NPEEK(n) (*(vm.stackTop - 1 - n))
 #define IS_FALSEY(value) (IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value)))
@@ -106,8 +107,8 @@ static void defineValue(const char* name, Value value)
     PUSH(OBJ_VAL(copyString(name, (int)strlen(name))));
     PUSH(value);
     tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
-    POP();
-    POP();
+    DROP();
+    DROP();
 }
 
 //> Calls and Functions define-native
@@ -394,7 +395,7 @@ static bool bindMethod(ObjClass* klass, ObjString* name)
     }
 
     ObjBoundMethod* bound = newBoundMethod(PEEK(), AS_CLOSURE(method));
-    POP();
+    DROP();
     PUSH(OBJ_VAL(bound));
     return true;
 }
@@ -447,7 +448,7 @@ static void defineMethod(ObjString* name)
     Value method = PEEK();
     ObjClass* klass = AS_CLASS(NPEEK(1));
     tableSet(&klass->methods, name, method);
-    POP();
+    DROP();
 }
 //< Methods and Initializers define-method
 //> Types of Values is-falsey
@@ -462,8 +463,8 @@ static bool isFalsey(Value value)
 static void concatenate()
 {
     /* Strings concatenate < Garbage Collection concatenate-peek
-      ObjString* b = AS_STRING(pop());
-      ObjString* a = AS_STRING(pop());
+      ObjString* b = AS_STRING(POP());
+      ObjString* a = AS_STRING(POP());
     */
     //> Garbage Collection concatenate-peek
     ObjString* b = AS_STRING(PEEK());
@@ -478,8 +479,8 @@ static void concatenate()
 
     ObjString* result = takeString(chars, length);
     //> Garbage Collection concatenate-pop
-    POP();
-    POP();
+    DROP();
+    DROP();
     //< Garbage Collection concatenate-pop
     PUSH(OBJ_VAL(result));
 }
@@ -519,8 +520,8 @@ static InterpretResult run()
 /* A Virtual Machine binary-op < Types of Values binary-op
 #define BINARY_OP(op) \
     do { \
-      double b = pop(); \
-      double a = pop(); \
+      double b = POP(); \
+      double a = POP(); \
       PUSH(a op b); \
     } while (false)
 */
@@ -531,22 +532,22 @@ static InterpretResult run()
             runtimeError("Operands must be numbers.");                                                                 \
             return INTERPRET_RUNTIME_ERROR;                                                                            \
         }                                                                                                              \
-        double b = AS_NUMBER(pop());                                                                                   \
-        double a = AS_NUMBER(pop());                                                                                   \
+        double b = AS_NUMBER(POP());                                                                                   \
+        double a = AS_NUMBER(POP());                                                                                   \
         PUSH(valueType(a op b));                                                                                       \
     } while (false)
     //< Types of Values binary-op
 
 #define BINARY_OP(valueType, op)                                                                                       \
     do {                                                                                                               \
-        if (IS_NUMBER(PEEK())) {                                                                                      \
-            double b = AS_NUMBER(pop());                                                                               \
-            if (IS_NUMBER(PEEK())) {                                                                                  \
-                double a = AS_NUMBER(pop());                                                                           \
+        if (IS_NUMBER(PEEK())) {                                                                                       \
+            double b = AS_NUMBER(POP());                                                                               \
+            if (IS_NUMBER(PEEK())) {                                                                                   \
+                double a = AS_NUMBER(POP());                                                                           \
                 PUSH(NUMBER_VAL(a op b));                                                                              \
             }                                                                                                          \
-            else if (IS_COMPLEX(PEEK())) {                                                                            \
-                ObjComplex* a = AS_COMPLEX(pop());                                                                     \
+            else if (IS_COMPLEX(PEEK())) {                                                                             \
+                ObjComplex* a = AS_COMPLEX(POP());                                                                     \
                 PUSH(OBJ_VAL(newComplex(a->real op b, a->imag)));                                                      \
             }                                                                                                          \
             else {                                                                                                     \
@@ -554,14 +555,14 @@ static InterpretResult run()
                 return INTERPRET_RUNTIME_ERROR;                                                                        \
             }                                                                                                          \
         }                                                                                                              \
-        else if (IS_COMPLEX(PEEK())) {                                                                                \
-            ObjComplex* b = AS_COMPLEX(pop());                                                                         \
-            if (IS_NUMBER(PEEK())) {                                                                                  \
-                double a = AS_NUMBER(pop());                                                                           \
+        else if (IS_COMPLEX(PEEK())) {                                                                                 \
+            ObjComplex* b = AS_COMPLEX(POP());                                                                         \
+            if (IS_NUMBER(PEEK())) {                                                                                   \
+                double a = AS_NUMBER(POP());                                                                           \
                 PUSH(OBJ_VAL(newComplex(a op b->value)));                                                              \
             }                                                                                                          \
-            else if (IS_COMPLEX(PEEK())) {                                                                            \
-                ObjComplex* a = AS_COMPLEX(pop());                                                                     \
+            else if (IS_COMPLEX(PEEK())) {                                                                             \
+                ObjComplex* a = AS_COMPLEX(POP());                                                                     \
                 PUSH(OBJ_VAL(newComplex(a->value op b->value)));                                                       \
             }                                                                                                          \
             else {                                                                                                     \
@@ -582,8 +583,8 @@ static InterpretResult run()
             runtimeError("Operands must be numbers.");                                                                 \
             return INTERPRET_RUNTIME_ERROR;                                                                            \
         }                                                                                                              \
-        double b = AS_NUMBER(pop());                                                                                   \
-        double a = AS_NUMBER(pop());                                                                                   \
+        double b = AS_NUMBER(POP());                                                                                   \
+        double a = AS_NUMBER(POP());                                                                                   \
         PUSH(valueType(fn(a, b)));                                                                                     \
     } while (false)
     //< Types of Values binary-op
@@ -643,7 +644,7 @@ static InterpretResult run()
             //< Types of Values interpret-literals
             //> Global Variables interpret-pop
         case OP_POP:
-            POP();
+            DROP();
             break;
             //< Global Variables interpret-pop
             //> Local Variables interpret-get-local
@@ -686,7 +687,7 @@ static InterpretResult run()
         case OP_DEFINE_GLOBAL: {
             ObjString* name = READ_STRING();
             tableSet(&vm.globals, name, PEEK());
-            POP();
+            DROP();
             break;
         }
             //< Global Variables interpret-define-global
@@ -729,7 +730,7 @@ static InterpretResult run()
 
             Value value;
             if (tableGet(&instance->fields, name, &value)) {
-                POP(); // Instance.
+                DROP(); // Instance.
                 PUSH(value);
                 break;
             }
@@ -759,8 +760,8 @@ static InterpretResult run()
             //< set-not-instance
             ObjInstance* instance = AS_INSTANCE(NPEEK(1));
             tableSet(&instance->fields, READ_STRING(), PEEK());
-            Value value = pop();
-            POP();
+            Value value = POP();
+            DROP();
             PUSH(value);
             break;
         }
@@ -806,8 +807,8 @@ static InterpretResult run()
                     runtimeError("Invalid index");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                POP();
-                POP();
+                DROP();
+                DROP();
             }
             else {
                 runtimeError("Invalid index dimension");
@@ -854,9 +855,9 @@ static InterpretResult run()
                     runtimeError("Invalid index dimension");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                POP();
-                POP();
-                POP();
+                DROP();
+                DROP();
+                DROP();
                 PUSH(value);
             }
             break;
@@ -864,7 +865,7 @@ static InterpretResult run()
             //> Superclasses interpret-get-super
         case OP_GET_SUPER: {
             ObjString* name = READ_STRING();
-            ObjClass* superclass = AS_CLASS(pop());
+            ObjClass* superclass = AS_CLASS(POP());
 
             if (!bindMethod(superclass, name)) {
                 return INTERPRET_RUNTIME_ERROR;
@@ -874,8 +875,8 @@ static InterpretResult run()
             //< Superclasses interpret-get-super
             //> Types of Values interpret-equal
         case OP_EQUAL: {
-            Value b = pop();
-            Value a = pop();
+            Value b = POP();
+            Value a = POP();
             PUSH(BOOL_VAL(valuesEqual(a, b)));
             break;
         }
@@ -895,7 +896,7 @@ static InterpretResult run()
                   case OP_DIVIDE:   BINARY_OP(/); break;
             */
             /* A Virtual Machine op-negate < Types of Values op-negate
-                  case OP_NEGATE:   PUSH(-pop()); break;
+                  case OP_NEGATE:   PUSH(-POP()); break;
             */
             /* Types of Values op-arithmetic < Strings add-strings
                   case OP_ADD:      BINARY_OP(NUMBER_VAL, +); break;
@@ -903,13 +904,13 @@ static InterpretResult run()
             //> Strings add-strings
         case OP_ADD: {
             if (IS_NUMBER(PEEK())) {
-                double b = AS_NUMBER(pop());
+                double b = AS_NUMBER(POP());
                 if (IS_NUMBER(PEEK())) {
-                    double a = AS_NUMBER(pop());
+                    double a = AS_NUMBER(POP());
                     PUSH(NUMBER_VAL(a + b));
                 }
                 else if (IS_COMPLEX(PEEK())) {
-                    ObjComplex* a = AS_COMPLEX(pop());
+                    ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(newComplex(a->real + b, a->imag)));
                 }
                 else {
@@ -918,13 +919,13 @@ static InterpretResult run()
                 }
             }
             else if (IS_COMPLEX(PEEK())) {
-                ObjComplex* b = AS_COMPLEX(pop());
+                ObjComplex* b = AS_COMPLEX(POP());
                 if (IS_NUMBER(PEEK())) {
-                    double a = AS_NUMBER(pop());
+                    double a = AS_NUMBER(POP());
                     PUSH(OBJ_VAL(newComplex(a + b->real, b->imag)));
                 }
                 else if (IS_COMPLEX(PEEK())) {
-                    ObjComplex* a = AS_COMPLEX(pop());
+                    ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(newComplex(a->real + b->real, a->imag + b->imag)));
                 }
                 else {
@@ -945,13 +946,13 @@ static InterpretResult run()
             //> Types of Values op-arithmetic
         case OP_SUBTRACT: {
             if (IS_NUMBER(PEEK())) {
-                double b = AS_NUMBER(pop());
+                double b = AS_NUMBER(POP());
                 if (IS_NUMBER(PEEK())) {
-                    double a = AS_NUMBER(pop());
+                    double a = AS_NUMBER(POP());
                     PUSH(NUMBER_VAL(a - b));
                 }
                 else if (IS_COMPLEX(PEEK())) {
-                    ObjComplex* a = AS_COMPLEX(pop());
+                    ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(newComplex(a->real - b, a->imag)));
                 }
                 else {
@@ -960,13 +961,13 @@ static InterpretResult run()
                 }
             }
             else if (IS_COMPLEX(PEEK())) {
-                ObjComplex* b = AS_COMPLEX(pop());
+                ObjComplex* b = AS_COMPLEX(POP());
                 if (IS_NUMBER(PEEK())) {
-                    double a = AS_NUMBER(pop());
+                    double a = AS_NUMBER(POP());
                     PUSH(OBJ_VAL(newComplex(a - b->real, b->imag)));
                 }
                 else if (IS_COMPLEX(PEEK())) {
-                    ObjComplex* a = AS_COMPLEX(pop());
+                    ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(newComplex(a->real - b->real, a->imag - b->imag)));
                 }
                 else {
@@ -982,13 +983,13 @@ static InterpretResult run()
         }
         case OP_MULTIPLY: {
             if (IS_NUMBER(PEEK())) {
-                double b = AS_NUMBER(pop());
+                double b = AS_NUMBER(POP());
                 if (IS_NUMBER(PEEK())) {
-                    double a = AS_NUMBER(pop());
+                    double a = AS_NUMBER(POP());
                     PUSH(NUMBER_VAL(a * b));
                 }
                 else if (IS_COMPLEX(PEEK())) {
-                    ObjComplex* a = AS_COMPLEX(pop());
+                    ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(newComplex(a->real * b, a->imag * b)));
                 }
                 else {
@@ -997,13 +998,13 @@ static InterpretResult run()
                 }
             }
             else if (IS_COMPLEX(PEEK())) {
-                ObjComplex* b = AS_COMPLEX(pop());
+                ObjComplex* b = AS_COMPLEX(POP());
                 if (IS_NUMBER(PEEK())) {
-                    double a = AS_NUMBER(pop());
+                    double a = AS_NUMBER(POP());
                     PUSH(OBJ_VAL(newComplex(a * b->real, a * b->imag)));
                 }
                 else if (IS_COMPLEX(PEEK())) {
-                    ObjComplex* a = AS_COMPLEX(pop());
+                    ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(
                         newComplex(a->real * b->real - a->imag * b->imag, a->real * b->imag + a->imag * b->real)));
                 }
@@ -1020,13 +1021,13 @@ static InterpretResult run()
         }
         case OP_DIVIDE: {
             if (IS_NUMBER(PEEK())) {
-                double b = AS_NUMBER(pop());
+                double b = AS_NUMBER(POP());
                 if (IS_NUMBER(PEEK())) {
-                    double a = AS_NUMBER(pop());
+                    double a = AS_NUMBER(POP());
                     PUSH(NUMBER_VAL(a / b));
                 }
                 else if (IS_COMPLEX(PEEK())) {
-                    ObjComplex* a = AS_COMPLEX(pop());
+                    ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(newComplex(a->real / b, a->imag / b)));
                 }
                 else {
@@ -1035,14 +1036,14 @@ static InterpretResult run()
                 }
             }
             else if (IS_COMPLEX(PEEK())) {
-                ObjComplex* b = AS_COMPLEX(pop());
+                ObjComplex* b = AS_COMPLEX(POP());
                 if (IS_NUMBER(PEEK())) {
-                    double a = AS_NUMBER(pop());
+                    double a = AS_NUMBER(POP());
                     double denom = b->real * b->real - b->imag * b->imag;
                     PUSH(OBJ_VAL(newComplex(a * b->real / denom, -a * b->imag / denom)));
                 }
                 else if (IS_COMPLEX(PEEK())) {
-                    ObjComplex* a = AS_COMPLEX(pop());
+                    ObjComplex* a = AS_COMPLEX(POP());
                     double denom = b->real * b->real - b->imag * b->imag;
                     PUSH(OBJ_VAL(newComplex((a->real * b->real + a->imag * b->imag) / denom,
                                             (a->real * b->imag - a->imag * b->real) / denom)));
@@ -1068,7 +1069,7 @@ static InterpretResult run()
             //< Types of Values op-arithmetic
             //> Types of Values op-not
         case OP_NOT: {
-            Value b = pop();
+            Value b = POP();
             bool v = IS_FALSEY(b);
             PUSH(BOOL_VAL(v));
             break;
@@ -1080,12 +1081,13 @@ static InterpretResult run()
                 runtimeError("Operand must be a number.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            PUSH(NUMBER_VAL(-AS_NUMBER(pop())));
+            double v = AS_NUMBER(POP());
+            PUSH(NUMBER_VAL(-v));
             break;
             //< Types of Values op-negate
             //> Global Variables interpret-print
         case OP_PRINT: {
-            printValue(pop());
+            printValue(POP());
             printf("\n");
             break;
         }
@@ -1154,7 +1156,7 @@ static InterpretResult run()
         case OP_SUPER_INVOKE: {
             ObjString* method = READ_STRING();
             int argCount = READ_BYTE();
-            ObjClass* superclass = AS_CLASS(pop());
+            ObjClass* superclass = AS_CLASS(POP());
             if (!invokeFromClass(superclass, method, argCount)) {
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -1185,12 +1187,12 @@ static InterpretResult run()
             //> Closures interpret-close-upvalue
         case OP_CLOSE_UPVALUE:
             closeUpvalues(vm.stackTop - 1);
-            POP();
+            DROP();
             break;
             //< Closures interpret-close-upvalue
         case OP_RETURN: {
             /* A Virtual Machine print-return < Global Variables op-return
-                    printValue(pop());
+                    printValue(POP());
                     printf("\n");
             */
             /* Global Variables op-return < Calls and Functions interpret-return
@@ -1200,13 +1202,13 @@ static InterpretResult run()
                     return INTERPRET_OK;
             */
             //> Calls and Functions interpret-return
-            Value result = pop();
+            Value result = POP();
             //> Closures return-close-upvalues
             closeUpvalues(frame->slots);
             //< Closures return-close-upvalues
             vm.frameCount--;
             if (vm.frameCount == 0) {
-                POP();
+                DROP();
                 return INTERPRET_OK;
             }
 
@@ -1233,7 +1235,7 @@ static InterpretResult run()
             //< inherit-non-class
             ObjClass* subclass = AS_CLASS(PEEK());
             tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
-            POP(); // Subclass.
+            DROP(); // Subclass.
             break;
         }
             //< Superclasses interpret-inherit
@@ -1314,7 +1316,7 @@ InterpretResult interpret(const char* source)
     */
     //> Closures interpret
     ObjClosure* closure = newClosure(function);
-    POP();
+    DROP();
     PUSH(OBJ_VAL(closure));
     call(closure, 0);
     //< Closures interpret
