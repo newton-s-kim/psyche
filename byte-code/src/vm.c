@@ -32,6 +32,7 @@
 #define POP() (--vm.stackTop)
 #define PEEK() (*(vm.stackTop - 1))
 #define NPEEK(n) (*(vm.stackTop - 1 - n))
+#define IS_FALSEY(value) (IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value)))
 
 VM vm; // [one]
 //> Calls and Functions clock-native
@@ -450,10 +451,12 @@ static void defineMethod(ObjString* name)
 }
 //< Methods and Initializers define-method
 //> Types of Values is-falsey
+/*
 static bool isFalsey(Value value)
 {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
+*/
 //< Types of Values is-falsey
 //> Strings concatenate
 static void concatenate()
@@ -1064,9 +1067,12 @@ static InterpretResult run()
             break;
             //< Types of Values op-arithmetic
             //> Types of Values op-not
-        case OP_NOT:
-            PUSH(BOOL_VAL(isFalsey(pop())));
+        case OP_NOT: {
+            Value b = pop();
+            bool v = IS_FALSEY(b);
+            PUSH(BOOL_VAL(v));
             break;
+        }
             //< Types of Values op-not
             //> Types of Values op-negate
         case OP_NEGATE:
@@ -1100,10 +1106,10 @@ static InterpretResult run()
         case OP_JUMP_IF_FALSE: {
             uint16_t offset = READ_SHORT();
             /* Jumping Back and Forth op-jump-if-false < Calls and Functions jump-if-false
-                    if (isFalsey(PEEK())) vm.ip += offset;
+                    if (IS_FALSEY(PEEK())) vm.ip += offset;
             */
             //> Calls and Functions jump-if-false
-            if (isFalsey(PEEK()))
+            if (IS_FALSEY(PEEK()))
                 frame->ip += offset;
             //< Calls and Functions jump-if-false
             break;
