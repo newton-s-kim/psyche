@@ -332,6 +332,19 @@ Value map_remove(Value receiver, int argc, Value* argv)
     }
     return NIL_VAL;
 }
+static Value map_size(Value receiver, int argc, Value* argv)
+{
+    (void)receiver;
+    (void)argc;
+    (void)argv;
+    ObjMap* map = AS_MAP(receiver);
+    int size = 0;
+    for (int i = 0; i < map->map.capacity; i++) {
+        if (map->map.entries[i].key)
+            size++;
+    }
+    return NUMBER_VAL(size);
+}
 static Value map_new(Value receiver, int argc, Value* argv)
 {
     (void)argc;
@@ -348,6 +361,8 @@ ObjClass* newMapClass()
     ObjClass* klass = newClass(name);
     ObjString* method = copyString("remove", 6);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)));
+    method = copyString("size", 4);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
     klass->call = newNativeBoundMethod(map_new);
     return klass;
 }
@@ -503,9 +518,27 @@ void printObject(Value value)
         printf("]");
         break;
     }
-    case OBJ_MAP:
-        printf("<map>");
+    case OBJ_MAP: {
+        ObjMap* map = AS_MAP(value);
+        printf("{");
+        bool found = false;
+        for (int i = 0; i < map->map.capacity; i++) {
+            if (map->map.entries[i].key) {
+                if (found)
+                    printf(",");
+                printf("\"%s\":", map->map.entries[i].key->chars);
+                Value v = map->map.entries[i].value;
+                if (IS_STRING(v))
+                    printf("\"");
+                printValue(v);
+                if (IS_STRING(v))
+                    printf("\"");
+                found = true;
+            }
+        }
+        printf("}");
         break;
+    }
     }
 }
 

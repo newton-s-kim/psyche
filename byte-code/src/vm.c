@@ -833,7 +833,7 @@ static InterpretResult run()
                     ObjString* key = AS_STRING(peek(1));
                     if (IS_MAP(peek(2))) {
                         ObjMap* map = AS_MAP(peek(2));
-                        tableSet(&map->map, key, peek(0));
+                        tableSet(&map->map, key, value);
                     }
                     else {
                         runtimeError("Expects Map");
