@@ -84,6 +84,7 @@ typedef struct {
     DL** dls;
     size_t dlCount;
     size_t dlCapacity;
+    ObjClass* numClass;
 } VM;
 
 //> interpret-result

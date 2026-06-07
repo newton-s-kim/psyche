@@ -7,7 +7,7 @@ extern "C" Value asinNative(int argc, Value* args)
 {
     Value value = NIL_VAL;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     if (IS_NUMBER(args[0])) {
         value = NUMBER_VAL(asin(AS_NUMBER(args[0])));
     }
@@ -19,7 +19,7 @@ extern "C" Value asinNative(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected");
+        runtimeError("Number is expected.");
     }
     return value;
 }
@@ -28,7 +28,7 @@ extern "C" Value atanNative(int argc, Value* args)
 {
     Value value = NIL_VAL;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     if (IS_NUMBER(args[0])) {
         value = NUMBER_VAL(atan(AS_NUMBER(args[0])));
     }
@@ -40,7 +40,7 @@ extern "C" Value atanNative(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected");
+        runtimeError("Number is expected.");
     }
     return value;
 }
@@ -49,7 +49,7 @@ extern "C" Value acosNative(int argc, Value* args)
 {
     Value value = NIL_VAL;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     if (IS_NUMBER(args[0])) {
         value = NUMBER_VAL(acos(AS_NUMBER(args[0])));
     }
@@ -61,7 +61,7 @@ extern "C" Value acosNative(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected");
+        runtimeError("Number is expected.");
     }
     return value;
 }
@@ -70,7 +70,7 @@ extern "C" Value sinNative(int argc, Value* args)
 {
     Value value = NIL_VAL;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     if (IS_NUMBER(args[0])) {
         value = NUMBER_VAL(sin(AS_NUMBER(args[0])));
     }
@@ -82,7 +82,7 @@ extern "C" Value sinNative(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected");
+        runtimeError("Number is expected.");
     }
     return value;
 }
@@ -91,7 +91,7 @@ extern "C" Value cosNative(int argc, Value* args)
 {
     Value value = NIL_VAL;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     if (IS_NUMBER(args[0])) {
         return NUMBER_VAL(cos(AS_NUMBER(args[0])));
     }
@@ -103,7 +103,7 @@ extern "C" Value cosNative(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected");
+        runtimeError("Number is expected.");
     }
     return value;
 }
@@ -112,7 +112,7 @@ extern "C" Value tanNative(int argc, Value* args)
 {
     Value value = NIL_VAL;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     if (IS_NUMBER(args[0])) {
         return NUMBER_VAL(tan(AS_NUMBER(args[0])));
     }
@@ -124,7 +124,7 @@ extern "C" Value tanNative(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected");
+        runtimeError("Number is expected.");
     }
     return value;
 }
@@ -133,24 +133,18 @@ extern "C" Value sqrtNative(int argc, Value* args)
 {
     Value value = NIL_VAL;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid number of arguments");
     if (IS_NUMBER(args[0])) {
         double v = AS_NUMBER(args[0]);
         if (0 <= v) {
-            value = NUMBER_VAL(sqrt(AS_NUMBER(args[0])));
+            value = NUMBER_VAL(sqrt(v));
         }
-        /*
         else {
-            ObjComplex* cmplx = factory->newComplex(std::complex<double>(0, sqrt(-AS_NUMBER(args[0]))));
-            value = OBJ_VAL(cmplx);
-        }
-        */
-        else {
-            runtimeError("number is expected");
+            value = OBJ_VAL(newComplex(0, sqrt(-v)));
         }
     }
     else {
-        runtimeError("number is expected");
+        runtimeError("Number is expected.");
     }
     return value;
 }
@@ -159,12 +153,12 @@ extern "C" Value cbrtNative(int argc, Value* args)
 {
     Value value = NIL_VAL;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     if (IS_NUMBER(args[0])) {
         value = NUMBER_VAL(cbrt(AS_NUMBER(args[0])));
     }
     else {
-        runtimeError("number is expected");
+        runtimeError("Number is expected.");
     }
     return value;
 }
@@ -173,14 +167,14 @@ extern "C" Value phaseNative(int argc, Value* args)
 {
     (void)args;
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     /*
     if (IS_COMPLEX(args[0])) {
         return NUMBER_VAL(arg(AS_COMPLEX(args[0])->value));
     }
     */
     else {
-        runtimeError("complex number is expected");
+        runtimeError("complex Number is expected.");
     }
     return NIL_VAL;
 }
@@ -188,7 +182,7 @@ extern "C" Value phaseNative(int argc, Value* args)
 extern "C" Value logNative(int argc, Value* args)
 {
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     Value r = NIL_VAL;
     if (IS_NUMBER(args[0])) {
         r = NUMBER_VAL(log(AS_NUMBER(args[0])));
@@ -208,7 +202,7 @@ extern "C" Value logNative(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected.");
+        runtimeError("Number is expected..");
     }
     return r;
 }
@@ -216,7 +210,7 @@ extern "C" Value logNative(int argc, Value* args)
 extern "C" Value log2Native(int argc, Value* args)
 {
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     Value r = NIL_VAL;
     if (IS_NUMBER(args[0])) {
         r = NUMBER_VAL(log2(AS_NUMBER(args[0])));
@@ -236,7 +230,7 @@ extern "C" Value log2Native(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected.");
+        runtimeError("Number is expected..");
     }
     return r;
 }
@@ -244,7 +238,7 @@ extern "C" Value log2Native(int argc, Value* args)
 extern "C" Value log10Native(int argc, Value* args)
 {
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     Value r = NIL_VAL;
     if (IS_NUMBER(args[0])) {
         r = NUMBER_VAL(log10(AS_NUMBER(args[0])));
@@ -264,7 +258,7 @@ extern "C" Value log10Native(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected.");
+        runtimeError("Number is expected..");
     }
     return r;
 }
@@ -272,19 +266,20 @@ extern "C" Value log10Native(int argc, Value* args)
 extern "C" Value expNative(int argc, Value* args)
 {
     if (1 != argc)
-        runtimeError("invalid arguments");
+        runtimeError("Invalid arguments");
     Value r = NIL_VAL;
     if (IS_NUMBER(args[0])) {
         double v = AS_NUMBER(args[0]);
         r = NUMBER_VAL(exp(v));
     }
-    /*
     else if (IS_COMPLEX(args[0])) {
         ObjComplex* v = AS_COMPLEX(args[0]);
-        std::complex<double> cv = exp(v->value);
-        ObjComplex* rv = factory->newComplex(cv);
+        double m = exp(v->real);
+        double theta = atan(v->imag / v->real);
+        ObjComplex* rv = newComplex(m * cos(theta), m * sin(theta));
         r = OBJ_VAL(rv);
     }
+    /*
     else if (IS_COL(args[0])) {
         ObjCol* c = AS_COL(args[0]);
         ObjCol* ret = factory->newCol();
@@ -299,7 +294,7 @@ extern "C" Value expNative(int argc, Value* args)
     }
     */
     else {
-        runtimeError("number is expected.");
+        runtimeError("Number is expected.");
     }
     return r;
 }
@@ -323,7 +318,6 @@ extern "C" void math_symbols(const char*** names, Value** values)
     math_syms[cnt++] = OBJ_VAL(newNative(log10Native));
     math_syms[cnt++] = OBJ_VAL(newNative(log2Native));
     math_syms[cnt++] = OBJ_VAL(newNative(logNative));
-    math_syms[cnt++] = OBJ_VAL(newNative(expNative));
     math_syms[cnt++] = OBJ_VAL(newNative(expNative));
     math_syms[cnt++] = NUMBER_VAL(M_PI);
 

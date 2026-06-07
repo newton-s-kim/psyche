@@ -891,6 +891,18 @@ static void number(bool canAssign)
     emitConstant(NUMBER_VAL(value));
     //< Types of Values const-number-val
 }
+static void complex_number(bool canAssign)
+{
+    (void)canAssign;
+    //< Global Variables number
+    double value = strtod(parser.previous.start, NULL);
+    /* Compiling Expressions number < Types of Values const-number-val
+      emitConstant(value);
+    */
+    //> Types of Values const-number-val
+    emitConstant(OBJ_VAL(newComplex(0, value)));
+    //< Types of Values const-number-val
+}
 //< Compiling Expressions number
 //> Jumping Back and Forth or
 static void or_(bool canAssign)
@@ -1153,7 +1165,7 @@ ParseRule rules[] = {
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
     //< Strings table-string
     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
-    [TOKEN_COMPLEX_NUMBER] = {number, NULL, PREC_NONE},
+    [TOKEN_COMPLEX_NUMBER] = {complex_number, NULL, PREC_NONE},
     /* Compiling Expressions rules < Jumping Back and Forth table-and
       [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
     */

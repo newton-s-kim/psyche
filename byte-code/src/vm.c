@@ -146,6 +146,7 @@ void initVM()
     //< Methods and Initializers init-init-string
     //> Calls and Functions define-native-clock
 
+    vm.numClass = newNumClass();
     defineNative("clock", clockNative);
     defineValue("List", OBJ_VAL(newListClass()));
     defineValue("Map", OBJ_VAL(newMapClass()));
@@ -366,6 +367,9 @@ static bool invoke(ObjString* name, int argCount)
         ObjMap* map = AS_MAP(receiver);
         return invokeNativeFromClass(receiver, map->klass, name, argCount);
     }
+    else if (IS_NUMBER(receiver)) {
+        return invokeNativeFromClass(receiver, vm.numClass, name, argCount);
+    }
     else {
         runtimeError("Only instances have methods.");
         return false;
@@ -533,7 +537,7 @@ static InterpretResult run()
             }                                                                                                          \
             else if (IS_COMPLEX(peek(0))) {                                                                            \
                 ObjComplex* a = AS_COMPLEX(pop());                                                                     \
-                push(OBJ_VAL(newComplex(a->value op b)));                                                              \
+                push(OBJ_VAL(newComplex(a->real op b, a->imag)));                                                      \
             }                                                                                                          \
             else {                                                                                                     \
                 runtimeError("Operands must be numbers.");                                                             \
@@ -896,7 +900,7 @@ static InterpretResult run()
                 }
                 else if (IS_COMPLEX(peek(0))) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(newComplex(a->value + b)));
+                    push(OBJ_VAL(newComplex(a->real + b, a->imag)));
                 }
                 else {
                     runtimeError("Operands must be two numbers or two strings.");
@@ -907,11 +911,11 @@ static InterpretResult run()
                 ObjComplex* b = AS_COMPLEX(pop());
                 if (IS_NUMBER(peek(0))) {
                     double a = AS_NUMBER(pop());
-                    push(OBJ_VAL(newComplex(a + b->value)));
+                    push(OBJ_VAL(newComplex(a + b->real, b->imag)));
                 }
                 else if (IS_COMPLEX(peek(0))) {
                     ObjComplex* a = AS_COMPLEX(pop());
-                    push(OBJ_VAL(newComplex(a->value + b->value)));
+                    push(OBJ_VAL(newComplex(a->real + b->real, a->imag + b->imag)));
                 }
                 else {
                     runtimeError("Operands must be two numbers or two strings.");
@@ -929,15 +933,122 @@ static InterpretResult run()
         }
             //< Strings add-strings
             //> Types of Values op-arithmetic
-        case OP_SUBTRACT:
-            BINARY_OP(NUMBER_VAL, -);
+        case OP_SUBTRACT: {
+            if (IS_NUMBER(peek(0))) {
+                double b = AS_NUMBER(pop());
+                if (IS_NUMBER(peek(0))) {
+                    double a = AS_NUMBER(pop());
+                    push(NUMBER_VAL(a - b));
+                }
+                else if (IS_COMPLEX(peek(0))) {
+                    ObjComplex* a = AS_COMPLEX(pop());
+                    push(OBJ_VAL(newComplex(a->real - b, a->imag)));
+                }
+                else {
+                    runtimeError("Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else if (IS_COMPLEX(peek(0))) {
+                ObjComplex* b = AS_COMPLEX(pop());
+                if (IS_NUMBER(peek(0))) {
+                    double a = AS_NUMBER(pop());
+                    push(OBJ_VAL(newComplex(a - b->real, b->imag)));
+                }
+                else if (IS_COMPLEX(peek(0))) {
+                    ObjComplex* a = AS_COMPLEX(pop());
+                    push(OBJ_VAL(newComplex(a->real - b->real, a->imag - b->imag)));
+                }
+                else {
+                    runtimeError("Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else {
+                runtimeError("Operands must be numbers.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
             break;
-        case OP_MULTIPLY:
-            BINARY_OP(NUMBER_VAL, *);
+        }
+        case OP_MULTIPLY: {
+            if (IS_NUMBER(peek(0))) {
+                double b = AS_NUMBER(pop());
+                if (IS_NUMBER(peek(0))) {
+                    double a = AS_NUMBER(pop());
+                    push(NUMBER_VAL(a * b));
+                }
+                else if (IS_COMPLEX(peek(0))) {
+                    ObjComplex* a = AS_COMPLEX(pop());
+                    push(OBJ_VAL(newComplex(a->real * b, a->imag * b)));
+                }
+                else {
+                    runtimeError("Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else if (IS_COMPLEX(peek(0))) {
+                ObjComplex* b = AS_COMPLEX(pop());
+                if (IS_NUMBER(peek(0))) {
+                    double a = AS_NUMBER(pop());
+                    push(OBJ_VAL(newComplex(a * b->real, a * b->imag)));
+                }
+                else if (IS_COMPLEX(peek(0))) {
+                    ObjComplex* a = AS_COMPLEX(pop());
+                    push(OBJ_VAL(
+                        newComplex(a->real * b->real - a->imag * b->imag, a->real * b->imag + a->imag * b->real)));
+                }
+                else {
+                    runtimeError("Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else {
+                runtimeError("Operands must be numbers.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
             break;
-        case OP_DIVIDE:
-            BINARY_OP(NUMBER_VAL, /);
+        }
+        case OP_DIVIDE: {
+            if (IS_NUMBER(peek(0))) {
+                double b = AS_NUMBER(pop());
+                if (IS_NUMBER(peek(0))) {
+                    double a = AS_NUMBER(pop());
+                    push(NUMBER_VAL(a / b));
+                }
+                else if (IS_COMPLEX(peek(0))) {
+                    ObjComplex* a = AS_COMPLEX(pop());
+                    push(OBJ_VAL(newComplex(a->real / b, a->imag / b)));
+                }
+                else {
+                    runtimeError("Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else if (IS_COMPLEX(peek(0))) {
+                ObjComplex* b = AS_COMPLEX(pop());
+                if (IS_NUMBER(peek(0))) {
+                    double a = AS_NUMBER(pop());
+                    double denom = b->real * b->real - b->imag * b->imag;
+                    push(OBJ_VAL(newComplex(a * b->real / denom, -a * b->imag / denom)));
+                }
+                else if (IS_COMPLEX(peek(0))) {
+                    ObjComplex* a = AS_COMPLEX(pop());
+                    double denom = b->real * b->real - b->imag * b->imag;
+                    push(OBJ_VAL(newComplex((a->real * b->real + a->imag * b->imag) / denom,
+                                            (a->real * b->imag - a->imag * b->real) / denom)));
+                }
+                else {
+                    runtimeError("Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else {
+                runtimeError("Operands must be numbers.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+
             break;
+        }
         case OP_MODULO:
             POWER_OP(NUMBER_VAL, fmod);
             break;

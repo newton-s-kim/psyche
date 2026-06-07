@@ -1,4 +1,5 @@
 //> Strings object-c
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -210,10 +211,11 @@ ObjUpvalue* newUpvalue(Value* slot)
     return upvalue;
 }
 //< Closures new-upvalue
-ObjComplex* newComplex(double complex v)
+ObjComplex* newComplex(double real, double imag)
 {
     ObjComplex* cmplx = ALLOCATE_OBJ(ObjComplex, OBJ_COMPLEX);
-    cmplx->value = v;
+    cmplx->real = real;
+    cmplx->imag = imag;
     return cmplx;
 }
 Value list_clear(Value receiver, int argc, Value* argv)
@@ -264,7 +266,7 @@ Value list_insert(Value receiver, int argc, Value* argv)
     if (0 > index)
         index += list->array.count + 1;
     if (index < 0 || list->array.count < index) {
-        runtimeError("Index is out of bound.");
+        runtimeError("Index is out of bounds.");
         return NIL_VAL;
     }
     if (index != (int)index) {
@@ -349,6 +351,75 @@ ObjClass* newMapClass()
     klass->call = newNativeBoundMethod(map_new);
     return klass;
 }
+static Value num_fraction(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    double v = AS_NUMBER(receiver);
+    return NUMBER_VAL(v - (int)v);
+}
+static Value num_truncate(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    return NUMBER_VAL(trunc(AS_NUMBER(receiver)));
+}
+static Value num_round(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    return NUMBER_VAL(round(AS_NUMBER(receiver)));
+}
+static Value num_floor(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    return NUMBER_VAL(floor(AS_NUMBER(receiver)));
+}
+static Value num_ceil(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    return NUMBER_VAL(ceil(AS_NUMBER(receiver)));
+}
+static Value num_abs(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    return NUMBER_VAL(fabs(AS_NUMBER(receiver)));
+}
+static Value num_sign(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    int d = 0;
+    double v = AS_NUMBER(receiver);
+    if (0 > v)
+        d = -1;
+    if (0 < v)
+        d = 1;
+    return NUMBER_VAL(d);
+}
+ObjClass* newNumClass()
+{
+    ObjString* name = copyString("Number", 6);
+    ObjClass* klass = newClass(name);
+    ObjString* method = copyString("abs", 3);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_abs)));
+    method = copyString("sign", 4);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_sign)));
+    method = copyString("ceil", 4);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_ceil)));
+    method = copyString("floor", 5);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_floor)));
+    method = copyString("round", 5);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_round)));
+    method = copyString("truncate", 8);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_truncate)));
+    method = copyString("fraction", 8);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_fraction)));
+    return klass;
+}
 //> Calls and Functions print-function-helper
 static void printFunction(ObjFunction* function)
 {
@@ -406,9 +477,21 @@ void printObject(Value value)
         printf("<upvalue>");
         break;
         //< Closures print-upvalue
-    case OBJ_COMPLEX:
-        printf("%f + %fi", creal(AS_COMPLEX(value)->value), cimag(AS_COMPLEX(value)->value));
+    case OBJ_COMPLEX: {
+        ObjComplex* c = AS_COMPLEX(value);
+        if (c->real) {
+            printf("%.14g", c->real);
+        }
+        if (0 < c->imag) {
+            if (c->real)
+                printf("+");
+        }
+        else {
+            printf("-");
+        }
+        printf("%.14gj", c->imag);
         break;
+    }
     case OBJ_LIST: {
         ObjList* list = AS_LIST(value);
         printf("[");

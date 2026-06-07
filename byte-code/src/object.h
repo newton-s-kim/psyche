@@ -12,8 +12,6 @@
 #include "value.h"
 //> obj-type-macro
 
-#include <complex.h>
-
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 //< obj-type-macro
 //> is-string
@@ -201,7 +199,8 @@ typedef struct {
 typedef struct {
     Obj obj;
     ObjClass klass;
-    double _Complex value;
+    double real;
+    double imag;
 } ObjComplex;
 
 typedef struct {
@@ -244,7 +243,8 @@ ObjString* copyString(const char* chars, int length);
 //> Closures new-upvalue-h
 ObjUpvalue* newUpvalue(Value* slot);
 //< Closures new-upvalue-h
-ObjComplex* newComplex(double _Complex v);
+ObjComplex* newComplex(double real, double imag);
+ObjClass* newNumClass();
 ObjClass* newListClass();
 ObjClass* newMapClass();
 //> print-object-h
