@@ -218,6 +218,22 @@ ObjComplex* newComplex(double real, double imag)
     cmplx->imag = imag;
     return cmplx;
 }
+Value list_indexof(Value receiver, int argc, Value* argv)
+{
+    int index = 0;
+    if (1 != argc) {
+        runtimeError("Expects 2 arguments");
+        return NIL_VAL;
+    }
+    ObjList* list = AS_LIST(receiver);
+    for (index = 0; index < list->array.count; index++) {
+        if (valuesEqual(argv[0], list->array.values[index]))
+            break;
+    }
+    if (index == list->array.count)
+        index = -1;
+    return NUMBER_VAL(index);
+}
 Value list_clear(Value receiver, int argc, Value* argv)
 {
     (void)argc;
@@ -314,6 +330,8 @@ ObjClass* newListClass()
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_contains)));
     method = copyString("clear", 5);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)));
+    method = copyString("indexOf", 7);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
     klass->call = newNativeBoundMethod(list_new);
     return klass;
 }

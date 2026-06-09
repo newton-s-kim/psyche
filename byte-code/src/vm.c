@@ -37,6 +37,37 @@
 
 VM vm; // [one]
 //> Calls and Functions clock-native
+static Value rangeNative(int argCount, Value* args)
+{
+    Value v;
+    if (!tableGet(&vm.globals, copyString("List", 4), &v))
+        return NIL_VAL;
+    ObjClass* klass = AS_CLASS(v);
+    ObjList* list = AS_LIST(klass->call->method(v, 0, NULL));
+    int start = 0, end = 0, increment = 1;
+    switch (argCount) {
+    case 3:
+        start = AS_NUMBER(args[0]);
+        end = AS_NUMBER(args[1]);
+        increment = AS_NUMBER(args[2]);
+        break;
+    case 2:
+        start = AS_NUMBER(args[0]);
+        end = AS_NUMBER(args[1]);
+        break;
+    case 1:
+        end = AS_NUMBER(args[0]);
+        break;
+    default:
+        runtimeError("Invalid number of arguments.");
+        return NIL_VAL;
+        break;
+    }
+    for (int i = start; i <= end; i += increment) {
+        writeValueArray(&list->array, NUMBER_VAL(i));
+    }
+    return OBJ_VAL(list);
+}
 static Value clockNative(int argCount, Value* args)
 {
     (void)argCount;
@@ -154,9 +185,10 @@ void initVM()
     //> Calls and Functions define-native-clock
 
     vm.numClass = newNumClass();
-    defineNative("clock", clockNative);
     defineValue("List", OBJ_VAL(newListClass()));
     defineValue("Map", OBJ_VAL(newMapClass()));
+    defineNative("range", rangeNative);
+    defineNative("clock", clockNative);
     //< Calls and Functions define-native-clock
     vm.dls = NULL;
     vm.dlCount = 0;
