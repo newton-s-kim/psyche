@@ -404,12 +404,10 @@ static bool invoke(ObjString* name, int argCount)
         return invokeFromClass(instance->klass, name, argCount, false);
     }
     else if (IS_LIST(receiver)) {
-        ObjList* list = AS_LIST(receiver);
-        return invokeFromNative(receiver, list->klass, name, argCount);
+        return invokeFromNative(receiver, vm.listClass, name, argCount);
     }
     else if (IS_MAP(receiver)) {
-        ObjMap* map = AS_MAP(receiver);
-        return invokeFromNative(receiver, map->klass, name, argCount);
+        return invokeFromNative(receiver, vm.mapClass, name, argCount);
     }
     else if (IS_NUMBER(receiver)) {
         return invokeFromNative(receiver, vm.numClass, name, argCount);

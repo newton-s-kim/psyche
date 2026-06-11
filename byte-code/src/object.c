@@ -309,7 +309,6 @@ static Value list_new(int argc, Value* argv)
 {
     LAX_LOG("list_new(%d)", argc);
     ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
-    list->klass = vm.listClass;
     initValueArray(&list->array);
     if (0 < argc)
         for (int index = 0; index < argc; index++)
@@ -321,7 +320,6 @@ static Value list_filled(int argc, Value* argv)
 {
     LAX_LOG("list_filled(%d)", argc);
     ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
-    list->klass = vm.listClass;
     initValueArray(&list->array);
     if (2 != argc) {
         runtimeError("Invalid number of arguments.");
@@ -399,7 +397,6 @@ static Value map_new(int argc, Value* argv)
     (void)argv;
     LAX_LOG("map_new(%d)", argc);
     ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
-    map->klass = vm.mapClass;
     initTable(&map->map);
     return OBJ_VAL(map);
 }

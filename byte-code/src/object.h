@@ -199,20 +199,17 @@ typedef struct {
 
 typedef struct {
     Obj obj;
-    ObjClass klass;
     double real;
     double imag;
 } ObjComplex;
 
 typedef struct {
     Obj obj;
-    ObjClass* klass;
     ValueArray array;
 } ObjList;
 
 typedef struct {
     Obj obj;
-    ObjClass* klass;
     Table map;
 } ObjMap;
 

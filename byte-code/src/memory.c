@@ -174,13 +174,11 @@ static void blackenObject(Obj* object)
         break;
     case OBJ_LIST: {
         ObjList* list = (ObjList*)object;
-        markObject((Obj*)list->klass);
         markArray(&list->array);
         break;
     }
     case OBJ_MAP: {
         ObjMap* map = (ObjMap*)object;
-        markObject((Obj*)map->klass);
         markTable(&map->map);
     }
     }
@@ -277,6 +275,9 @@ static void freeObject(Obj* object)
 //> Garbage Collection mark-roots
 static void markRoots()
 {
+    markObject((Obj*)vm.numClass);
+    markObject((Obj*)vm.listClass);
+    markObject((Obj*)vm.mapClass);
     for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
         markValue(*slot);
     }

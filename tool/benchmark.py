@@ -110,7 +110,7 @@ BENCHMARK("map_string", r"""12799920000""")
 
 LANGUAGES = [
     ("psyche", [os.path.join(PSYCHE_BIN, "psyche")], ".psy"),
-    ("wren", ["../wren-cli/bin/wren_cli"], ".wren"),
+    ("wren", ["../wren/bin/wren_test"], ".wren"),
     ("dart", ["fletch", "run"], ".dart"),
     ("lua", ["lua"], ".lua"),
     ("luajit (-joff)", ["luajit", "-joff"], ".lua"),
