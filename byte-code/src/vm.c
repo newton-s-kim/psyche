@@ -43,7 +43,7 @@ static Value rangeNative(int argCount, Value* args)
     if (!tableGet(&vm.globals, copyString("List", 4), &v))
         return NIL_VAL;
     ObjClass* klass = AS_CLASS(v);
-    ObjList* list = AS_LIST(klass->call->method(v, 0, NULL));
+    ObjList* list = AS_LIST(klass->call->function(0, NULL));
     int start = 0, end = 0, increment = 1;
     switch (argCount) {
     case 3:
@@ -302,7 +302,7 @@ static bool callValue(Value callee, int argCount)
             ObjClass* klass = AS_CLASS(callee);
             Value instance = NIL_VAL;
             if (klass->call) {
-                instance = klass->call->method(callee, argCount, vm.stackTop - argCount);
+                instance = klass->call->function(argCount, vm.stackTop - argCount);
                 vm.stackTop -= argCount;
                 argCount = 0;
             }

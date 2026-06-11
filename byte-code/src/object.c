@@ -305,9 +305,8 @@ Value list_add(Value receiver, int argc, Value* argv)
     LAX_LOG("list size: %d", list->array.count);
     return argv[0];
 }
-static Value list_new(Value receiver, int argc, Value* argv)
+static Value list_new(int argc, Value* argv)
 {
-    (void)receiver;
     LAX_LOG("list_new(%d)", argc);
     ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
     list->klass = vm.listClass;
@@ -363,7 +362,7 @@ ObjClass* newListClass()
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
     method = copyString("filled", 6);
     tableSet(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
-    klass->call = newNativeBoundMethod(list_new);
+    klass->call = newNative(list_new);
     return klass;
 }
 Value map_remove(Value receiver, int argc, Value* argv)
@@ -394,11 +393,10 @@ static Value map_size(Value receiver, int argc, Value* argv)
     }
     return NUMBER_VAL(size);
 }
-static Value map_new(Value receiver, int argc, Value* argv)
+static Value map_new(int argc, Value* argv)
 {
     (void)argc;
     (void)argv;
-    (void)receiver;
     LAX_LOG("map_new(%d)", argc);
     ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
     map->klass = vm.mapClass;
@@ -413,7 +411,7 @@ ObjClass* newMapClass()
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)));
     method = copyString("size", 4);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
-    klass->call = newNativeBoundMethod(map_new);
+    klass->call = newNative(map_new);
     return klass;
 }
 static Value num_fraction(Value receiver, int argc, Value* argv)
