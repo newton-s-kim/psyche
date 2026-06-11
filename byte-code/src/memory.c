@@ -129,6 +129,7 @@ static void blackenObject(Obj* object)
         markObject((Obj*)klass->name);
         //> Methods and Initializers mark-methods
         markTable(&klass->methods);
+        markTable(&klass->staticMethods);
         if (klass->call)
             markObject((Obj*)klass->call);
         //< Methods and Initializers mark-methods
@@ -205,6 +206,7 @@ static void freeObject(Obj* object)
         //> Methods and Initializers free-methods
         ObjClass* klass = (ObjClass*)object;
         freeTable(&klass->methods);
+        freeTable(&klass->staticMethods);
         //< Methods and Initializers free-methods
         FREE(ObjClass, object);
         break;

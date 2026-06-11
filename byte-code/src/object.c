@@ -56,6 +56,7 @@ ObjClass* newClass(ObjString* name)
     klass->name = name; // [klass]
                         //> Methods and Initializers init-methods
     initTable(&klass->methods);
+    initTable(&klass->staticMethods);
     //< Methods and Initializers init-methods
     klass->call = NULL;
     return klass;
@@ -306,14 +307,42 @@ Value list_add(Value receiver, int argc, Value* argv)
 }
 static Value list_new(Value receiver, int argc, Value* argv)
 {
+    (void)receiver;
     LAX_LOG("list_new(%d)", argc);
     ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
-    list->klass = AS_CLASS(receiver);
+    list->klass = vm.listClass;
     initValueArray(&list->array);
     if (0 < argc)
         for (int index = 0; index < argc; index++)
             writeValueArray(&list->array, argv[index]);
     LAX_LOG("list type: %d", list->obj.type);
+    return OBJ_VAL(list);
+}
+static Value list_filled(int argc, Value* argv)
+{
+    LAX_LOG("list_filled(%d)", argc);
+    ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
+    list->klass = vm.listClass;
+    initValueArray(&list->array);
+    if (2 != argc) {
+        runtimeError("Invalid number of arguments.");
+        return NIL_VAL;
+    }
+    if (!IS_NUMBER(argv[0])) {
+        runtimeError("Size must be a number.");
+        return NIL_VAL;
+    }
+    double num = AS_NUMBER(argv[0]);
+    if (0 > num) {
+        runtimeError("Size cannot be negative.");
+        return NIL_VAL;
+    }
+    if (num != (int)num) {
+        runtimeError("Size must be an integer.");
+        return NIL_VAL;
+    }
+    for (int index = 0; index < num; index++)
+        writeValueArray(&list->array, argv[1]);
     return OBJ_VAL(list);
 }
 ObjClass* newListClass()
@@ -332,6 +361,8 @@ ObjClass* newListClass()
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)));
     method = copyString("indexOf", 7);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
+    method = copyString("filled", 6);
+    tableSet(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
     klass->call = newNativeBoundMethod(list_new);
     return klass;
 }
@@ -367,9 +398,10 @@ static Value map_new(Value receiver, int argc, Value* argv)
 {
     (void)argc;
     (void)argv;
+    (void)receiver;
     LAX_LOG("map_new(%d)", argc);
     ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
-    map->klass = AS_CLASS(receiver);
+    map->klass = vm.mapClass;
     initTable(&map->map);
     return OBJ_VAL(map);
 }
@@ -531,7 +563,11 @@ void printObject(Value value)
         for (int i = 0; i < list->array.count; i++) {
             if (0 < i)
                 printf(",");
+            if (IS_STRING(list->array.values[i]))
+                printf("\"");
             printValue(list->array.values[i]);
+            if (IS_STRING(list->array.values[i]))
+                printf("\"");
         }
         printf("]");
         break;

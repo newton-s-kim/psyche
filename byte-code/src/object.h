@@ -177,6 +177,7 @@ typedef struct {
     //> Methods and Initializers class-methods
     Table methods;
     //< Methods and Initializers class-methods
+    Table staticMethods;
     ObjNativeBoundMethod* call;
 } ObjClass;
 //< Classes and Instances obj-class

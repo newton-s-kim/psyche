@@ -185,6 +185,8 @@ void initVM()
     //> Calls and Functions define-native-clock
 
     vm.numClass = newNumClass();
+    vm.listClass = newListClass();
+    vm.mapClass = newMapClass();
     defineValue("List", OBJ_VAL(newListClass()));
     defineValue("Map", OBJ_VAL(newMapClass()));
     defineNative("range", rangeNative);
@@ -350,16 +352,17 @@ static bool callValue(Value callee, int argCount)
 }
 //< Calls and Functions call-value
 //> Methods and Initializers invoke-from-class
-static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount)
+static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount, bool isStatic)
 {
     Value method;
-    if (!tableGet(&klass->methods, name, &method)) {
+    bool found = (isStatic) ? tableGet(&klass->staticMethods, name, &method) : tableGet(&klass->methods, name, &method);
+    if (!found) {
         runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
     return callValue(method, argCount);
 }
-static bool invokeNativeFromClass(Value receiver, ObjClass* klass, ObjString* name, int argCount)
+static bool invokeFromNative(Value receiver, ObjClass* klass, ObjString* name, int argCount)
 {
     Value method;
     if (!tableGet(&klass->methods, name, &method)) {
@@ -398,18 +401,21 @@ static bool invoke(ObjString* name, int argCount)
         }
 
         //< invoke-field
-        return invokeFromClass(instance->klass, name, argCount);
+        return invokeFromClass(instance->klass, name, argCount, false);
     }
     else if (IS_LIST(receiver)) {
         ObjList* list = AS_LIST(receiver);
-        return invokeNativeFromClass(receiver, list->klass, name, argCount);
+        return invokeFromNative(receiver, list->klass, name, argCount);
     }
     else if (IS_MAP(receiver)) {
         ObjMap* map = AS_MAP(receiver);
-        return invokeNativeFromClass(receiver, map->klass, name, argCount);
+        return invokeFromNative(receiver, map->klass, name, argCount);
     }
     else if (IS_NUMBER(receiver)) {
-        return invokeNativeFromClass(receiver, vm.numClass, name, argCount);
+        return invokeFromNative(receiver, vm.numClass, name, argCount);
+    }
+    else if (IS_CLASS(receiver)) {
+        return invokeFromClass(AS_CLASS(receiver), name, argCount, true);
     }
     else {
         runtimeError("Only instances have methods.");
@@ -751,30 +757,32 @@ static InterpretResult run()
             //> Classes and Instances interpret-get-property
         case OP_GET_PROPERTY: {
             //> get-not-instance
-            if (!IS_INSTANCE(PEEK())) {
-                runtimeError("Only instances have properties.");
-                return INTERPRET_RUNTIME_ERROR;
-            }
+            if (IS_INSTANCE(PEEK())) {
 
-            //< get-not-instance
-            ObjInstance* instance = AS_INSTANCE(PEEK());
-            ObjString* name = READ_STRING();
+                //< get-not-instance
+                ObjInstance* instance = AS_INSTANCE(PEEK());
+                ObjString* name = READ_STRING();
 
-            Value value;
-            if (tableGet(&instance->fields, name, &value)) {
-                DROP(); // Instance.
-                PUSH(value);
-                break;
-            }
-            //> get-undefined
+                Value value;
+                if (tableGet(&instance->fields, name, &value)) {
+                    DROP(); // Instance.
+                    PUSH(value);
+                    break;
+                }
+                //> get-undefined
 
-            //< get-undefined
-            /* Classes and Instances get-undefined < Methods and Initializers get-method
-                    runtimeError("Undefined property '%s'.", name->chars);
+                //< get-undefined
+                /* Classes and Instances get-undefined < Methods and Initializers get-method
+                        runtimeError("Undefined property '%s'.", name->chars);
+                        return INTERPRET_RUNTIME_ERROR;
+                */
+                //> Methods and Initializers get-method
+                if (!bindMethod(instance->klass, name)) {
                     return INTERPRET_RUNTIME_ERROR;
-            */
-            //> Methods and Initializers get-method
-            if (!bindMethod(instance->klass, name)) {
+                }
+            }
+            else {
+                runtimeError("Only instances have properties.");
                 return INTERPRET_RUNTIME_ERROR;
             }
             break;
@@ -1189,7 +1197,7 @@ static InterpretResult run()
             ObjString* method = READ_STRING();
             int argCount = READ_BYTE();
             ObjClass* superclass = AS_CLASS(POP());
-            if (!invokeFromClass(superclass, method, argCount)) {
+            if (!invokeFromClass(superclass, method, argCount, false)) {
                 return INTERPRET_RUNTIME_ERROR;
             }
             frame = &vm.frames[vm.frameCount - 1];
