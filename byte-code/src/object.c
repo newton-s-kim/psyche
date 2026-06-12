@@ -1,6 +1,7 @@
 //> Strings object-c
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "memory.h"
@@ -177,6 +178,17 @@ ObjString* takeString(char* chars, int length)
     //< Hash Tables take-string-hash
 }
 //< take-string
+/*
+static long hexStrToInt(const char* chars, int length)
+{
+    char str[16];
+    char* endptr;
+    int i = 0;
+    for(i = 0 ; i < length ; i++) str[i] = chars[i];
+    str[i] = 0;
+    return strtol(str, &endptr, 16);
+}
+*/
 ObjString* copyString(const char* chars, int length)
 {
     //> Hash Tables copy-string-hash
@@ -227,6 +239,29 @@ ObjString* copyString(const char* chars, int length)
             case 't':
                 esc = '\t';
                 break;
+		/*
+            case 'x':
+		p++;
+		esc = hexStrToInt(p, 2);
+		p+=2;
+		break;
+            case 'u': {
+		p++;
+		long l = hexStrToInt(p, 4);
+		p+=4;
+		memcpy(heapChars + index++, &l, 2);
+		continue;
+                break;
+            }
+            case 'U': {
+		p++;
+		long l = hexStrToInt(p, 8);
+		p+=8;
+		memcpy(heapChars + index++, &l, 4);
+		continue;
+                break;
+            }
+	    */
             }
             heapChars[index++] = esc;
         }
