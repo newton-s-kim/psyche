@@ -189,13 +189,57 @@ ObjString* copyString(const char* chars, int length)
     //< copy-string-intern
     //< Hash Tables copy-string-hash
     char* heapChars = ALLOCATE(char, length + 1);
-    memcpy(heapChars, chars, length);
-    heapChars[length] = '\0';
+    // memcpy(heapChars, chars, length);
+    const char* e = chars + length;
+    int index = 0;
+    char esc = 0;
+    for (const char* p = chars; p < e; p++) {
+        if ('\\' == *p) {
+            p++;
+            switch (*p) {
+            case '"':
+                esc = '"';
+                break;
+            case '\\':
+                esc = '\\';
+                break;
+            case '%':
+                esc = '\%';
+                break;
+            case '0':
+                esc = '\0';
+                break;
+            case 'a':
+                esc = '\a';
+                break;
+            case 'e':
+                esc = '\0';
+                break;
+            case 'f':
+                esc = '\f';
+                break;
+            case 'n':
+                esc = '\n';
+                break;
+            case 'r':
+                esc = '\r';
+                break;
+            case 't':
+                esc = '\t';
+                break;
+            }
+            heapChars[index++] = esc;
+        }
+        else {
+            heapChars[index++] = *p;
+        }
+    }
+    heapChars[index] = '\0';
     /* Strings object-c < Hash Tables copy-string-allocate
       return allocateString(heapChars, length);
     */
     //> Hash Tables copy-string-allocate
-    return allocateString(heapChars, length, hash);
+    return allocateString(heapChars, index, hash);
     //< Hash Tables copy-string-allocate
 }
 //> Closures new-upvalue

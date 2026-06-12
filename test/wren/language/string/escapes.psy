@@ -1,0 +1,8 @@
+// Escape characters.
+print "\"";     // expect: "
+print "\\";     // expect: \
+print "(\n)";   // expect: (
+                // expect: )
+print "\%";     // expect: %
+
+// TODO: Non-printing escapes like \t.
