@@ -332,6 +332,9 @@ static void sweep()
             //> unmark
             object->isMarked = false;
             //< unmark
+#ifdef DEBUG_LOG_GC
+            printf("0x%p unmarked", (void*)object);
+#endif
             previous = object;
             object = object->next;
         }
