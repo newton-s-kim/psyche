@@ -1247,8 +1247,14 @@ static InterpretResult run()
             //< Closures return-close-upvalues
             vm.thread->frameCount--;
             if (vm.thread->frameCount == 0) {
-                DROP();
-                return INTERPRET_OK;
+                if (NULL == vm.thread->caller) {
+                    DROP();
+                    return INTERPRET_OK;
+                }
+                else {
+                    vm.thread = vm.thread->caller;
+                    continue;
+                }
             }
 
             vm.thread->stackTop = frame->slots;
