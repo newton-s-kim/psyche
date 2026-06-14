@@ -14,6 +14,7 @@ DEBUG_TRACE=no
 DEBUG_PRINT_CODE=no
 PROFILING=no
 LOGGING=no
+GC_LOGGING=no
 
 function print_help(){
    echo $1 written by Newton Kim
@@ -25,6 +26,7 @@ function print_help(){
    echo "  -l, --log  enables logging"
    echo "  -p, --print-code  prints code"
    echo "  -t, --trace  enables stack tracing mode"
+   echo "  -g, --log-gc  enables garbage collector logging"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -51,6 +53,9 @@ while [[ $# -gt 0 ]]; do
     -l|--log)
       LOGGING=yes
       ;;
+    -g|--log-gc)
+      GC_LOGGING=yes
+      ;;
     *) # unknown option - skip
       ;;
   esac
@@ -68,7 +73,9 @@ function config_common_h() {
     echo "#undef DEBUG_TRACE_EXECUTION" >> $COMMON_H
   fi
   echo "#undef DEBUG_STRESS_GC" >> $COMMON_H
-  echo "#undef DEBUG_LOG_GC" >> $COMMON_H
+  if [ "$GC_LOGGING" != "yes" ]; then
+    echo "#undef DEBUG_LOG_GC" >> $COMMON_H
+  fi
   if [ "$LOGGING" != "yes" ]; then
     echo "#undef LAX_DEBUG" >> $COMMON_H
   fi
