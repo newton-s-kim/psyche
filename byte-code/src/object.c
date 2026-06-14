@@ -335,13 +335,35 @@ ObjComplex* newComplex(double real, double imag)
     cmplx->imag = imag;
     return cmplx;
 }
-ObjThread* newThread()
+ObjThread* newThread(ThreadType type)
 {
     ObjThread* thread = ALLOCATE_OBJ(ObjThread, OBJ_THREAD);
+    thread->type = type;
     thread->frameCount = 0;
     thread->stackTop = thread->stack;
     thread->caller = NULL;
     return thread;
+}
+Value list_each(Value receiver, int argc, Value* argv)
+{
+    int index = 0;
+    if (1 != argc) {
+        runtimeError("Expects 1 argument.");
+        return NIL_VAL;
+    }
+    if (!IS_CLOSURE(argv[0])) {
+        runtimeError("Expects closure.");
+        return NIL_VAL;
+    }
+    ObjList* list = AS_LIST(receiver);
+    Value args[2];
+    for (index = 0; index < list->array.count; index++) {
+        args[0] = NUMBER_VAL(index);
+        args[1] = list->array.values[index];
+        if (!runThread(argv[0], 2, args))
+            return FALSE_VAL;
+    }
+    return TRUE_VAL;
 }
 Value list_indexof(Value receiver, int argc, Value* argv)
 {
@@ -482,6 +504,8 @@ ObjClass* newListClass()
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)));
     method = copyString("indexOf", 7);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
+    method = copyString("each", 4);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_each)));
     method = copyString("filled", 6);
     tableSet(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
     klass->call = newNative(list_new);

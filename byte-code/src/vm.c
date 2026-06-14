@@ -155,7 +155,7 @@ void initVM()
     //> Strings init-objects-root
     vm.objects = NULL;
     //< Strings init-objects-root
-    vm.thread = newThread();
+    vm.thread = newThread(THREAD_TYPE_PROCESS);
     //> call-reset-stack
     resetStack();
     //< call-reset-stack
@@ -1254,7 +1254,12 @@ static InterpretResult run()
                 else {
                     vm.thread = vm.thread->caller;
                     frame = &vm.thread->frames[vm.thread->frameCount - 1];
-                    continue;
+                    if (THREAD_TYPE_EPHIMERAL == vm.thread->type) {
+                        return INTERPRET_OK;
+                    }
+                    else {
+                        continue;
+                    }
                 }
             }
 
@@ -1403,4 +1408,16 @@ bool loadLibrary(Path* path, String* dl_name)
     return true;
 }
 
+bool runThread(Value f, int argc, Value* argv)
+{
+    ObjThread* thread = newThread(THREAD_TYPE_EPHIMERAL);
+    thread->caller = vm.thread;
+    vm.thread = thread;
+    for (int i = 0; i < argc; i++)
+        PUSH(argv[i]);
+    bool ret = callValue(f, argc);
+    if (ret)
+        run();
+    return ret;
+}
 //< interpret

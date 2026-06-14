@@ -83,5 +83,6 @@ Value pop();
 //< push-pop
 bool loadLibrary(Path* path, String* dl_name);
 void runtimeError(const char* format, ...);
+bool runThread(Value f, int argc, Value* argv);
 
 #endif

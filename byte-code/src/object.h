@@ -235,9 +235,15 @@ typedef struct {
     Value* slots;
 } CallFrame;
 //< Calls and Functions call-frame
-
+typedef enum {
+    // called by another thread and hands over the control to the caller
+    THREAD_TYPE_PROCESS,
+    // called by VM directly,  simply stops running
+    THREAD_TYPE_EPHIMERAL
+} ThreadType;
 typedef struct sObjThread {
     Obj obj;
+    ThreadType type;
     //> Calls and Functions frame-array
     CallFrame frames[FRAMES_MAX];
     int frameCount;
@@ -279,7 +285,7 @@ ObjString* copyString(const char* chars, int length);
 ObjUpvalue* newUpvalue(Value* slot);
 //< Closures new-upvalue-h
 ObjComplex* newComplex(double real, double imag);
-ObjThread* newThread();
+ObjThread* newThread(ThreadType type);
 ObjClass* newNumClass();
 ObjClass* newListClass();
 ObjClass* newMapClass();
