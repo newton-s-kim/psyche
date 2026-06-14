@@ -180,6 +180,17 @@ static void blackenObject(Obj* object)
     case OBJ_MAP: {
         ObjMap* map = (ObjMap*)object;
         markTable(&map->map);
+        break;
+    }
+    case OBJ_THREAD: {
+        ObjThread* thread = (ObjThread*)object;
+        for (int i = 0; i < thread->frameCount; i++)
+            markObject((Obj*)thread->frames[i].closure);
+        for (Value* stk = thread->stack; stk < thread->stackTop; stk++)
+            markValue(*stk);
+        if (thread->caller)
+            markObject((Obj*)thread->caller);
+        break;
     }
     }
 }
@@ -269,6 +280,9 @@ static void freeObject(Obj* object)
         freeTable(&map->map);
         FREE(ObjMap, object);
         break;
+    case OBJ_THREAD:
+        FREE(ObjThread, object);
+        break;
     }
 }
 //< Strings free-object
@@ -278,15 +292,9 @@ static void markRoots()
     markObject((Obj*)vm.numClass);
     markObject((Obj*)vm.listClass);
     markObject((Obj*)vm.mapClass);
-    for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
-        markValue(*slot);
+    for (ObjThread* thread = vm.thread; thread; thread = thread->caller) {
+        markObject((Obj*)thread);
     }
-    //> mark-closures
-
-    for (int i = 0; i < vm.frameCount; i++) {
-        markObject((Obj*)vm.frames[i].closure);
-    }
-    //< mark-closures
     //> mark-open-upvalues
 
     for (ObjUpvalue* upvalue = vm.openUpvalues; upvalue != NULL; upvalue = upvalue->next) {

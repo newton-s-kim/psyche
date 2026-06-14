@@ -41,6 +41,7 @@
 //> as-string
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
 #define IS_MAP(value) isObjType(value, OBJ_MAP)
+#define IS_THREAD(value) isObjType(value, OBJ_THREAD)
 
 //> Methods and Initializers as-bound-method
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
@@ -68,6 +69,7 @@
 //> obj-type
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
 #define AS_MAP(value) ((ObjMap*)AS_OBJ(value))
+#define AS_THREAD(value) ((ObjThread*)AS_OBJ(value))
 
 typedef enum {
     //> Methods and Initializers obj-type-bound-method
@@ -95,7 +97,8 @@ typedef enum {
     //< Closures obj-type-upvalue
     OBJ_COMPLEX,
     OBJ_LIST,
-    OBJ_MAP
+    OBJ_MAP,
+    OBJ_THREAD
 } ObjType;
 //< obj-type
 
@@ -212,6 +215,40 @@ typedef struct {
     Obj obj;
     Table map;
 } ObjMap;
+/* A Virtual Machine stack-max < Calls and Functions frame-max
+#define STACK_MAX 256
+*/
+//> Calls and Functions frame-max
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
+
+//> Calls and Functions call-frame
+
+typedef struct {
+    /* Calls and Functions call-frame < Closures call-frame-closure
+      ObjFunction* function;
+    */
+    //> Closures call-frame-closure
+    ObjClosure* closure;
+    //< Closures call-frame-closure
+    uint8_t* ip;
+    Value* slots;
+} CallFrame;
+//< Calls and Functions call-frame
+
+typedef struct sObjThread {
+    Obj obj;
+    //> Calls and Functions frame-array
+    CallFrame frames[FRAMES_MAX];
+    int frameCount;
+
+    //< Calls and Functions frame-array
+    //> vm-stack
+    Value stack[STACK_MAX];
+    Value* stackTop;
+    //< vm-stack
+    struct sObjThread* caller;
+} ObjThread;
 
 //< Methods and Initializers obj-bound-method
 //> Methods and Initializers new-bound-method-h
@@ -242,6 +279,7 @@ ObjString* copyString(const char* chars, int length);
 ObjUpvalue* newUpvalue(Value* slot);
 //< Closures new-upvalue-h
 ObjComplex* newComplex(double real, double imag);
+ObjThread* newThread();
 ObjClass* newNumClass();
 ObjClass* newListClass();
 ObjClass* newMapClass();

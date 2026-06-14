@@ -335,6 +335,14 @@ ObjComplex* newComplex(double real, double imag)
     cmplx->imag = imag;
     return cmplx;
 }
+ObjThread* newThread()
+{
+    ObjThread* thread = ALLOCATE_OBJ(ObjThread, OBJ_THREAD);
+    thread->frameCount = 0;
+    thread->stackTop = thread->stack;
+    thread->caller = NULL;
+    return thread;
+}
 Value list_indexof(Value receiver, int argc, Value* argv)
 {
     int index = 0;
@@ -704,6 +712,9 @@ void printObject(Value value)
         printf("}");
         break;
     }
+    case OBJ_THREAD:
+        printf("<thread>");
+        break;
     }
 }
 

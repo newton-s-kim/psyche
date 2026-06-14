@@ -19,27 +19,6 @@
 //< stack-max
 #include "dl.h"
 
-/* A Virtual Machine stack-max < Calls and Functions frame-max
-#define STACK_MAX 256
-*/
-//> Calls and Functions frame-max
-#define FRAMES_MAX 64
-#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
-//< Calls and Functions frame-max
-//> Calls and Functions call-frame
-
-typedef struct {
-    /* Calls and Functions call-frame < Closures call-frame-closure
-      ObjFunction* function;
-    */
-    //> Closures call-frame-closure
-    ObjClosure* closure;
-    //< Closures call-frame-closure
-    uint8_t* ip;
-    Value* slots;
-} CallFrame;
-//< Calls and Functions call-frame
-
 typedef struct {
     /* A Virtual Machine vm-h < Calls and Functions frame-array
       Chunk* chunk;
@@ -47,15 +26,7 @@ typedef struct {
     /* A Virtual Machine ip < Calls and Functions frame-array
       uint8_t* ip;
     */
-    //> Calls and Functions frame-array
-    CallFrame frames[FRAMES_MAX];
-    int frameCount;
-
-    //< Calls and Functions frame-array
-    //> vm-stack
-    Value stack[STACK_MAX];
-    Value* stackTop;
-    //< vm-stack
+    ObjThread* thread;
     //> Global Variables vm-globals
     Table globals;
     //< Global Variables vm-globals

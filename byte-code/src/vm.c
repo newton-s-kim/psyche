@@ -28,11 +28,11 @@
 
 #include "log.h"
 
-#define PUSH(value) (*vm.stackTop++ = (value))
-#define POP() (*(--vm.stackTop))
-#define DROP() (--vm.stackTop)
-#define PEEK() (*(vm.stackTop - 1))
-#define NPEEK(n) (*(vm.stackTop - 1 - n))
+#define PUSH(value) (*vm.thread->stackTop++ = (value))
+#define POP() (*(--vm.thread->stackTop))
+#define DROP() (--vm.thread->stackTop)
+#define PEEK() (*(vm.thread->stackTop - 1))
+#define NPEEK(n) (*(vm.thread->stackTop - 1 - n))
 #define IS_FALSEY(value) (IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value)))
 
 VM vm; // [one]
@@ -78,9 +78,9 @@ static Value clockNative(int argCount, Value* args)
 //> reset-stack
 static void resetStack()
 {
-    vm.stackTop = vm.stack;
+    vm.thread->stackTop = vm.thread->stack;
     //> Calls and Functions reset-frame-count
-    vm.frameCount = 0;
+    vm.thread->frameCount = 0;
     //< Calls and Functions reset-frame-count
     //> Closures init-open-upvalues
     vm.openUpvalues = NULL;
@@ -109,8 +109,8 @@ void runtimeError(const char* format, ...)
       fprintf(stderr, "[line %d] in script\n", line);
     */
     //> Calls and Functions runtime-error-stack
-    for (int i = vm.frameCount - 1; i >= 0; i--) {
-        CallFrame* frame = &vm.frames[i];
+    for (int i = vm.thread->frameCount - 1; i >= 0; i--) {
+        CallFrame* frame = &vm.thread->frames[i];
         /* Calls and Functions runtime-error-stack < Closures runtime-error-function
             ObjFunction* function = frame->function;
         */
@@ -137,7 +137,7 @@ static void defineValue(const char* name, Value value)
 {
     PUSH(OBJ_VAL(copyString(name, (int)strlen(name))));
     PUSH(value);
-    tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+    tableSet(&vm.globals, AS_STRING(vm.thread->stack[0]), vm.thread->stack[1]);
     DROP();
     DROP();
 }
@@ -152,6 +152,7 @@ void defineNative(const char* name, NativeFn function)
 
 void initVM()
 {
+    vm.thread = newThread();
     //> call-reset-stack
     resetStack();
     //< call-reset-stack
@@ -221,15 +222,15 @@ void freeVM()
 //> push
 void push(Value value)
 {
-    *vm.stackTop = value;
-    vm.stackTop++;
+    *vm.thread->stackTop = value;
+    vm.thread->stackTop++;
 }
 //< push
 //> pop
 Value pop()
 {
-    vm.stackTop--;
-    return *vm.stackTop;
+    vm.thread->stackTop--;
+    return *vm.thread->stackTop;
 }
 //< pop
 //> Types of Values peek
@@ -264,13 +265,13 @@ static bool call(ObjClosure* closure, int argCount)
 
     //< check-arity
     //> check-overflow
-    if (vm.frameCount == FRAMES_MAX) {
+    if (vm.thread->frameCount == FRAMES_MAX) {
         runtimeError("Stack overflow.");
         return false;
     }
 
     //< check-overflow
-    CallFrame* frame = &vm.frames[vm.frameCount++];
+    CallFrame* frame = &vm.thread->frames[vm.thread->frameCount++];
     /* Calls and Functions call < Closures call-init-closure
       frame->function = function;
       frame->ip = function->chunk.code;
@@ -279,7 +280,7 @@ static bool call(ObjClosure* closure, int argCount)
     frame->closure = closure;
     frame->ip = closure->function->chunk.code;
     //< Closures call-init-closure
-    frame->slots = vm.stackTop - argCount - 1;
+    frame->slots = vm.thread->stackTop - argCount - 1;
     return true;
 }
 //< Calls and Functions call
@@ -292,7 +293,7 @@ static bool callValue(Value callee, int argCount)
         case OBJ_BOUND_METHOD: {
             ObjBoundMethod* bound = AS_BOUND_METHOD(callee);
             //> store-receiver
-            vm.stackTop[-argCount - 1] = bound->receiver;
+            vm.thread->stackTop[-argCount - 1] = bound->receiver;
             //< store-receiver
             return call(bound->method, argCount);
         }
@@ -302,14 +303,14 @@ static bool callValue(Value callee, int argCount)
             ObjClass* klass = AS_CLASS(callee);
             Value instance = NIL_VAL;
             if (klass->call) {
-                instance = klass->call->function(argCount, vm.stackTop - argCount);
-                vm.stackTop -= argCount;
+                instance = klass->call->function(argCount, vm.thread->stackTop - argCount);
+                vm.thread->stackTop -= argCount;
                 argCount = 0;
             }
             else {
                 instance = OBJ_VAL(newInstance(klass));
             }
-            vm.stackTop[-argCount - 1] = instance;
+            vm.thread->stackTop[-argCount - 1] = instance;
             //> Methods and Initializers call-init
             Value initializer;
             if (tableGet(&klass->methods, vm.initString, &initializer)) {
@@ -337,8 +338,8 @@ static bool callValue(Value callee, int argCount)
             //> call-native
         case OBJ_NATIVE: {
             NativeFn native = AS_NATIVE(callee);
-            Value result = native(argCount, vm.stackTop - argCount);
-            vm.stackTop -= argCount + 1;
+            Value result = native(argCount, vm.thread->stackTop - argCount);
+            vm.thread->stackTop -= argCount + 1;
             PUSH(result);
             return true;
         }
@@ -374,8 +375,8 @@ static bool invokeFromNative(Value receiver, ObjClass* klass, ObjString* name, i
         retVal = callValue(method, argCount);
     }
     else if (IS_NATIVE_BOUND_METHOD(method)) {
-        Value result = AS_NATIVE_BOUND_METHOD(method)(receiver, argCount, vm.stackTop - argCount);
-        vm.stackTop -= argCount + 1;
+        Value result = AS_NATIVE_BOUND_METHOD(method)(receiver, argCount, vm.thread->stackTop - argCount);
+        vm.thread->stackTop -= argCount + 1;
         PUSH(result);
         retVal = true;
     }
@@ -396,7 +397,7 @@ static bool invoke(ObjString* name, int argCount)
 
         Value value;
         if (tableGet(&instance->fields, name, &value)) {
-            vm.stackTop[-argCount - 1] = value;
+            vm.thread->stackTop[-argCount - 1] = value;
             return callValue(value, argCount);
         }
 
@@ -525,7 +526,7 @@ static void concatenate()
 static InterpretResult run()
 {
     //> Calls and Functions run
-    CallFrame* frame = &vm.frames[vm.frameCount - 1];
+    CallFrame* frame = &vm.thread->frames[vm.thread->frameCount - 1];
 
 /* A Virtual Machine run < Calls and Functions run
 #define READ_BYTE() (*vm.ip++)
@@ -1174,7 +1175,7 @@ static InterpretResult run()
                 return INTERPRET_RUNTIME_ERROR;
             }
             //> update-frame-after-call
-            frame = &vm.frames[vm.frameCount - 1];
+            frame = &vm.thread->frames[vm.thread->frameCount - 1];
             //< update-frame-after-call
             break;
         }
@@ -1186,7 +1187,7 @@ static InterpretResult run()
             if (!invoke(method, argCount)) {
                 return INTERPRET_RUNTIME_ERROR;
             }
-            frame = &vm.frames[vm.frameCount - 1];
+            frame = &vm.thread->frames[vm.thread->frameCount - 1];
             break;
         }
             //< Methods and Initializers interpret-invoke
@@ -1198,7 +1199,7 @@ static InterpretResult run()
             if (!invokeFromClass(superclass, method, argCount, false)) {
                 return INTERPRET_RUNTIME_ERROR;
             }
-            frame = &vm.frames[vm.frameCount - 1];
+            frame = &vm.thread->frames[vm.thread->frameCount - 1];
             break;
         }
             //< Superclasses interpret-super-invoke
@@ -1224,7 +1225,7 @@ static InterpretResult run()
             //< Closures interpret-closure
             //> Closures interpret-close-upvalue
         case OP_CLOSE_UPVALUE:
-            closeUpvalues(vm.stackTop - 1);
+            closeUpvalues(vm.thread->stackTop - 1);
             DROP();
             break;
             //< Closures interpret-close-upvalue
@@ -1244,15 +1245,15 @@ static InterpretResult run()
             //> Closures return-close-upvalues
             closeUpvalues(frame->slots);
             //< Closures return-close-upvalues
-            vm.frameCount--;
-            if (vm.frameCount == 0) {
+            vm.thread->frameCount--;
+            if (vm.thread->frameCount == 0) {
                 DROP();
                 return INTERPRET_OK;
             }
 
-            vm.stackTop = frame->slots;
+            vm.thread->stackTop = frame->slots;
             PUSH(result);
-            frame = &vm.frames[vm.frameCount - 1];
+            frame = &vm.thread->frames[vm.thread->frameCount - 1];
             break;
             //< Calls and Functions interpret-return
         }
