@@ -178,17 +178,56 @@ ObjString* takeString(char* chars, int length)
     //< Hash Tables take-string-hash
 }
 //< take-string
-/*
-static long hexStrToInt(const char* chars, int length)
+static int hexStrToInt(const char* chars, int length)
 {
-    char str[16];
-    char* endptr;
-    int i = 0;
-    for(i = 0 ; i < length ; i++) str[i] = chars[i];
-    str[i] = 0;
-    return strtol(str, &endptr, 16);
+    int val = 0;
+    int digit = 0;
+    const char* e = chars + length;
+    for (const char* p = chars; p < e; p++) {
+        if ('0' <= *p && '9' >= *p)
+            digit = *p - '0';
+        else if ('a' <= *p && 'f' >= *p)
+            digit = *p - 'a' + 10;
+        else if ('A' <= *p && 'F' >= *p)
+            digit = *p - 'A' + 10;
+        else
+            return -1;
+        val <<= 4;
+        val |= 0xf & digit;
+    }
+    LAX_LOG("->0x%x", val);
+    return val;
 }
-*/
+static int intToUtf8(char* chars, int v)
+{
+    int adv = 0;
+    if (0x7f >= v) {
+        *chars = v & 0x7f;
+        adv = 1;
+    }
+    else if (0x7ff >= v) {
+        // 11 bits art spreaded over 2 bytes: 110xxxxx 10xxxxxx
+        *chars++ = 0xc0 | ((v & 0x7c0) >> 6);
+        *chars = 0x80 | (v & 0x3f);
+        adv = 2;
+    }
+    else if (0xffff >= v) {
+        // 16 bits are spreaded over 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
+        *chars++ = 0xe0 | ((v & 0xf000) >> 12);
+        *chars++ = 0x80 | ((v & 0xfc0) >> 6);
+        *chars = 0x80 | ((v & 0x3f));
+        adv = 3;
+    }
+    else if (0x10ffff >= v) {
+        // 21 bits are spreaded over 4 bytes: 1110xxxx 10xxxxxx 10xxxxxx
+        *chars++ = 0xf0 | ((v & 0x1c00000) >> 18);
+        *chars++ = 0x80 | ((v & 0x3f000) >> 12);
+        *chars++ = 0x80 | ((v & 0xfc0) >> 6);
+        *chars = 0x80 | ((v & 0x3f));
+        adv = 4;
+    }
+    return adv;
+}
 ObjString* copyString(const char* chars, int length)
 {
     //> Hash Tables copy-string-hash
@@ -239,29 +278,27 @@ ObjString* copyString(const char* chars, int length)
             case 't':
                 esc = '\t';
                 break;
-		/*
             case 'x':
-		p++;
-		esc = hexStrToInt(p, 2);
-		p+=2;
-		break;
+                p++;
+                esc = (char)hexStrToInt(p, 2);
+                p += 1;
+                break;
             case 'u': {
-		p++;
-		long l = hexStrToInt(p, 4);
-		p+=4;
-		memcpy(heapChars + index++, &l, 2);
-		continue;
+                p++;
+                int l = hexStrToInt(p, 4);
+                p += 3;
+                index += intToUtf8(heapChars + index, l);
+                continue;
                 break;
             }
             case 'U': {
-		p++;
-		long l = hexStrToInt(p, 8);
-		p+=8;
-		memcpy(heapChars + index++, &l, 4);
-		continue;
+                p++;
+                int l = hexStrToInt(p, 8);
+                p += 7;
+                index += intToUtf8(heapChars + index, l);
+                continue;
                 break;
             }
-	    */
             }
             heapChars[index++] = esc;
         }

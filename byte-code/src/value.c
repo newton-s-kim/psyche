@@ -123,6 +123,12 @@ bool valuesEqual(Value a, Value b)
     if (IS_NUMBER(a) && IS_NUMBER(b)) {
         return AS_NUMBER(a) == AS_NUMBER(b);
     }
+    else if (IS_STRING(a) && IS_STRING(b)) {
+        if (AS_STRING(a)->hash == AS_STRING(b)->hash)
+            return true;
+        else if (!strcmp(AS_STRING(a)->chars, AS_STRING(b)->chars))
+            return true;
+    }
     //< nan-equality
     return a == b;
 #else
