@@ -152,13 +152,13 @@ void defineNative(const char* name, NativeFn function)
 
 void initVM()
 {
+    //> Strings init-objects-root
+    vm.objects = NULL;
+    //< Strings init-objects-root
     vm.thread = newThread();
     //> call-reset-stack
     resetStack();
     //< call-reset-stack
-    //> Strings init-objects-root
-    vm.objects = NULL;
-    //< Strings init-objects-root
     //> Garbage Collection init-gc-fields
     vm.bytesAllocated = 0;
     vm.nextGC = 1024 * 1024;
@@ -631,7 +631,7 @@ static InterpretResult run()
 #ifdef DEBUG_TRACE_EXECUTION
         //> trace-stack
         printf("          ");
-        for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
+        for (Value* slot = vm.thread->stack; slot < vm.thread->stackTop; slot++) {
             printf("[ ");
             printValue(*slot);
             printf(" ]");
@@ -1253,6 +1253,7 @@ static InterpretResult run()
                 }
                 else {
                     vm.thread = vm.thread->caller;
+                    frame = &vm.thread->frames[vm.thread->frameCount - 1];
                     continue;
                 }
             }
