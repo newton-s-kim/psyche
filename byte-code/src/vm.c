@@ -1252,9 +1252,10 @@ static InterpretResult run()
                     return INTERPRET_OK;
                 }
                 else {
+                    ThreadType t = vm.thread->type;
                     vm.thread = vm.thread->caller;
                     frame = &vm.thread->frames[vm.thread->frameCount - 1];
-                    if (THREAD_TYPE_EPHIMERAL == vm.thread->type) {
+                    if (THREAD_TYPE_EPHIMERAL == t) {
                         return INTERPRET_OK;
                     }
                     else {
