@@ -85,7 +85,7 @@ Value pop();
 bool loadLibrary(Path* path, String* dl_name);
 void runtimeError(const char* format, ...);
 bool runThread(Value f, int argc, Value* argv);
-uint16_t getGlobalAddress(ObjString* name);
+uint16_t getGlobalAddress(ObjString* name, Value defval);
 const char* undefinedSymbol(uint16_t addr);
 
 #endif

@@ -134,7 +134,7 @@ static void defineValue(const char* name, Value value)
     ObjString* on = copyString(name, (int)strlen(name));
     PUSH(OBJ_VAL(on));
     PUSH(value);
-    uint16_t offset = getGlobalAddress(on);
+    uint16_t offset = getGlobalAddress(on, NIL_VAL);
     vm.globals.values[offset] = vm.thread->stack[1];
     DROP();
     DROP();
@@ -712,6 +712,7 @@ static InterpretResult run()
         case OP_GET_GLOBAL: {
             uint16_t name = READ_SHORT();
             Value value;
+	    LAX_LOG("global.count=%d", vm.globals.count);
             if (vm.globals.count <= name || IS_UNDEF(vm.globals.values[name])) {
                 runtimeError("Undefined variable '%s'.", undefinedSymbol(name));
                 return INTERPRET_RUNTIME_ERROR;
@@ -1428,19 +1429,19 @@ bool runThread(Value f, int argc, Value* argv)
     return ret;
 }
 
-uint16_t getGlobalAddress(ObjString* name)
+uint16_t getGlobalAddress(ObjString* name, Value defval)
 {
     Value v;
     uint16_t offset = 0;
     if (!tableGet(&vm.symtabGlobals, name, &v)) {
-        writeValueArray(&vm.globals, UNDEF_VAL);
-        tableSet(&vm.symtabGlobals, name, NUMBER_VAL(vm.globals.count));
         offset = vm.globals.count;
+        tableSet(&vm.symtabGlobals, name, NUMBER_VAL(vm.globals.count));
+        writeValueArray(&vm.globals, defval);
     }
     else {
         offset = AS_NUMBER(v);
     }
-
+    LAX_LOG("%s->%d", name->chars, offset);
     return offset;
 }
 

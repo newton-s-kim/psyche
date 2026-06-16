@@ -650,7 +650,7 @@ static uint16_t parseVariable(const char* errorMessage)
 
     //< Local Variables parse-local
     // return identifierConstant(&parser.previous);
-    return getGlobalAddress(copyString(parser.previous.start, parser.previous.length));
+    return getGlobalAddress(copyString(parser.previous.start, parser.previous.length), NIL_VAL);
 }
 //< Global Variables parse-variable
 //> Local Variables mark-initialized
@@ -957,7 +957,7 @@ static void namedVariable(Token name, bool canAssign)
     }
     else {
         // arg = identifierConstant(&name);
-        arg = getGlobalAddress(copyString(name.start, name.length));
+        arg = getGlobalAddress(copyString(name.start, name.length), UNDEF_VAL);
         getOp = OP_GET_GLOBAL;
         setOp = OP_SET_GLOBAL;
     }
@@ -1368,7 +1368,7 @@ static void classDeclaration()
     //< Methods and Initializers class-name
     uint16_t nameConstant = identifierConstant(&parser.previous);
     declareVariable();
-    uint16_t gaddr = getGlobalAddress(copyString(parser.previous.start, parser.previous.length));
+    uint16_t gaddr = getGlobalAddress(copyString(parser.previous.start, parser.previous.length), NIL_VAL);
 
     emitShort(OP_CLASS, nameConstant);
     defineVariable(gaddr);
