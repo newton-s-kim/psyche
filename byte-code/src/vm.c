@@ -39,11 +39,7 @@ VM vm; // [one]
 //> Calls and Functions clock-native
 static Value rangeNative(int argCount, Value* args)
 {
-    Value v;
-    if (!tableGet(&vm.globals, copyString("List", 4), &v))
-        return NIL_VAL;
-    ObjClass* klass = AS_CLASS(v);
-    ObjList* list = AS_LIST(klass->call->function(0, NULL));
+    ObjList* list = AS_LIST(vm.listClass->call->function(0, NULL));
     int start = 0, end = 0, increment = 1;
     switch (argCount) {
     case 3:
