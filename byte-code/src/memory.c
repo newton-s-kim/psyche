@@ -303,7 +303,8 @@ static void markRoots()
     //< mark-open-upvalues
     //> mark-globals
 
-    markTable(&vm.globals);
+    markTable(&vm.symtabGlobals);
+    markArray(&vm.globals);
     //< mark-globals
     //> call-mark-compiler-roots
     markCompilerRoots();

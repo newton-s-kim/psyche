@@ -649,7 +649,8 @@ static uint16_t parseVariable(const char* errorMessage)
         return 0;
 
     //< Local Variables parse-local
-    return identifierConstant(&parser.previous);
+    // return identifierConstant(&parser.previous);
+    return getGlobalAddress(copyString(parser.previous.start, parser.previous.length));
 }
 //< Global Variables parse-variable
 //> Local Variables mark-initialized
@@ -955,7 +956,8 @@ static void namedVariable(Token name, bool canAssign)
         //< Closures named-variable-upvalue
     }
     else {
-        arg = identifierConstant(&name);
+        // arg = identifierConstant(&name);
+        arg = getGlobalAddress(copyString(name.start, name.length));
         getOp = OP_GET_GLOBAL;
         setOp = OP_SET_GLOBAL;
     }
@@ -1366,9 +1368,10 @@ static void classDeclaration()
     //< Methods and Initializers class-name
     uint16_t nameConstant = identifierConstant(&parser.previous);
     declareVariable();
+    uint16_t gaddr = getGlobalAddress(copyString(parser.previous.start, parser.previous.length));
 
     emitShort(OP_CLASS, nameConstant);
-    defineVariable(nameConstant);
+    defineVariable(gaddr);
 
     //> Methods and Initializers create-class-compiler
     ClassCompiler classCompiler;

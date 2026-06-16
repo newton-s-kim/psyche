@@ -131,9 +131,11 @@ void runtimeError(const char* format, ...)
 
 static void defineValue(const char* name, Value value)
 {
-    PUSH(OBJ_VAL(copyString(name, (int)strlen(name))));
+    ObjString* on = copyString(name, (int)strlen(name));
+    PUSH(OBJ_VAL(on));
     PUSH(value);
-    tableSet(&vm.globals, AS_STRING(vm.thread->stack[0]), vm.thread->stack[1]);
+    uint16_t offset = getGlobalAddress(on);
+    vm.globals.values[offset] = vm.thread->stack[1];
     DROP();
     DROP();
 }
@@ -167,7 +169,8 @@ void initVM()
     //< Garbage Collection init-gray-stack
     //> Global Variables init-globals
 
-    initTable(&vm.globals);
+    initTable(&vm.symtabGlobals);
+    initValueArray(&vm.globals);
     //< Global Variables init-globals
     //> Hash Tables init-strings
     initTable(&vm.strings);
@@ -197,7 +200,8 @@ void initVM()
 void freeVM()
 {
     //> Global Variables free-globals
-    freeTable(&vm.globals);
+    freeTable(&vm.symtabGlobals);
+    freeValueArray(&vm.globals);
     //< Global Variables free-globals
     //> Hash Tables free-strings
     freeTable(&vm.strings);
@@ -706,11 +710,14 @@ static InterpretResult run()
             //< Local Variables interpret-set-local
             //> Global Variables interpret-get-global
         case OP_GET_GLOBAL: {
-            ObjString* name = READ_STRING();
+            uint16_t name = READ_SHORT();
             Value value;
-            if (!tableGet(&vm.globals, name, &value)) {
-                runtimeError("Undefined variable '%s'.", name->chars);
+            if (vm.globals.count <= name || IS_UNDEF(vm.globals.values[name])) {
+                runtimeError("Undefined variable '%s'.", undefinedSymbol(name));
                 return INTERPRET_RUNTIME_ERROR;
+            }
+            else {
+                value = vm.globals.values[name];
             }
             PUSH(value);
             break;
@@ -718,19 +725,22 @@ static InterpretResult run()
             //< Global Variables interpret-get-global
             //> Global Variables interpret-define-global
         case OP_DEFINE_GLOBAL: {
-            ObjString* name = READ_STRING();
-            tableSet(&vm.globals, name, PEEK());
+            uint16_t name = READ_SHORT();
+            vm.globals.values[name] = PEEK();
             DROP();
             break;
         }
             //< Global Variables interpret-define-global
             //> Global Variables interpret-set-global
         case OP_SET_GLOBAL: {
-            ObjString* name = READ_STRING();
-            if (tableSet(&vm.globals, name, PEEK())) {
-                tableDelete(&vm.globals, name); // [delete]
-                runtimeError("Undefined variable '%s'.", name->chars);
+            uint16_t name = READ_SHORT();
+            if (vm.globals.count <= name || IS_UNDEF(vm.globals.values[name])) {
+                // tableDelete(&vm.globals, name); // [delete]
+                runtimeError("Undefined variable '%s'.", undefinedSymbol(name));
                 return INTERPRET_RUNTIME_ERROR;
+            }
+            else {
+                vm.globals.values[name] = PEEK();
             }
             break;
         }
@@ -1416,5 +1426,32 @@ bool runThread(Value f, int argc, Value* argv)
     if (ret)
         run();
     return ret;
+}
+
+uint16_t getGlobalAddress(ObjString* name)
+{
+    Value v;
+    uint16_t offset = 0;
+    if (!tableGet(&vm.symtabGlobals, name, &v)) {
+        writeValueArray(&vm.globals, UNDEF_VAL);
+        tableSet(&vm.symtabGlobals, name, NUMBER_VAL(vm.globals.count));
+        offset = vm.globals.count;
+    }
+    else {
+        offset = AS_NUMBER(v);
+    }
+
+    return offset;
+}
+
+const char* undefinedSymbol(uint16_t addr)
+{
+    Value v = NUMBER_VAL(addr);
+    for (int i = 0; i < vm.symtabGlobals.capacity; i++) {
+        if (valuesEqual(vm.symtabGlobals.entries[i].value, v)) {
+            return vm.symtabGlobals.entries[i].key->chars;
+        }
+    }
+    return "";
 }
 //< interpret

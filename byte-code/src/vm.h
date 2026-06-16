@@ -28,7 +28,8 @@ typedef struct {
     */
     ObjThread* thread;
     //> Global Variables vm-globals
-    Table globals;
+    Table symtabGlobals;
+    ValueArray globals;
     //< Global Variables vm-globals
     //> Hash Tables vm-strings
     Table strings;
@@ -84,5 +85,7 @@ Value pop();
 bool loadLibrary(Path* path, String* dl_name);
 void runtimeError(const char* format, ...);
 bool runThread(Value f, int argc, Value* argv);
+uint16_t getGlobalAddress(ObjString* name);
+const char* undefinedSymbol(uint16_t addr);
 
 #endif
