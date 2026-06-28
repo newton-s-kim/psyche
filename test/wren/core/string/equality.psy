@@ -1,0 +1,28 @@
+print "" == ""          // expect: true
+print "abcd" == "abcd"  // expect: true
+print "abcd" == "d"     // expect: false
+print "e" == "abcd"     // expect: false
+print "" == "abcd"      // expect: false
+
+// Not equal to other types.
+print "1" == 1        // expect: false
+print "true" == true  // expect: false
+
+print "" != ""          // expect: false
+print "abcd" != "abcd"  // expect: false
+print "abcd" != "d"     // expect: true
+print "e" != "abcd"     // expect: true
+print "" != "abcd"      // expect: true
+
+// Not equal to other types.
+print "1" != 1        // expect: true
+print "true" != true  // expect: true
+
+// Non-ASCII.
+print "vålue" == "value" // expect: false
+print "vålue" == "vålue" // expect: true
+
+// 8-bit clean.
+print "a\0b\0c" == "a" // expect: false
+print "a\0b\0c" == "abc" // expect: false
+print "a\0b\0c" == "a\0b\0c" // expect: true

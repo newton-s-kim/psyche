@@ -1,0 +1,24 @@
+// One byte UTF-8 Sequences.
+print "\u0041";     // expect: A
+print "\u007e";     // expect: ~
+
+// Two byte sequences.
+print "\u00b6";     // expect: ¶
+print "\u00de";     // expect: Þ
+
+// Three byte sequences.
+print "\u0950";     // expect: ॐ
+print "\u0b83";     // expect: ஃ
+
+// Capitalized hex.
+print "\u00B6";     // expect: ¶
+print "\u00DE";     // expect: Þ
+
+// Big escapes:
+var smile = "\U0001F603";
+var byteSmile = "\xf0\x9f\x98\x83";
+print byteSmile == smile; // expect: true
+
+print "<\U0001F64A>";       // expect: <🙊>
+print "<\U0001F680>";       // expect: <🚀>
+print "<\U00010318>";       // expect: <𐌘>

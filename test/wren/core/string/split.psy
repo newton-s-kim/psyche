@@ -1,0 +1,16 @@
+print "something".split("meth") // expect: [so, ing]
+print "something".split("some") // expect: [, thing]
+print "something".split("ing")  // expect: [someth, ]
+print "something".split("math") // expect: [something]
+
+// Multiple.
+print "somethingsomething".split("meth") // expect: [so, ingso, ing]
+print "abc abc abc".split(" ") // expect: [abc, abc, abc]
+print "abcabcabc".split("abc") // expect: [, , , ]
+
+// Non-ASCII.
+print "søméthîng".split("méth")  // expect: [sø, îng]
+print "søméthîng".split("meth") // expect: [søméthîng]
+
+// 8-bit clean.
+print "a\0b\0c".split("\0") // expect: [a, b, c]

@@ -1,0 +1,18 @@
+print "".size()   // expect: 0
+print "a string".size() // expect: 8
+
+// 8-bit clean.
+print "\0".size()  // expect: 1
+print "a\0b".size()  // expect: 3
+print "\0c".size()  // expect: 2
+print ("a\0b" + "\0c").size()  // expect: 5
+
+// Treats a UTF-8 sequence as a single item.
+//
+// Bytes:           11111
+//        012345678901234
+// Chars: sø mé ஃ  thî ng
+print "søméஃthîng".size() // expect: 10
+
+// Counts invalid UTF-8 one byte at a time.
+print "\xefok\xf7".size() // expect: 4

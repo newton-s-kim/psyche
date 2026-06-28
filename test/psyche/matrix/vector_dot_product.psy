@@ -1,0 +1,29 @@
+var a = Vector(10, 2, -6);
+var b = Vector(-0.5, 4, -3);
+print Vector.dot(a, b); // expect: 21
+
+a = Vector(-3, -1, 4);
+b = Vector(2, 14, 5);
+print Vector.dot(a, b); // expect: 0
+
+a = Vector(2, 3, 1);
+b = Vector(-1, 5, 1);
+print acos(Vector.dot(a, b) / (a.abs() * b.abs())); // expect: 0.77
+
+a = Vector(2, 5, 4);
+print acos(2 / a.abs()); // expect: 1.27
+print acos(5 / a.abs()); // expect: 0.73
+print acos(4 / a.abs()); // expect: 0.93
+
+a = Vector(2, 3, -4);
+b = Vector(1, 1, 2);
+print a.component(b); // expect: -0.557086015
+
+a = Vector(4, 1);
+b = Vector(2, 3);
+print a.project(b); // expect: <1.692307692,2.538461538>
+
+a = Vector(3, -1, 5);
+b = Vector(2, 1, 2);
+print a.project(b); // expect: <3.333333333,1.666666667,3.333333333>
+print a - a.project(b); // expect: <-0.333333333, 2.666666667,1.666666667>

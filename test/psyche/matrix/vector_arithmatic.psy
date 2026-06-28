@@ -1,0 +1,10 @@
+var a = Vector(1,4);
+var b = Vector(-6,3);
+print a + b; // expect: <-5,7>
+print a - b; // expect: <7,1>
+print 2*a - 3*b; // expect: <-16,17>
+
+a = Vector(4,2);
+b = Vector(-2,5);
+print a + b; // expect <2,7>
+print a - b; // expect <6,-3>

@@ -1,0 +1,14 @@
+print "abcd".startsWith("cd") // expect: false
+print "abcd".startsWith("a") // expect: true
+print "abcd".startsWith("abcd") // expect: true
+print "abcd".startsWith("abcde") // expect: false
+print "abcd".startsWith("") // expect: true
+
+// Non-ASCII.
+print "søméthîng".startsWith("sømé")  // expect: true
+print "søméthîng".startsWith("some") // expect: false
+
+// 8-bit clean.
+print "a\0b\0c".startsWith("a")  // expect: true
+print "a\0b\0c".startsWith("a\0")  // expect: true
+print "a\0b\0c".startsWith("b\0")  // expect: false
