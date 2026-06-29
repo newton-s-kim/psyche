@@ -16,5 +16,6 @@ if(ENABLE_GPROF)
 endif()
 
 add_subdirectory(byte-code)
-add_subdirectory(libs/math)
 add_subdirectory(psyche)
+add_subdirectory(pcsa)
+add_subdirectory(libs/math)

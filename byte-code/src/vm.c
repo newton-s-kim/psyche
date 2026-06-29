@@ -712,7 +712,7 @@ static InterpretResult run()
         case OP_GET_GLOBAL: {
             uint16_t name = READ_SHORT();
             Value value;
-	    LAX_LOG("global.count=%d", vm.globals.count);
+            LAX_LOG("global.count=%d", vm.globals.count);
             if (vm.globals.count <= name || IS_UNDEF(vm.globals.values[name])) {
                 runtimeError("Undefined variable '%s'.", undefinedSymbol(name));
                 return INTERPRET_RUNTIME_ERROR;

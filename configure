@@ -25,6 +25,7 @@ function print_help(){
    echo "  -h, --help  prints this screen"
    echo "  -l, --log  enables logging"
    echo "  -p, --print-code  prints code"
+   echo "  -r, --profile  builds in profiling mode"
    echo "  -t, --trace  enables stack tracing mode"
    echo "  -g, --log-gc  enables garbage collector logging"
 }

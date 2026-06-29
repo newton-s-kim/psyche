@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <readline/history.h>
+#include <readline/readline.h>
 //< Scanning on Demand main-includes
 #include "common.h"
 //> main-include-chunk
@@ -19,16 +21,14 @@
 
 static void repl()
 {
-    char line[1024];
+    char* line;
     for (;;) {
-        printf("> ");
-
-        if (!fgets(line, sizeof(line), stdin)) {
-            printf("\n");
-            break;
+        line = readline("psyche> ");
+        if (0 < strlen(line)) {
+            interpret(line);
+            add_history(line);
         }
-
-        interpret(line);
+        free(line);
     }
 }
 //< Scanning on Demand repl

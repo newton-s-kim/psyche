@@ -9,4 +9,4 @@ set_target_properties(psyche PROPERTIES
     CXX_EXTENSIONS OFF)
 target_compile_options(psyche PRIVATE -Werror -Wall -Wextra)
 #target_compile_definitions(psyche PRIVATE $<$<CONFIG:Debug>:LAX_GC_DEBUG=1;LAX_DEBUG=1>)
-target_link_libraries(psyche pcvm)
+target_link_libraries(psyche pcvm readline)
