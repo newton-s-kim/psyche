@@ -791,14 +791,14 @@ static void call(bool canAssign)
     emitBytes(OP_CALL, argCount);
 }
 //< Calls and Functions compile-call
-/*
+
 static void list(bool canAssign)
 {
     (void)canAssign;
     uint8_t argCount = listArgList();
     emitBytes(OP_LIST, argCount);
 }
-*/
+
 static void member(bool canAssign)
 {
     uint8_t argCount = listArgList();
@@ -1109,7 +1109,7 @@ ParseRule rules[] = {
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE}, // [big]
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LEFT_BRACKET] = {NULL, member, PREC_CALL}, // [big]
+    [TOKEN_LEFT_BRACKET] = {list, member, PREC_CALL}, // [big]
     [TOKEN_RIGHT_BRACKET] = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
     /* Compiling Expressions rules < Classes and Instances table-dot

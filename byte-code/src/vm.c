@@ -1283,6 +1283,13 @@ static InterpretResult run()
             break;
             //< Classes and Instances interpret-class
             //> Superclasses interpret-inherit
+        case OP_LIST: {
+            size_t argCount = READ_BYTE();
+            Value lst = vm.listClass->call->function(argCount, vm.thread->stackTop - argCount);
+            vm.thread->stackTop -= argCount;
+            PUSH(lst);
+            break;
+        }
         case OP_INHERIT: {
             Value superclass = NPEEK(1);
             //> inherit-non-class

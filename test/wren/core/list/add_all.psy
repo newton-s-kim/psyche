@@ -1,4 +1,4 @@
-var a = List(1);
+var a = [1];
 a.add(2, 3);
 print a; // expect: [1,2,3]
 a.add();
