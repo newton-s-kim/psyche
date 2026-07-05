@@ -396,7 +396,9 @@ def _defineTestSuites():
         "test/lox/for/statement_condition.lox": "skip",
     }
 
-    jloxTests = _merge_dicts({"test": "pass"}, javaNaNEquality, noJavaLimits, forInfinitive)
+    jloxTests = _merge_dicts(
+        {"test": "pass"}, javaNaNEquality, noJavaLimits, forInfinitive
+    )
 
     # loch behaves like jlox
     _allSuites["loch"] = Suite("loch", jloxTests)

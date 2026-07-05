@@ -556,7 +556,7 @@ static Value map_new(int argc, Value* argv)
     ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
     initTable(&map->map);
     if (0 < argc)
-        for (int index = 0; index < argc; index+=2)
+        for (int index = 0; index < argc; index += 2)
             tableSet(&map->map, AS_STRING(argv[index]), argv[index + 1]);
     return OBJ_VAL(map);
 }
