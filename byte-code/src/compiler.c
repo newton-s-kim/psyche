@@ -716,6 +716,7 @@ static uint8_t listArgList()
     consume(TOKEN_RIGHT_BRACKET, "Expect ']' after arguments.");
     return argCount;
 }
+
 /*
 static uint8_t mapArgList()
 {
@@ -742,6 +743,7 @@ static uint8_t mapArgList()
     return argCount;
 }
 */
+
 //> Jumping Back and Forth and
 static void and_(bool canAssign)
 {
