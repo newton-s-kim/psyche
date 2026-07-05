@@ -1290,6 +1290,13 @@ static InterpretResult run()
             PUSH(lst);
             break;
         }
+        case OP_MAP: {
+            size_t argCount = READ_BYTE();
+            Value lst = vm.mapClass->call->function(argCount, vm.thread->stackTop - argCount);
+            vm.thread->stackTop -= argCount;
+            PUSH(lst);
+            break;
+        }
         case OP_INHERIT: {
             Value superclass = NPEEK(1);
             //> inherit-non-class

@@ -99,6 +99,7 @@ typedef enum {
     OP_CLASS,
     //< Classes and Instances class-op
     OP_LIST,
+    OP_MAP,
     //> Superclasses inherit-op
     OP_INHERIT,
     //< Superclasses inherit-op

@@ -228,6 +228,8 @@ int disassembleInstruction(Chunk* chunk, int offset)
         //< Classes and Instances disassemble-class
     case OP_LIST:
         return simpleInstruction("OP_LIST", offset);
+    case OP_MAP:
+        return simpleInstruction("OP_MAP", offset);
         //> Superclasses disassemble-inherit
     case OP_INHERIT:
         return simpleInstruction("OP_INHERIT", offset);

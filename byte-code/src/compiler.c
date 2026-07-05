@@ -17,6 +17,8 @@
 #include "scanner.h"
 //> Compiling Expressions include-debug
 
+#include "log.h"
+
 // clang-format off
 /*
 program        → declaration* EOF ;
@@ -714,6 +716,32 @@ static uint8_t listArgList()
     consume(TOKEN_RIGHT_BRACKET, "Expect ']' after arguments.");
     return argCount;
 }
+/*
+static uint8_t mapArgList()
+{
+    uint8_t argCount = 0;
+    if (!check(TOKEN_RIGHT_BRACE)) {
+        do {
+            expression();
+            //> arg-limit
+            if (argCount == UINT8_MAX) {
+                error("Can't have more than 255 arguments.");
+            }
+            //< arg-limit
+            argCount++;
+            match(TOKEN_COLON);
+            expression();
+            if (argCount == UINT8_MAX) {
+                error("Can't have more than 255 arguments.");
+            }
+            argCount++;
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after arguments.");
+    LAX_LOG("right bracket is detected 3");
+    return argCount;
+}
+*/
 //> Jumping Back and Forth and
 static void and_(bool canAssign)
 {
@@ -810,6 +838,16 @@ static void member(bool canAssign)
         emitBytes(OP_GET_ELEMENT, argCount);
     }
 }
+
+/*
+static void map(bool canAssign)
+{
+    (void)canAssign;
+    uint8_t argCount = mapArgList();
+    emitBytes(OP_MAP, argCount);
+}
+*/
+
 //> Classes and Instances compile-dot
 static void dot(bool canAssign)
 {
@@ -1291,6 +1329,7 @@ static void block()
     }
 
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+    LAX_LOG("right bracket is detected");
 }
 //< Local Variables block
 //> Calls and Functions compile-function
@@ -1417,6 +1456,7 @@ static void classDeclaration()
     }
     //< Methods and Initializers class-body
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+    LAX_LOG("right bracket is detected 2");
     //> Methods and Initializers pop-class
     emitByte(OP_POP);
     //< Methods and Initializers pop-class

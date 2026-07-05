@@ -539,6 +539,15 @@ static Value map_size(Value receiver, int argc, Value* argv)
     }
     return NUMBER_VAL(size);
 }
+static Value map_clear(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjMap* map = AS_MAP(receiver);
+    freeTable(&map->map);
+    initTable(&map->map);
+    return NIL_VAL;
+}
 static Value map_new(int argc, Value* argv)
 {
     (void)argc;
@@ -546,6 +555,9 @@ static Value map_new(int argc, Value* argv)
     LAX_LOG("map_new(%d)", argc);
     ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
     initTable(&map->map);
+    if (0 < argc)
+        for (int index = 0; index < argc; index+=2)
+            tableSet(&map->map, AS_STRING(argv[index]), argv[index + 1]);
     return OBJ_VAL(map);
 }
 ObjClass* newMapClass()
@@ -556,6 +568,8 @@ ObjClass* newMapClass()
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)));
     method = copyString("size", 4);
     tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
+    method = copyString("clear", 5);
+    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_clear)));
     klass->call = newNative(map_new);
     return klass;
 }
