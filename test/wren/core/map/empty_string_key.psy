@@ -1,0 +1,5 @@
+var map = {
+  "": "empty string"
+};
+
+print map[""]; // expect: empty string

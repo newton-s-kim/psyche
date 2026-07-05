@@ -1,0 +1,16 @@
+print "".contains("");              // expect: true
+print "anything".contains("");      // expect: true
+print "something".contains("meth"); // expect: true
+print "something".contains("some"); // expect: true
+print "something".contains("ing");  // expect: true
+print "something".contains("math"); // expect: false
+
+// Non-ASCII.
+print "søméthîng".contains("méth");  // expect: true
+print "søméthîng".contains("meth"); // expect: false
+
+// 8-bit clean.
+print "a\0b\0c".contains("\0"); // expect: true
+print "a\0b\0c".contains("b"); // expect: true
+print "a\0b\0c".contains("b\0c"); // expect: true
+print "a\0b\0c".contains("bc"); // expect: false

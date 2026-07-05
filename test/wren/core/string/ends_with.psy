@@ -1,0 +1,15 @@
+print "abcd".endsWith("cd"); // expect: true
+print "abcd".endsWith("abcde"); // expect: false
+print "abcd".endsWith("abcd"); // expect: true
+print "abcd".endsWith("f"); // expect: false
+print "abcd".endsWith(""); // expect: true
+
+// Non-ASCII.
+print "søméthîng".endsWith("thîng");  // expect: true
+print "søméthîng".endsWith("thing"); // expect: false
+
+// 8-bit clean.
+print "a\0b\0c".endsWith("\0");  // expect: false
+print "a\0b\0c".endsWith("c");  // expect: true
+print "a\0b\0c".endsWith("\0c");  // expect: true
+print "a\0b\0c".endsWith("\0b");  // expect: false
