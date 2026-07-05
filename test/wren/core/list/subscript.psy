@@ -1,5 +1,5 @@
 // Returns elements.
-var list = List("a", "b", "c", "d");
+var list = ["a", "b", "c", "d"];
 print list[0]; // expect: a
 print list[1]; // expect: b
 print list[2]; // expect: c
