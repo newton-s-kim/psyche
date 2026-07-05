@@ -717,7 +717,6 @@ static uint8_t listArgList()
     return argCount;
 }
 
-/*
 static uint8_t mapArgList()
 {
     uint8_t argCount = 0;
@@ -742,7 +741,6 @@ static uint8_t mapArgList()
     LAX_LOG("right bracket is detected 3");
     return argCount;
 }
-*/
 
 //> Jumping Back and Forth and
 static void and_(bool canAssign)
@@ -841,14 +839,12 @@ static void member(bool canAssign)
     }
 }
 
-/*
 static void map(bool canAssign)
 {
     (void)canAssign;
     uint8_t argCount = mapArgList();
     emitBytes(OP_MAP, argCount);
 }
-*/
 
 //> Classes and Instances compile-dot
 static void dot(bool canAssign)
@@ -1147,7 +1143,7 @@ ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     //< Calls and Functions infix-left-paren
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE}, // [big]
+    [TOKEN_LEFT_BRACE] = {map, NULL, PREC_NONE}, // [big]
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACKET] = {list, member, PREC_CALL}, // [big]
     [TOKEN_RIGHT_BRACKET] = {NULL, NULL, PREC_NONE},
