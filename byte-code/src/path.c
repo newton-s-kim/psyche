@@ -5,6 +5,8 @@
 
 #include "path.h"
 
+#include "dlmalloc/malloc.h"
+
 // The maximum number of components in a path. We can't normalize a path that
 // contains more than this number of parts. The number here assumes a max path
 // length of 4096, which is common on Linux, and then assumes each component is
@@ -32,7 +34,7 @@ static void ensureCapacity(Path* path, size_t capacity)
     while (newCapacity < capacity)
         newCapacity *= 2;
 
-    path->chars = (char*)realloc(path->chars, newCapacity);
+    path->chars = (char*)dlrealloc(path->chars, newCapacity);
     path->capacity = newCapacity;
 }
 
@@ -117,8 +119,8 @@ PathType pathType(const char* path)
 
 Path* pathNew(const char* string)
 {
-    Path* path = (Path*)malloc(sizeof(Path));
-    path->chars = (char*)malloc(1);
+    Path* path = (Path*)dlmalloc(sizeof(Path));
+    path->chars = (char*)dlmalloc(1);
     path->chars[0] = '\0';
     path->length = 0;
     path->capacity = 0;
@@ -131,8 +133,8 @@ Path* pathNew(const char* string)
 void pathFree(Path* path)
 {
     if (path->chars)
-        free(path->chars);
-    free(path);
+        dlfree(path->chars);
+    dlfree(path);
 }
 
 void pathDirName(Path* path)
@@ -285,17 +287,17 @@ void pathNormalize(Path* path)
         pathAppendChar(result, '.');
 
     // Copy back into the original path.
-    free(path->chars);
+    dlfree(path->chars);
     path->capacity = result->capacity;
     path->chars = result->chars;
     path->length = result->length;
 
-    free(result);
+    dlfree(result);
 }
 
 char* pathToString(Path* path)
 {
-    char* string = (char*)malloc(path->length + 1);
+    char* string = (char*)dlmalloc(path->length + 1);
     memcpy(string, path->chars, path->length);
     string[path->length] = '\0';
     return string;

@@ -5,6 +5,9 @@
 #include "common.h"
 //> Strings memory-include-object
 #include "object.h"
+
+#include "dlmalloc/malloc.h"
+
 //< Strings memory-include-object
 
 //> Strings allocate

@@ -1,6 +1,9 @@
 #include "str.h"
 #include "common.h"
 #include "log.h"
+
+#include "dlmalloc/malloc.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,9 +12,9 @@ String* strNewWithLength(const char* str, const size_t length)
     LAX_LOG("strNewWithLength(%s,%lu)", str, length);
     if (NULL == str)
         return NULL;
-    String* ret = malloc(sizeof(String));
+    String* ret = dlmalloc(sizeof(String));
     ret->size = length;
-    ret->c_str = calloc(ret->size + 1, sizeof(char));
+    ret->c_str = dlcalloc(ret->size + 1, sizeof(char));
     strncpy(ret->c_str, str, length);
     return ret;
 }
@@ -26,8 +29,8 @@ void strFree(String* str)
     if (!str)
         return;
     if (str->c_str)
-        free(str->c_str);
-    free(str);
+        dlfree(str->c_str);
+    dlfree(str);
 }
 
 bool strAppend(String* str, const char* cstr)
@@ -39,7 +42,7 @@ bool strAppend(String* str, const char* cstr)
     if (!cstr)
         return false;
     str->size += strlen(cstr);
-    str->c_str = realloc(str->c_str, str->size + 1);
+    str->c_str = dlrealloc(str->c_str, str->size + 1);
     strcat(str->c_str, cstr);
     str->c_str[str->size] = 0;
     return true;

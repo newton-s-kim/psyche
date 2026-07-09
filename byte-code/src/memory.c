@@ -42,11 +42,11 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize)
 
     //< Garbage Collection call-collect
     if (newSize == 0) {
-        free(pointer);
+        dlfree(pointer);
         return NULL;
     }
 
-    void* result = realloc(pointer, newSize);
+    void* result = dlrealloc(pointer, newSize);
     //> out-of-memory
     if (result == NULL)
         exit(1);
@@ -76,7 +76,7 @@ void markObject(Obj* object)
 
     if (vm.grayCapacity < vm.grayCount + 1) {
         vm.grayCapacity = GROW_CAPACITY(vm.grayCapacity);
-        vm.grayStack = (Obj**)realloc(vm.grayStack, sizeof(Obj*) * vm.grayCapacity);
+        vm.grayStack = (Obj**)dlrealloc(vm.grayStack, sizeof(Obj*) * vm.grayCapacity);
         //> exit-gray-stack
 
         if (vm.grayStack == NULL)
@@ -405,7 +405,7 @@ void freeObjects()
     }
     //> Garbage Collection free-gray-stack
 
-    free(vm.grayStack);
+    dlfree(vm.grayStack);
     //< Garbage Collection free-gray-stack
 }
 //< Strings free-objects
