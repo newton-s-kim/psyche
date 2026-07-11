@@ -1,0 +1,78 @@
+# The Computer Language Benchmarks Game
+# http://benchmarksgame.alioth.debian.org/
+
+#    contributed by Isaac Gouy
+#    converted to Java by Oleg Mazurov
+#    converted to Python by Buck Golemon
+#    modified by Justin Peel
+
+fun fannkuch(n) {
+    var maxFlipsCount = 0;
+    var permSign = true;
+    var checksum = 0;
+
+    var perm1 = List(range(n));
+    var count = List(perm1.size());
+    for(var i = 0 ; i < perm1.size() ; i++) count[i] = perm1[i];
+    var rxrange = range(2, n - 1);
+    var nm = n - 1;
+    while (true) {
+        var k = perm1[0];
+        if (0 != k) {
+            var perm = perm1.size();
+            var flipsCount = 1;
+            var kk = perm[k];
+            while (0 != kk) {
+                for(var i = k ; i < perm.size() ; i = i + 1) perm[i - k] = perm[i];
+                flipsCount += 1;
+                k = kk;
+                kk = perm[kk];
+            }
+            if (maxFlipsCount < flipsCount) {
+                maxFlipsCount = flipsCount;
+            }
+            if(flipsCount) {
+                checksum += permSign;
+            } else {
+                checksum += flipsCount;
+            }
+        }
+
+        # Use incremental change to generate another permutation
+        if (permSign) {
+            var temp = perm1[0];
+            perm1[0] = perm1[1];
+            perm1[1] = temp;
+            permSign = false;
+        } else {
+            var temp = perm1[1];
+            perm1[1] = perm1[2];
+            perm1[2] = temp;
+            permSign = true;
+            var broken = false;
+            for (var i = 0 ; i < rxrange.size() ; i = i + 1) {
+                var r = rxrange[i];
+                if (count[r]) {
+                    broken = true;
+                    break;
+                }
+                count[r] = r;
+                perm0 = perm1[0];
+                for(var i = 1 ; i < r + 3; i = i + 1) perm1[i - 1] = perm1[i];
+                perm1[r+1] = perm0;
+            }
+            if(broken) {
+                var r = nm;
+                if (!count[r]) {
+                    print checksum;
+                    return maxFlipsCount;
+                }
+            }
+            count[r] -= 1;
+        }
+    }
+}
+
+n = 9;
+
+print "Pfannkuchen(",n ,") = ", fannkuch(n);

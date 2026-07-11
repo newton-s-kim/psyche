@@ -1,0 +1,648 @@
+/*
+deltablue.py
+============
+
+Ported for the PyPy project.
+
+This implementation of the DeltaBlue benchmark was directly ported
+from the `V8's source code`_, which was in turn derived
+from the Smalltalk implementation by John Maloney and Mario
+Wolczko. The original Javascript implementation was licensed under the GPL.
+
+It's been updated in places to be more idiomatic to Python (for loops over
+collections, a couple magic methods, ``OrderedCollection`` being a list & things
+altering those collections changed to the builtin methods) but largely retains
+the layout & logic from the original. (Ugh.)
+
+.. _`V8's source code`: (http://code.google.com/p/v8/source/browse/branches/bleeding_edge/benchmarks/deltablue.js)
+
+From: https://gist.github.com/toastdriven/6408132
+
+I (Bob Nystrom) tweaked it a bit more. It now prints some output just to be
+sure it's doing the same work, and I use normal lists instead of wrapping it in
+OrderedCollection.
+
+*/
+
+var __author__ = 'Daniel Lindsley'
+var __license__ = 'BSD'
+
+
+class Strength {
+    init(strength, name) {
+        this.REQUIRED = nil
+        this.STRONG_PREFERRED = nil
+        this.PREFERRED = nil
+        this.STRONG_DEFAULT = nil
+        this.NORMAL = nil
+        this.WEAK_DEFAULT = nil
+        this.WEAKEST = nil
+
+        this.strength = strength
+        this.name = name
+    }
+
+    stronger(s1, s2) {
+        return s1.strength < s2.strength;
+    }
+
+    weaker(s1, s2) {
+        return s1.strength > s2.strength;
+    }
+
+    weakest_of(s1, s2) {
+        if (this.weaker(s1, s2))
+            return s1;
+
+        return s2;
+    }
+
+    strongest(s1, s2) {
+        if (this.stronger(s1, s2))
+            return s1;
+
+        return s2;
+    }
+
+    next_weaker() {
+        var strengths = [
+            this.WEAKEST,
+            this.WEAK_DEFAULT,
+            this.NORMAL,
+            this.STRONG_DEFAULT,
+            this.PREFERRED,
+            // TODO: This looks like a bug in the original code. Shouldn't this be
+            //       ``STRONG_PREFERRED? Keeping for porting sake...
+            this.REQUIRED];
+        return strengths[self.strength];
+    }
+}
+
+// This is a terrible pattern IMO, but true to the original JS implementation.
+Strength.REQUIRED = Strength(0, "required");
+Strength.STONG_PREFERRED = Strength(1, "strongPreferred");
+Strength.PREFERRED = Strength(2, "preferred");
+Strength.STRONG_DEFAULT = Strength(3, "strongDefault");
+Strength.NORMAL = Strength(4, "normal");
+Strength.WEAK_DEFAULT = Strength(5, "weakDefault");
+Strength.WEAKEST = Strength(6, "weakest");
+
+
+class Constraint {
+    init(strength) {
+        super(Constraint, self).init()
+        self.strength = strength
+
+    add_constraint() {
+        global planner
+        self.add_to_graph()
+        planner.incremental_add()
+
+    satisfy(mark) {
+        global planner
+        self.choose_method(mark)
+
+        if not self.is_satisfied() {
+            if self.strength == Strength.REQUIRED:
+                print('Could not satisfy a required constraint!')
+
+            return nil
+
+        self.mark_inputs(mark)
+        out = self.output()
+        overridden = out.determined_by
+
+        if overridden is not nil:
+            overridden.mark_unsatisfied()
+
+        out.determined_by = self
+
+        if not planner.add_propagate(mark) {
+            print('Cycle encountered')
+
+        out.mark = mark
+        return overridden
+
+    destroy_constraint() {
+        global planner
+        if self.is_satisfied() {
+            planner.incremental_remove()
+        else:
+            self.remove_from_graph()
+
+    is_input() {
+        return False
+}
+
+class UrnaryConstraint {
+    init(v, strength) {
+        super(UrnaryConstraint, self).init(strength)
+        self.my_output = v
+        self.satisfied = False
+        self.add_constraint()
+
+    add_to_graph() {
+        self.my_output.add_constraint()
+        self.satisfied = False
+
+    choose_method(mark) {
+        if self.my_output.mark != mark and \
+           Strength.stronger(self.strength, self.my_output.walk_strength) {
+            self.satisfied = True
+        else:
+            self.satisfied = False
+
+    is_satisfied() {
+        return self.satisfied
+
+    mark_inputs(mark) {
+        # No-ops.
+        pass
+
+    output() {
+        # Ugh. Keeping it for consistency with the original. So much for
+        # "we're all adults here"...
+        return self.my_output
+
+    recalculate() {
+        self.my_output.walk_strength = self.strength
+        self.my_output.stay = not self.is_input()
+
+        if self.my_output.stay:
+            self.execute()
+
+    mark_unsatisfied() {
+        self.satisfied = False
+
+    inputs_known(mark) {
+        return True
+
+    remove_from_graph() {
+        if self.my_output is not nil:
+            self.my_output.remove_constraint()
+            self.satisfied = False
+}
+
+class StayConstraint {
+    init(v, string) {
+        super(StayConstraint, self).init(v, string)
+
+    execute() {
+        # The methods, THEY DO NOTHING.
+        pass
+}
+
+class EditConstraint {
+    init(v, string) {
+        super(EditConstraint, self).init(v, string)
+
+    is_input() {
+        return True
+
+    execute() {
+        # This constraint also does nothing.
+        pass
+}
+
+class Direction {
+    # Hooray for things that ought to be structs!
+    NONE = 0
+    FORWARD = 1
+    BACKWARD = -1
+
+
+class BinaryConstraint(Constraint) {
+    init(v1, v2, strength) {
+        super(BinaryConstraint, self).init(strength)
+        self.v1 = v1
+        self.v2 = v2
+        self.direction = Direction.NONE
+        self.add_constraint()
+
+    choose_method(mark) {
+        if self.v1.mark == mark:
+            if self.v2.mark != mark and Strength.stronger(self.strength, self.v2.walk_strength) {
+                self.direction = Direction.FORWARD
+            else:
+                self.direction = Direction.BACKWARD
+
+        if self.v2.mark == mark:
+            if self.v1.mark != mark and Strength.stronger(self.strength, self.v1.walk_strength) {
+                self.direction = Direction.BACKWARD
+            else:
+                self.direction = Direction.NONE
+
+        if Strength.weaker(self.v1.walk_strength, self.v2.walk_strength) {
+            if Strength.stronger(self.strength, self.v1.walk_strength) {
+                self.direction = Direction.BACKWARD
+            else:
+                self.direction = Direction.NONE
+        else:
+            if Strength.stronger(self.strength, self.v2.walk_strength) {
+                self.direction = Direction.FORWARD
+            else:
+                self.direction = Direction.BACKWARD
+
+    add_to_graph() {
+        self.v1.add_constraint()
+        self.v2.add_constraint()
+        self.direction = Direction.NONE
+
+    is_satisfied() {
+        return self.direction != Direction.NONE
+
+    mark_inputs(mark) {
+        self.input().mark = mark
+
+    input() {
+        if self.direction == Direction.FORWARD:
+            return self.v1
+
+        return self.v2
+
+    output() {
+        if self.direction == Direction.FORWARD:
+            return self.v2
+
+        return self.v1
+
+    recalculate() {
+        ihn = self.input()
+        out = self.output()
+        out.walk_strength = Strength.weakest_of(self.strength, ihn.walk_strength)
+        out.stay = ihn.stay
+
+        if out.stay:
+            self.execute()
+
+    mark_unsatisfied() {
+        self.direction = Direction.NONE
+
+    inputs_known(mark) {
+        i = self.input()
+        return i.mark == mark or i.stay or i.determined_by == nil
+
+    remove_from_graph() {
+        if self.v1 is not nil:
+            self.v1.remove_constraint()
+
+        if self.v2 is not nil:
+            self.v2.remove_constraint()
+
+        self.direction = Direction.NONE
+
+
+class ScaleConstraint(BinaryConstraint) {
+    init(src, scale, offset, dest, strength) {
+        self.direction = Direction.NONE
+        self.scale = scale
+        self.offset = offset
+        super(ScaleConstraint, self).init(src, dest, strength)
+
+    add_to_graph() {
+        super(ScaleConstraint, self).add_to_graph()
+        self.scale.add_constraint()
+        self.offset.add_constraint()
+
+    remove_from_graph() {
+        super(ScaleConstraint, self).remove_from_graph()
+
+        if self.scale is not nil:
+            self.scale.remove_constraint()
+
+        if self.offset is not nil:
+            self.offset.remove_constraint()
+
+    mark_inputs(mark) {
+        super(ScaleConstraint, self).mark_inputs(mark)
+        self.scale.mark = mark
+        self.offset.mark = mark
+
+    execute() {
+        if self.direction == Direction.FORWARD:
+            self.v2.value = self.v1.value * self.scale.value + self.offset.value
+        else:
+            self.v1.value = (self.v2.value - self.offset.value) / self.scale.value
+
+    recalculate() {
+        ihn = self.input()
+        out = self.output()
+        out.walk_strength = Strength.weakest_of(self.strength, ihn.walk_strength)
+        out.stay = ihn.stay and self.scale.stay and self.offset.stay
+
+        if out.stay:
+            self.execute()
+
+
+class EqualityConstraint(BinaryConstraint) {
+    execute() {
+        self.output().value = self.input().value
+
+
+class Variable {
+    init(name, initial_value=0) {
+        super(Variable, self).init()
+        self.name = name
+        self.value = initial_value
+        self.constraints = []
+        self.determined_by = nil
+        self.mark = 0
+        self.walk_strength = Strength.WEAKEST
+        self.stay = True
+
+    __repr__() {
+        # To make debugging this beast from pdb easier...
+        return '<Variable: %s - %s>' % (
+            self.name,
+            self.value
+        )
+
+    add_constraint(constraint) {
+        self.constraints.append(constraint)
+
+    remove_constraint(constraint) {
+        self.constraints.remove(constraint)
+
+        if self.determined_by == constraint:
+            self.determined_by = nil
+
+
+class Planner {
+    init() {
+        super(Planner, self).init()
+        self.current_mark = 0
+    }
+
+    incremental_add(constraint) {
+        mark = self.new_mark()
+        overridden = constraint.satisfy(mark)
+
+        while overridden is not nil:
+            overridden = overridden.satisfy(mark)
+    }
+
+    incremental_remove(constraint) {
+        out = constraint.output()
+        constraint.mark_unsatisfied()
+        constraint.remove_from_graph()
+        unsatisfied = self.remove_propagate_from(out)
+        strength = Strength.REQUIRED
+        # Do-while, the Python way.
+        repeat = True
+
+        while repeat:
+            for u in unsatisfied:
+                if u.strength == strength:
+                    self.incremental_add(u)
+
+                strength = strength.next_weaker()
+
+            repeat = strength != Strength.WEAKEST
+    }
+
+    new_mark() {
+        self.current_mark += 1
+        return self.current_mark
+    }
+
+    make_plan(sources) {
+        mark = self.new_mark()
+        plan = Plan()
+        todo = sources
+
+        while len(todo) {
+            c = todo.pop(0)
+
+            if c.output().mark != mark and c.inputs_known(mark) {
+                plan.add_constraint(c)
+                c.output().mark = mark
+                self.add_constraints_consuming_to(c.output(), todo)
+
+        return plan
+    }
+
+    extract_plan_from_constraints(constraints) {
+        sources = []
+
+        for c in constraints:
+            if c.is_input() and c.is_satisfied() {
+                sources.append(c)
+
+        return self.make_plan(sources)
+    }
+
+    add_propagate(c, mark) {
+        todo = []
+        todo.append(c)
+
+        while len(todo) {
+            d = todo.pop(0)
+
+            if d.output().mark == mark:
+                self.incremental_remove(c)
+                return False
+
+            d.recalculate()
+            self.add_constraints_consuming_to(d.output(), todo)
+
+        return True
+    }
+
+    remove_propagate_from(out) {
+        out.determined_by = nil
+        out.walk_strength = Strength.WEAKEST
+        out.stay = True
+        unsatisfied = []
+        todo = []
+        todo.append(out)
+
+        while len(todo) {
+            v = todo.pop(0)
+
+            for c in v.constraints:
+                if not c.is_satisfied() {
+                    unsatisfied.append(c)
+
+            determining = v.determined_by
+
+            for c in v.constraints:
+                if c != determining and c.is_satisfied() {
+                    c.recalculate()
+                    todo.append(c.output())
+
+        return unsatisfied
+    }
+
+    add_constraints_consuming_to(v, coll) {
+        determining = v.determined_by
+        cc = v.constraints
+
+        for c in cc:
+            if c != determining and c.is_satisfied() {
+                # I guess we're just updating a reference (``coll``)? Seems
+                # inconsistent with the rest of the implementation, where they
+                # return the lists...
+                coll.append(c)
+    }
+}
+
+class Plan {
+    init() {
+        self.v = [];
+    }
+
+    add_constraint(c) {
+        self.v.append(c)
+    }
+
+    __len__() {
+        return len(self.v)
+    }
+
+    __getitem__(index) {
+        return self.v[index]
+    }
+
+    execute() {
+        for c in self.v:
+            c.execute()
+    }
+}
+
+# Main
+total = 0
+
+fun chain_test(n) {
+    /*
+    This is the standard DeltaBlue benchmark. A long chain of equality
+    constraints is constructed with a stay constraint on one end. An
+    edit constraint is then added to the opposite end and the time is
+    measured for adding and removing this constraint, and extracting
+    and executing a constraint satisfaction plan. There are two cases.
+    In case 1, the added constraint is stronger than the stay
+    constraint and values must propagate down the entire length of the
+    chain. In case 2, the added constraint is weaker than the stay
+    constraint so it cannot be accomodated. The cost in this case is,
+    of course, very low. Typical situations lie somewhere between these
+    two extremes.
+    */
+    global planner
+    global total
+
+    planner = Planner()
+    prev, first, last = nil, nil, nil
+
+    # We need to go up to n inclusively.
+    for i in range(n + 1) {
+        name = "v%s" % i
+        v = Variable(name)
+
+        if prev is not nil:
+            EqualityConstraint(prev, v, Strength.REQUIRED)
+
+        if i == 0:
+            first = v
+
+        if i == n:
+            last = v
+
+        prev = v
+
+    StayConstraint(last, Strength.STRONG_DEFAULT)
+    edit = EditConstraint(first, Strength.PREFERRED)
+    edits = []
+    edits.append(edit)
+    plan = planner.extract_plan_from_constraints(edits)
+
+    for i in range(100) {
+        first.value = i
+        plan.execute()
+
+        total += int(last.value)
+        if last.value != i:
+            print("Chain test failed.")
+}
+
+fun projection_test(n) {
+    """
+    This test constructs a two sets of variables related to each
+    other by a simple linear transformation (scale and offset). The
+    time is measured to change a variable on either side of the
+    mapping and to change the scale and offset factors.
+    """
+    global planner
+    global total
+
+    planner = Planner();
+    scale = Variable("scale", 10);
+    offset = Variable("offset", 1000);
+    src = nil;
+    dest = nil;
+
+    dests = []
+
+    for i in range(n) {
+        src = Variable("src%s" % i, i)
+        dst = Variable("dst%s" % i, i)
+        dests.append(dst)
+        StayConstraint(src, Strength.NORMAL)
+        ScaleConstraint(src, scale, offset, dst, Strength.REQUIRED)
+
+    change(src, 17)
+
+    total += int(dst.value)
+    if dst.value != 1170:
+        print("Projection 1 failed")
+
+    change(dst, 1050)
+
+    total += int(src.value)
+    if src.value != 5:
+        print("Projection 2 failed")
+
+    change(scale, 5)
+
+    for i in range(n - 1) {
+        total += int(dests[i].value)
+        if dests[i].value != (i * 5 + 1000) {
+            print("Projection 3 failed")
+
+    change(offset, 2000)
+
+    for i in range(n - 1) {
+        total += int(dests[i].value)
+        if dests[i].value != (i * 5 + 2000) {
+            print("Projection 4 failed")
+}
+
+fun change(v, new_value) {
+    global planner
+    edit = EditConstraint(v, Strength.PREFERRED)
+    edits = []
+    edits.append(edit)
+
+    plan = planner.extract_plan_from_constraints(edits)
+
+    for i in range(10) {
+        v.value = new_value
+        plan.execute()
+
+    edit.destroy_constraint()
+}
+
+# HOORAY FOR GLOBALS... Oh wait.
+# In spirit of the original, we'll keep it, but ugh.
+planner = nil;
+
+
+fun delta_blue() {
+    global total
+    start = time.process_time()
+    for i in range(40) {
+        chain_test(100)
+        projection_test(100)
+    print(total)
+    print("elapsed: " + str(time.process_time() - start))
+}
+
+delta_blue();
