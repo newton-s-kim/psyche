@@ -170,6 +170,7 @@ void initVM()
     //> Global Variables init-globals
 
     initTable(&vm.symtabGlobals);
+    initTable(&vm.symtabMethods);
     initValueArray(&vm.globals);
     //< Global Variables init-globals
     //> Hash Tables init-strings
@@ -205,6 +206,7 @@ void freeVM()
 {
     //> Global Variables free-globals
     freeTable(&vm.symtabGlobals);
+    freeTable(&vm.symtabMethods);
     freeValueArray(&vm.globals);
     //< Global Variables free-globals
     //> Hash Tables free-strings
@@ -1463,12 +1465,39 @@ uint16_t getGlobalAddress(ObjString* name, Value defval)
     return offset;
 }
 
+uint16_t getMethodAddress(ValueArray* methods, ObjString* name, Value defval)
+{
+    Value v;
+    uint16_t offset = 0;
+    if (!tableGet(&vm.symtabMethods, name, &v)) {
+        offset = methods->count;
+        tableSet(&vm.symtabMethods, name, NUMBER_VAL(methods->count));
+        writeValueArray(methods, defval);
+    }
+    else {
+        offset = AS_NUMBER(v);
+    }
+    LAX_LOG("%s->%d", name->chars, offset);
+    return offset;
+}
+
 const char* undefinedSymbol(uint16_t addr)
 {
     Value v = NUMBER_VAL(addr);
     for (int i = 0; i < vm.symtabGlobals.capacity; i++) {
         if (valuesEqual(vm.symtabGlobals.entries[i].value, v)) {
             return vm.symtabGlobals.entries[i].key->chars;
+        }
+    }
+    return "";
+}
+
+const char* undefinedMethod(uint16_t addr)
+{
+    Value v = NUMBER_VAL(addr);
+    for (int i = 0; i < vm.symtabMethods.capacity; i++) {
+        if (valuesEqual(vm.symtabMethods.entries[i].value, v)) {
+            return vm.symtabMethods.entries[i].key->chars;
         }
     }
     return "";

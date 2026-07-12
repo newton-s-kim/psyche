@@ -29,6 +29,7 @@ typedef struct {
     ObjThread* thread;
     //> Global Variables vm-globals
     Table symtabGlobals;
+    Table symtabMethods;
     ValueArray globals;
     //< Global Variables vm-globals
     //> Hash Tables vm-strings

@@ -305,6 +305,7 @@ static void markRoots()
     //> mark-globals
 
     markTable(&vm.symtabGlobals);
+    markTable(&vm.symtabMethods);
     markArray(&vm.globals);
     //< mark-globals
     //> call-mark-compiler-roots
