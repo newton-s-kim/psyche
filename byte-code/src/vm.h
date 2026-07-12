@@ -37,6 +37,7 @@ typedef struct {
     //< Hash Tables vm-strings
     //> Methods and Initializers vm-init-string
     ObjString* initString;
+    int initAddress;
     //< Methods and Initializers vm-init-string
     //> Closures open-upvalues-field
     ObjUpvalue* openUpvalues;
@@ -88,6 +89,8 @@ bool loadLibrary(Path* path, String* dl_name);
 void runtimeError(const char* format, ...);
 bool runThread(Value f, int argc, Value* argv);
 uint16_t getGlobalAddress(ObjString* name, Value defval);
+uint16_t getMethodAddress(ObjString* name);
 const char* undefinedSymbol(uint16_t addr);
+const char* undefinedMethod(uint16_t addr);
 
 #endif

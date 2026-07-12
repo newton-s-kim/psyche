@@ -178,9 +178,9 @@ typedef struct {
     Obj obj;
     ObjString* name;
     //> Methods and Initializers class-methods
-    Table methods;
+    ValueArray methods;
     //< Methods and Initializers class-methods
-    Table staticMethods;
+    ValueArray staticMethods;
     ObjNative* call;
 } ObjClass;
 //< Classes and Instances obj-class
@@ -189,7 +189,7 @@ typedef struct {
 typedef struct {
     Obj obj;
     ObjClass* klass;
-    Table fields; // [fields]
+    ValueArray fields; // [fields]
 } ObjInstance;
 //< Classes and Instances obj-instance
 

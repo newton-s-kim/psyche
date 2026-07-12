@@ -850,7 +850,8 @@ static void map(bool canAssign)
 static void dot(bool canAssign)
 {
     consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
-    uint16_t name = identifierConstant(&parser.previous);
+    // uint16_t name = identifierConstant(&parser.previous);
+    uint16_t name = getMethodAddress(copyString(parser.previous.start, parser.previous.length));
 
     if (canAssign && match(TOKEN_EQUAL)) {
         expression();
@@ -1063,7 +1064,8 @@ static void super_(bool canAssign)
     //< super-errors
     consume(TOKEN_DOT, "Expect '.' after 'super'.");
     consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
-    uint16_t name = identifierConstant(&parser.previous);
+    // uint16_t name = identifierConstant(&parser.previous);
+    uint16_t name = getMethodAddress(copyString(parser.previous.start, parser.previous.length));
     //> super-get
 
     namedVariable(syntheticToken("this"), false);
@@ -1374,7 +1376,8 @@ static void function(FunctionType type)
 static void method()
 {
     consume(TOKEN_IDENTIFIER, "Expect method name.");
-    uint16_t constant = identifierConstant(&parser.previous);
+    // uint16_t constant = identifierConstant(&parser.previous);
+    uint16_t constant = getMethodAddress(copyString(parser.previous.start, parser.previous.length));
     //> method-body
 
     //< method-body

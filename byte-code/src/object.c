@@ -58,8 +58,8 @@ ObjClass* newClass(ObjString* name)
     ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
     klass->name = name; // [klass]
                         //> Methods and Initializers init-methods
-    initTable(&klass->methods);
-    initTable(&klass->staticMethods);
+    initValueArray(&klass->methods);
+    initValueArray(&klass->staticMethods);
     //< Methods and Initializers init-methods
     klass->call = NULL;
     return klass;
@@ -102,7 +102,7 @@ ObjInstance* newInstance(ObjClass* klass)
 {
     ObjInstance* instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
     instance->klass = klass;
-    initTable(&instance->fields);
+    initValueArray(&instance->fields);
     return instance;
 }
 //< Classes and Instances new-instance
@@ -494,22 +494,22 @@ ObjClass* newListClass()
 {
     ObjString* name = copyString("List", 4);
     ObjClass* klass = newClass(name);
-    ObjString* method = copyString("add", 3);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_add)));
-    method = copyString("size", 4);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_size)));
-    method = copyString("insert", 6);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_insert)));
-    method = copyString("contains", 8);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_contains)));
-    method = copyString("clear", 5);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)));
-    method = copyString("indexOf", 7);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
-    method = copyString("each", 4);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_each)));
-    method = copyString("filled", 6);
-    tableSet(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
+    int method = getMethodAddress(copyString("add", 3));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_add)));
+    method = getMethodAddress(copyString("size", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_size)));
+    method = getMethodAddress(copyString("insert", 6));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_insert)));
+    method = getMethodAddress(copyString("contains", 8));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_contains)));
+    method = getMethodAddress(copyString("clear", 5));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)));
+    method = getMethodAddress(copyString("indexOf", 7));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
+    method = getMethodAddress(copyString("each", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_each)));
+    method = getMethodAddress(copyString("filled", 6));
+    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
     klass->call = newNative(list_new);
     return klass;
 }
@@ -525,8 +525,8 @@ ObjClass* newSystemClass()
 {
     ObjString* name = copyString("System", 6);
     ObjClass* klass = newClass(name);
-    ObjString* method = copyString("gc", 2);
-    tableSet(&klass->staticMethods, method, OBJ_VAL(newNative(sys_gc)));
+    int method = getMethodAddress(copyString("gc", 2));
+    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(sys_gc)));
     return klass;
 }
 
@@ -583,12 +583,12 @@ ObjClass* newMapClass()
 {
     ObjString* name = copyString("Map", 3);
     ObjClass* klass = newClass(name);
-    ObjString* method = copyString("remove", 6);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)));
-    method = copyString("size", 4);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
-    method = copyString("clear", 5);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_clear)));
+    int method = getMethodAddress(copyString("remove", 6));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)));
+    method = getMethodAddress(copyString("size", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
+    method = getMethodAddress(copyString("clear", 5));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_clear)));
     klass->call = newNative(map_new);
     return klass;
 }
@@ -645,20 +645,20 @@ ObjClass* newNumClass()
 {
     ObjString* name = copyString("Number", 6);
     ObjClass* klass = newClass(name);
-    ObjString* method = copyString("abs", 3);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_abs)));
-    method = copyString("sign", 4);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_sign)));
-    method = copyString("ceil", 4);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_ceil)));
-    method = copyString("floor", 5);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_floor)));
-    method = copyString("round", 5);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_round)));
-    method = copyString("truncate", 8);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_truncate)));
-    method = copyString("fraction", 8);
-    tableSet(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_fraction)));
+    int method = getMethodAddress(copyString("abs", 3));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_abs)));
+    method = getMethodAddress(copyString("sign", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_sign)));
+    method = getMethodAddress(copyString("ceil", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_ceil)));
+    method = getMethodAddress(copyString("floor", 5));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_floor)));
+    method = getMethodAddress(copyString("round", 5));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_round)));
+    method = getMethodAddress(copyString("truncate", 8));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_truncate)));
+    method = getMethodAddress(copyString("fraction", 8));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_fraction)));
     return klass;
 }
 //> Calls and Functions print-function-helper

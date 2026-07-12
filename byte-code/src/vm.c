@@ -182,6 +182,7 @@ void initVM()
     vm.initString = NULL;
     //< null-init-string
     vm.initString = copyString("init", 4);
+    vm.initAddress = getMethodAddress(vm.initString);
     //< Methods and Initializers init-init-string
     //> Calls and Functions define-native-clock
 
@@ -318,8 +319,9 @@ static bool callValue(Value callee, int argCount)
             }
             vm.thread->stackTop[-argCount - 1] = instance;
             //> Methods and Initializers call-init
-            Value initializer;
-            if (tableGet(&klass->methods, vm.initString, &initializer)) {
+            Value initializer = klass->methods.values[vm.initAddress];
+            // if (tableGet(&klass->methods, vm.initString, &initializer)) {
+            if (!IS_NIL(initializer)) {
                 return call(AS_CLOSURE(initializer), argCount);
                 //> no-init-arity-error
             }
@@ -359,21 +361,20 @@ static bool callValue(Value callee, int argCount)
 }
 //< Calls and Functions call-value
 //> Methods and Initializers invoke-from-class
-static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount, bool isStatic)
+static bool invokeFromClass(ObjClass* klass, int name, int argCount, bool isStatic)
 {
-    Value method;
-    bool found = (isStatic) ? tableGet(&klass->staticMethods, name, &method) : tableGet(&klass->methods, name, &method);
-    if (!found) {
-        runtimeError("Undefined property '%s'.", name->chars);
+    Value method = (isStatic) ? klass->staticMethods.values[name] : klass->methods.values[name];
+    if (!IS_NIL(method)) {
+        runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
     }
     return callValue(method, argCount);
 }
-static bool invokeFromNative(Value receiver, ObjClass* klass, ObjString* name, int argCount)
+static bool invokeFromNative(Value receiver, ObjClass* klass, int name, int argCount)
 {
-    Value method;
-    if (!tableGet(&klass->methods, name, &method)) {
-        runtimeError("Undefined property '%s'.", name->chars);
+    Value method = klass->methods.values[name];
+    if (IS_NIL(method)) {
+        runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
     }
     bool retVal = false;
@@ -390,7 +391,7 @@ static bool invokeFromNative(Value receiver, ObjClass* klass, ObjString* name, i
 }
 //< Methods and Initializers invoke-from-class
 //> Methods and Initializers invoke
-static bool invoke(ObjString* name, int argCount)
+static bool invoke(int name, int argCount)
 {
     Value receiver = NPEEK(argCount);
     //> invoke-check-type
@@ -401,8 +402,9 @@ static bool invoke(ObjString* name, int argCount)
         ObjInstance* instance = AS_INSTANCE(receiver);
         //> invoke-field
 
-        Value value;
-        if (tableGet(&instance->fields, name, &value)) {
+        Value value = instance->fields.values[name];
+        // if (tableGet(&instance->fields, name, &value)) {
+        if (!IS_NIL(value)) {
             vm.thread->stackTop[-argCount - 1] = value;
             return callValue(value, argCount);
         }
@@ -429,11 +431,11 @@ static bool invoke(ObjString* name, int argCount)
 }
 //< Methods and Initializers invoke
 //> Methods and Initializers bind-method
-static bool bindMethod(ObjClass* klass, ObjString* name)
+static bool bindMethod(ObjClass* klass, int name)
 {
-    Value method;
-    if (!tableGet(&klass->methods, name, &method)) {
-        runtimeError("Undefined property '%s'.", name->chars);
+    Value method = klass->methods.values[name];
+    if (IS_NIL(method)) {
+        runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
     }
 
@@ -486,11 +488,11 @@ static void closeUpvalues(Value* last)
 }
 //< Closures close-upvalues
 //> Methods and Initializers define-method
-static void defineMethod(ObjString* name)
+static void defineMethod(int name)
 {
     Value method = PEEK();
     ObjClass* klass = AS_CLASS(NPEEK(1));
-    tableSet(&klass->methods, name, method);
+    insertValueArray(&klass->methods, name, method);
     DROP();
 }
 //< Methods and Initializers define-method
@@ -773,10 +775,10 @@ static InterpretResult run()
 
                 //< get-not-instance
                 ObjInstance* instance = AS_INSTANCE(PEEK());
-                ObjString* name = READ_STRING();
+                int name = READ_SHORT();
 
-                Value value;
-                if (tableGet(&instance->fields, name, &value)) {
+                Value value = instance->fields.values[name];
+                if (!IS_NIL(value)) {
                     DROP(); // Instance.
                     PUSH(value);
                     break;
@@ -811,7 +813,7 @@ static InterpretResult run()
 
             //< set-not-instance
             ObjInstance* instance = AS_INSTANCE(NPEEK(1));
-            tableSet(&instance->fields, READ_STRING(), PEEK());
+            setAtValueArray(&instance->fields, READ_SHORT(), PEEK());
             Value value = POP();
             DROP();
             PUSH(value);
@@ -916,7 +918,7 @@ static InterpretResult run()
         }
             //> Superclasses interpret-get-super
         case OP_GET_SUPER: {
-            ObjString* name = READ_STRING();
+            int name = READ_SHORT();
             ObjClass* superclass = AS_CLASS(POP());
 
             if (!bindMethod(superclass, name)) {
@@ -1195,7 +1197,7 @@ static InterpretResult run()
             //< Calls and Functions interpret-call
             //> Methods and Initializers interpret-invoke
         case OP_INVOKE: {
-            ObjString* method = READ_STRING();
+            int method = READ_SHORT();
             int argCount = READ_BYTE();
             if (!invoke(method, argCount)) {
                 return INTERPRET_RUNTIME_ERROR;
@@ -1206,7 +1208,7 @@ static InterpretResult run()
             //< Methods and Initializers interpret-invoke
             //> Superclasses interpret-super-invoke
         case OP_SUPER_INVOKE: {
-            ObjString* method = READ_STRING();
+            int method = READ_SHORT();
             int argCount = READ_BYTE();
             ObjClass* superclass = AS_CLASS(POP());
             if (!invokeFromClass(superclass, method, argCount, false)) {
@@ -1312,15 +1314,21 @@ static InterpretResult run()
             }
 
             //< inherit-non-class
+            ObjClass* pSuperClass = AS_CLASS(superclass);
             ObjClass* subclass = AS_CLASS(PEEK());
-            tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+            // tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+            for (int i = 0; i < pSuperClass->methods.count; i++) {
+                if (IS_NIL(pSuperClass->methods.values[i]))
+                    continue;
+                setAtValueArray(&subclass->methods, i, pSuperClass->methods.values[i]);
+            }
             DROP(); // Subclass.
             break;
         }
             //< Superclasses interpret-inherit
             //> Methods and Initializers interpret-method
         case OP_METHOD:
-            defineMethod(READ_STRING());
+            defineMethod(READ_SHORT());
             break;
             //< Methods and Initializers interpret-method
         }
@@ -1465,14 +1473,14 @@ uint16_t getGlobalAddress(ObjString* name, Value defval)
     return offset;
 }
 
-uint16_t getMethodAddress(ValueArray* methods, ObjString* name, Value defval)
+uint16_t getMethodAddress(ObjString* name)
 {
+    static unsigned int methodsCount = 0;
     Value v;
     uint16_t offset = 0;
     if (!tableGet(&vm.symtabMethods, name, &v)) {
-        offset = methods->count;
-        tableSet(&vm.symtabMethods, name, NUMBER_VAL(methods->count));
-        writeValueArray(methods, defval);
+        offset = methodsCount++;
+        tableSet(&vm.symtabMethods, name, NUMBER_VAL(offset));
     }
     else {
         offset = AS_NUMBER(v);

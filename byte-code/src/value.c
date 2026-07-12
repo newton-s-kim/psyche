@@ -45,6 +45,21 @@ void insertValueArray(ValueArray* array, int index, Value value)
         array->count++;
     }
 }
+void setAtValueArray(ValueArray* array, int index, Value value)
+{
+    if (array->capacity < index + 1) {
+        int oldCapacity = array->capacity;
+        while (array->capacity < index + 1) {
+            array->capacity = GROW_CAPACITY(array->capacity);
+        }
+        array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
+        for (int i = array->count; i < index; i++)
+            array->values[i] = NIL_VAL;
+    }
+    array->values[index] = value;
+    if (array->count < index)
+        array->count = index + 1;
+}
 //> write-value-array
 void writeValueArray(ValueArray* array, Value value)
 {

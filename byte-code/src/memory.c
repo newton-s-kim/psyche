@@ -128,8 +128,8 @@ static void blackenObject(Obj* object)
         ObjClass* klass = (ObjClass*)object;
         markObject((Obj*)klass->name);
         //> Methods and Initializers mark-methods
-        markTable(&klass->methods);
-        markTable(&klass->staticMethods);
+        markArray(&klass->methods);
+        markArray(&klass->staticMethods);
         if (klass->call)
             markObject((Obj*)klass->call);
         //< Methods and Initializers mark-methods
@@ -158,7 +158,7 @@ static void blackenObject(Obj* object)
     case OBJ_INSTANCE: {
         ObjInstance* instance = (ObjInstance*)object;
         markObject((Obj*)instance->klass);
-        markTable(&instance->fields);
+        markArray(&instance->fields);
         break;
     }
         //< Classes and Instances blacken-instance
@@ -214,8 +214,8 @@ static void freeObject(Obj* object)
     case OBJ_CLASS: {
         //> Methods and Initializers free-methods
         ObjClass* klass = (ObjClass*)object;
-        freeTable(&klass->methods);
-        freeTable(&klass->staticMethods);
+        freeValueArray(&klass->methods);
+        freeValueArray(&klass->staticMethods);
         //< Methods and Initializers free-methods
         FREE(ObjClass, object);
         break;
@@ -242,7 +242,7 @@ static void freeObject(Obj* object)
         //> Classes and Instances free-instance
     case OBJ_INSTANCE: {
         ObjInstance* instance = (ObjInstance*)object;
-        freeTable(&instance->fields);
+        freeValueArray(&instance->fields);
         FREE(ObjInstance, object);
         break;
     }
