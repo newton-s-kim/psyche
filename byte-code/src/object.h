@@ -289,6 +289,7 @@ ObjThread* newThread(ThreadType type);
 ObjClass* newNumClass();
 ObjClass* newListClass();
 ObjClass* newMapClass();
+ObjClass* newSystemClass();
 //> print-object-h
 void printObject(Value value);
 //< print-object-h

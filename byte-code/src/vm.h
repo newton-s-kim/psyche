@@ -59,6 +59,7 @@ typedef struct {
     ObjClass* numClass;
     ObjClass* listClass;
     ObjClass* mapClass;
+    ObjClass* systemClass;
 } VM;
 
 //> interpret-result

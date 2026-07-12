@@ -31,7 +31,7 @@ var start = clock();
 
 println("stretch tree of depth ", stretchDepth, " check: ",
     Tree(0, stretchDepth).check());
-for (var i = 0 ; i < 1000 ; i = i + 1) system.gc();
+for (var i = 0 ; i < 1000 ; i = i + 1) System.gc();
 
 var longLivedTree = Tree(0, maxDepth);
 
@@ -45,12 +45,12 @@ while (depth <= stretchDepth) {
   }
 
   println(iterations * 2, " trees of depth ", depth, " check: ", check);
-  for (var i = 0 ; i < 1000 ; i = i + 1) system.gc();
+  for (var i = 0 ; i < 1000 ; i = i + 1) System.gc();
 
   iterations = iterations / 4;
   depth = depth + 2;
 }
 
 println("long lived tree of depth ", maxDepth, " check: ", longLivedTree.check());
-for (var i = 0 ; i < 1000 ; i = i + 1) system.gc();
+for (var i = 0 ; i < 1000 ; i = i + 1) System.gc();
 println("elapsed: ", clock() - start);

@@ -513,6 +513,23 @@ ObjClass* newListClass()
     klass->call = newNative(list_new);
     return klass;
 }
+
+Value sys_gc(int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    collectGarbage();
+    return NIL_VAL;
+}
+ObjClass* newSystemClass()
+{
+    ObjString* name = copyString("System", 6);
+    ObjClass* klass = newClass(name);
+    ObjString* method = copyString("gc", 2);
+    tableSet(&klass->staticMethods, method, OBJ_VAL(newNative(sys_gc)));
+    return klass;
+}
+
 Value map_remove(Value receiver, int argc, Value* argv)
 {
     LAX_LOG("map_remove(%d)", argc);

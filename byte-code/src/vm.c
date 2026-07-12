@@ -184,11 +184,15 @@ void initVM()
     //< Methods and Initializers init-init-string
     //> Calls and Functions define-native-clock
 
+    // native interfaces
+    vm.systemClass = newSystemClass();
+
     vm.numClass = newNumClass();
     vm.listClass = newListClass();
     vm.mapClass = newMapClass();
     defineValue("List", OBJ_VAL(newListClass()));
     defineValue("Map", OBJ_VAL(newMapClass()));
+    defineValue("System", OBJ_VAL(newSystemClass()));
     defineNative("range", rangeNative);
     defineNative("clock", clockNative);
     //< Calls and Functions define-native-clock
