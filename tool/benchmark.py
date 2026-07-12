@@ -55,9 +55,9 @@ def BENCHMARK(name, pattern):
     BENCHMARKS.append([name, regex, None])
 
 
-BENCHMARK("api_call", "true")
+#BENCHMARK("api_call", "true")
 
-BENCHMARK("api_foreign_method", "100000000")
+#BENCHMARK("api_foreign_method", "100000000")
 
 BENCHMARK(
     "binary_trees",
@@ -80,8 +80,6 @@ BENCHMARK(
 32 trees of depth 12 check: -32
 long lived tree of depth 12 check: -1""",
 )
-
-BENCHMARK("delta_blue", "14065400")
 
 BENCHMARK(
     "fib",
@@ -107,6 +105,11 @@ BENCHMARK("map_numeric", r"""2000001000000""")
 BENCHMARK("string_equals", r"""3000000""")
 
 BENCHMARK("map_string", r"""12799920000""")
+
+#BENCHMARK("fannkuch", "8629")
+
+#BENCHMARK("delta_blue", "14065400")
+
 
 LANGUAGES = [
     ("psyche", [os.path.join(PSYCHE_BIN, "psyche")], ".psy"),
