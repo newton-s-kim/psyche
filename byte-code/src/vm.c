@@ -183,6 +183,7 @@ void initVM()
     //< null-init-string
     vm.initString = copyString("init", 4);
     vm.initAddress = getMethodAddress(vm.initString);
+    LAX_LOG("initAddress = %d", vm.initAddress);
     //< Methods and Initializers init-init-string
     //> Calls and Functions define-native-clock
 
@@ -319,9 +320,11 @@ static bool callValue(Value callee, int argCount)
             }
             vm.thread->stackTop[-argCount - 1] = instance;
             //> Methods and Initializers call-init
-            Value initializer = klass->methods.values[vm.initAddress];
+            Value initializer =
+                (klass->methods.count > vm.initAddress) ? klass->methods.values[vm.initAddress] : UNDEF_VAL;
+            LAX_LOG("initialiser=0x%lx", initializer);
             // if (tableGet(&klass->methods, vm.initString, &initializer)) {
-            if (!IS_NIL(initializer)) {
+            if (!IS_UNDEF(initializer)) {
                 return call(AS_CLOSURE(initializer), argCount);
                 //> no-init-arity-error
             }
@@ -363,8 +366,16 @@ static bool callValue(Value callee, int argCount)
 //> Methods and Initializers invoke-from-class
 static bool invokeFromClass(ObjClass* klass, int name, int argCount, bool isStatic)
 {
-    Value method = (isStatic) ? klass->staticMethods.values[name] : klass->methods.values[name];
-    if (!IS_NIL(method)) {
+    Value method = NIL_VAL;
+    if (isStatic) {
+        LAX_LOG_ARRAY(klass->staticMethods);
+        method = (klass->staticMethods.count > name) ? klass->staticMethods.values[name] : UNDEF_VAL;
+    }
+    else {
+        LAX_LOG_ARRAY(klass->methods);
+        method = (klass->methods.count > name) ? klass->methods.values[name] : UNDEF_VAL;
+    }
+    if (IS_UNDEF(method)) {
         runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
     }
@@ -373,7 +384,7 @@ static bool invokeFromClass(ObjClass* klass, int name, int argCount, bool isStat
 static bool invokeFromNative(Value receiver, ObjClass* klass, int name, int argCount)
 {
     Value method = klass->methods.values[name];
-    if (IS_NIL(method)) {
+    if (IS_UNDEF(method)) {
         runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
     }
@@ -397,14 +408,17 @@ static bool invoke(int name, int argCount)
     //> invoke-check-type
 
     LAX_LOG("receiver type: %d", AS_OBJ(receiver)->type);
+    LAX_LOG("method ID: %d", name);
     if (IS_INSTANCE(receiver)) {
         //< invoke-check-type
         ObjInstance* instance = AS_INSTANCE(receiver);
         //> invoke-field
 
-        Value value = instance->fields.values[name];
+        LAX_LOG_ARRAY(instance->fields);
+        Value value = (instance->fields.count > name) ? instance->fields.values[name] : UNDEF_VAL;
         // if (tableGet(&instance->fields, name, &value)) {
-        if (!IS_NIL(value)) {
+        if (!IS_UNDEF(value)) {
+            LAX_LOG("method %d is found", name);
             vm.thread->stackTop[-argCount - 1] = value;
             return callValue(value, argCount);
         }
@@ -434,7 +448,7 @@ static bool invoke(int name, int argCount)
 static bool bindMethod(ObjClass* klass, int name)
 {
     Value method = klass->methods.values[name];
-    if (IS_NIL(method)) {
+    if (IS_UNDEF(method)) {
         runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
     }
@@ -490,9 +504,10 @@ static void closeUpvalues(Value* last)
 //> Methods and Initializers define-method
 static void defineMethod(int name)
 {
+    LAX_LOG("defineMethod(%d)", name);
     Value method = PEEK();
     ObjClass* klass = AS_CLASS(NPEEK(1));
-    insertValueArray(&klass->methods, name, method);
+    setAtValueArray(&klass->methods, name, method);
     DROP();
 }
 //< Methods and Initializers define-method
@@ -777,8 +792,8 @@ static InterpretResult run()
                 ObjInstance* instance = AS_INSTANCE(PEEK());
                 int name = READ_SHORT();
 
-                Value value = instance->fields.values[name];
-                if (!IS_NIL(value)) {
+                Value value = (instance->fields.count > name) ? instance->fields.values[name] : UNDEF_VAL;
+                if (!IS_UNDEF(value)) {
                     DROP(); // Instance.
                     PUSH(value);
                     break;
@@ -1318,7 +1333,7 @@ static InterpretResult run()
             ObjClass* subclass = AS_CLASS(PEEK());
             // tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
             for (int i = 0; i < pSuperClass->methods.count; i++) {
-                if (IS_NIL(pSuperClass->methods.values[i]))
+                if (IS_UNDEF(pSuperClass->methods.values[i]))
                     continue;
                 setAtValueArray(&subclass->methods, i, pSuperClass->methods.values[i]);
             }

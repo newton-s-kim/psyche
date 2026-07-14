@@ -11,6 +11,17 @@
         fprintf(stderr, ##__VA_ARGS__);                                                                                \
         fprintf(stderr, "\n");                                                                                         \
     }
+#define LAX_LOG_ARRAY(a)                                                                                               \
+    {                                                                                                                  \
+        printf("[");                                                                                                   \
+        for (int i = 0; i < (a).count; i++) {                                                                          \
+            if (i)                                                                                                     \
+                printf(", ");                                                                                          \
+            printValue((a).values[i]);                                                                                 \
+        }                                                                                                              \
+        printf("]\n");                                                                                                 \
+    }
 #else // QP_DEBUG
 #define LAX_LOG(...)
+#define LAX_LOG_ARRAY(a)
 #endif // QP_DEBUG

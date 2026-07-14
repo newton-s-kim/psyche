@@ -54,7 +54,7 @@ void setAtValueArray(ValueArray* array, int index, Value value)
         }
         array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
         for (int i = array->count; i < index; i++)
-            array->values[i] = NIL_VAL;
+            array->values[i] = UNDEF_VAL;
     }
     array->values[index] = value;
     if (array->count < index)
@@ -91,6 +91,9 @@ void printValue(Value value)
     }
     else if (IS_NIL(value)) {
         printf("nil");
+    }
+    else if (IS_UNDEF(value)) {
+        printf("undef");
     }
     else if (IS_NUMBER(value)) {
         printf("%.14g", AS_NUMBER(value));
