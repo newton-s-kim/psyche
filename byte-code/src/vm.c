@@ -448,7 +448,7 @@ static bool invoke(int name, int argCount)
 //> Methods and Initializers bind-method
 static bool bindMethod(ObjClass* klass, int name)
 {
-    Value method = klass->methods.values[name];
+    Value method = (klass->methods.count > name) ? klass->methods.values[name] : UNDEF_VAL;
     if (IS_UNDEF(method)) {
         runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
