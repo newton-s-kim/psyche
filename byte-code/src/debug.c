@@ -31,6 +31,15 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset)
     //< return-after-operand
 }
 //< constant-instruction
+static int variableInstruction(const char* name, Chunk* chunk, int offset)
+{
+    uint16_t constant = READ_ADDRESS();
+    printf("%-16s %4d '", name, constant);
+    printf("'\n");
+    //> return-after-operand
+    return offset + 3;
+    //< return-after-operand
+}
 //> Methods and Initializers invoke-instruction
 static int invokeInstruction(const char* name, Chunk* chunk, int offset)
 {
@@ -128,9 +137,9 @@ int disassembleInstruction(Chunk* chunk, int offset)
         //< Closures disassemble-upvalue-ops
         //> Classes and Instances disassemble-property-ops
     case OP_GET_PROPERTY:
-        return constantInstruction("OP_GET_PROPERTY", chunk, offset);
+        return variableInstruction("OP_GET_PROPERTY", chunk, offset);
     case OP_SET_PROPERTY:
-        return constantInstruction("OP_SET_PROPERTY", chunk, offset);
+        return variableInstruction("OP_SET_PROPERTY", chunk, offset);
         //< Classes and Instances disassemble-property-ops
         //> Superclasses disassemble-get-super
     case OP_GET_ELEMENT:
@@ -138,7 +147,7 @@ int disassembleInstruction(Chunk* chunk, int offset)
     case OP_SET_ELEMENT:
         return simpleInstruction("OP_SET_ELEMENT", offset);
     case OP_GET_SUPER:
-        return constantInstruction("OP_GET_SUPER", chunk, offset);
+        return variableInstruction("OP_GET_SUPER", chunk, offset);
         //< Superclasses disassemble-get-super
         //> Types of Values disassemble-comparison
     case OP_EQUAL:
@@ -236,7 +245,7 @@ int disassembleInstruction(Chunk* chunk, int offset)
         //< Superclasses disassemble-inherit
         //> Methods and Initializers disassemble-method
     case OP_METHOD:
-        return constantInstruction("OP_METHOD", chunk, offset);
+        return variableInstruction("OP_METHOD", chunk, offset);
         //< Methods and Initializers disassemble-method
     default:
         printf("Unknown opcode %d\n", instruction);

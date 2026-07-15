@@ -296,6 +296,7 @@ static bool call(ObjClosure* closure, int argCount)
 static bool callValue(Value callee, int argCount)
 {
     if (IS_OBJ(callee)) {
+        LAX_LOG("obj_type(callee): %d", OBJ_TYPE(callee));
         switch (OBJ_TYPE(callee)) {
             //> Methods and Initializers call-bound-method
         case OBJ_BOUND_METHOD: {
@@ -508,6 +509,7 @@ static void defineMethod(int name)
     Value method = PEEK();
     ObjClass* klass = AS_CLASS(NPEEK(1));
     setAtValueArray(&klass->methods, name, method);
+    LAX_LOG_ARRAY(klass->methods);
     DROP();
 }
 //< Methods and Initializers define-method
@@ -1333,10 +1335,14 @@ static InterpretResult run()
             ObjClass* subclass = AS_CLASS(PEEK());
             // tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
             for (int i = 0; i < pSuperClass->methods.count; i++) {
-                if (IS_UNDEF(pSuperClass->methods.values[i]))
-                    continue;
-                setAtValueArray(&subclass->methods, i, pSuperClass->methods.values[i]);
+                writeValueArray(&subclass->methods, pSuperClass->methods.values[i]);
+                /*
+            if (IS_UNDEF(pSuperClass->methods.values[i]))
+                continue;
+            setAtValueArray(&subclass->methods, i, pSuperClass->methods.values[i]);
+            */
             }
+            LAX_LOG_ARRAY(subclass->methods);
             DROP(); // Subclass.
             break;
         }

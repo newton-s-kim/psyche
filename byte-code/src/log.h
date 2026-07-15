@@ -13,7 +13,7 @@
     }
 #define LAX_LOG_ARRAY(a)                                                                                               \
     {                                                                                                                  \
-        printf("[");                                                                                                   \
+        printf("(%d,%d)[", (a).count, (a).capacity);                                                                   \
         for (int i = 0; i < (a).count; i++) {                                                                          \
             if (i)                                                                                                     \
                 printf(", ");                                                                                          \

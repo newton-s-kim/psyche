@@ -47,6 +47,7 @@ void insertValueArray(ValueArray* array, int index, Value value)
 }
 void setAtValueArray(ValueArray* array, int index, Value value)
 {
+    LAX_LOG("enter(0x%p, %d, 0x%lx)", array, index, value);
     if (array->capacity < index + 1) {
         int oldCapacity = array->capacity;
         while (array->capacity < index + 1) {
@@ -59,6 +60,8 @@ void setAtValueArray(ValueArray* array, int index, Value value)
     array->values[index] = value;
     if (array->count < index)
         array->count = index + 1;
+    else
+        array->count++;
 }
 //> write-value-array
 void writeValueArray(ValueArray* array, Value value)
