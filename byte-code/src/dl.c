@@ -1,17 +1,17 @@
 #include "dl.h"
 
-#include "dlmalloc/malloc.h"
+#include "psmalloc.h"
 
 #include <dlfcn.h>
 #include <stdlib.h>
 
 DL* dlNew(Path* path, String* name)
 {
-    DL* dl = dlmalloc(sizeof(DL));
+    DL* dl = PMALLOC(sizeof(DL));
     memset(dl, 0, sizeof(DL));
     dl->m_handle = dlopen(pathToString(path), RTLD_LAZY);
     if (!dl->m_handle) {
-        dlfree(dl);
+        PFREE(dl);
         return NULL;
     }
 
@@ -31,7 +31,7 @@ void dlFree(DL* dl)
         strFree(dl->m_name);
     if (dl->m_sym_name)
         strFree(dl->m_sym_name);
-    dlfree(dl);
+    PFREE(dl);
 }
 
 bool dlSymbols(DL* dl, const char*** names, Value** values)

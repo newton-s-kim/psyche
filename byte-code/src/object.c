@@ -15,8 +15,6 @@
 #include "common.h"
 #include "log.h"
 
-#include "dlmalloc/malloc.h"
-
 #define ALLOCATE_OBJ(type, objectType) (type*)allocateObject(sizeof(type), objectType)
 //< allocate-obj
 //> allocate-object

@@ -15,6 +15,7 @@ DEBUG_PRINT_CODE=no
 PROFILING=no
 LOGGING=no
 GC_LOGGING=no
+DL_MALLOC=no
 
 function print_help(){
    echo $1 written by Newton Kim
@@ -24,6 +25,7 @@ function print_help(){
    echo "  -c, --clean  forces cleaning up"
    echo "  -h, --help  prints this screen"
    echo "  -l, --log  enables logging"
+   echo "  -m, --dlmalloc  enables dlmalloc"
    echo "  -p, --print-code  prints code"
    echo "  -r, --profile  builds in profiling mode"
    echo "  -t, --trace  enables stack tracing mode"
@@ -57,6 +59,9 @@ while [[ $# -gt 0 ]]; do
     -g|--log-gc)
       GC_LOGGING=yes
       ;;
+    -m|--dlmalloc)
+      DL_MALLOC=yes
+      ;;
     *) # unknown option - skip
       ;;
   esac
@@ -79,6 +84,9 @@ function config_common_h() {
   fi
   if [ "$LOGGING" != "yes" ]; then
     echo "#undef LAX_DEBUG" >> $COMMON_H
+  fi
+  if [ "$DL_MALLOC" != "yes" ]; then
+    echo "#undef USE_DLMALLOC" >> $COMMON_H
   fi
   echo "//< omit" >> $COMMON_H
 }

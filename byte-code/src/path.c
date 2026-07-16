@@ -5,7 +5,7 @@
 
 #include "path.h"
 
-#include "dlmalloc/malloc.h"
+#include "psmalloc.h"
 
 // The maximum number of components in a path. We can't normalize a path that
 // contains more than this number of parts. The number here assumes a max path
@@ -34,7 +34,7 @@ static void ensureCapacity(Path* path, size_t capacity)
     while (newCapacity < capacity)
         newCapacity *= 2;
 
-    path->chars = (char*)dlrealloc(path->chars, newCapacity);
+    path->chars = (char*)PREALLOC(path->chars, newCapacity);
     path->capacity = newCapacity;
 }
 
@@ -119,8 +119,8 @@ PathType pathType(const char* path)
 
 Path* pathNew(const char* string)
 {
-    Path* path = (Path*)dlmalloc(sizeof(Path));
-    path->chars = (char*)dlmalloc(1);
+    Path* path = (Path*)PMALLOC(sizeof(Path));
+    path->chars = (char*)PMALLOC(1);
     path->chars[0] = '\0';
     path->length = 0;
     path->capacity = 0;
@@ -133,8 +133,8 @@ Path* pathNew(const char* string)
 void pathFree(Path* path)
 {
     if (path->chars)
-        dlfree(path->chars);
-    dlfree(path);
+        PFREE(path->chars);
+    PFREE(path);
 }
 
 void pathDirName(Path* path)
@@ -287,12 +287,12 @@ void pathNormalize(Path* path)
         pathAppendChar(result, '.');
 
     // Copy back into the original path.
-    dlfree(path->chars);
+    PFREE(path->chars);
     path->capacity = result->capacity;
     path->chars = result->chars;
     path->length = result->length;
 
-    dlfree(result);
+    PFREE(result);
 }
 
 char* pathToString(Path* path)
