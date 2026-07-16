@@ -9,4 +9,5 @@ set_target_properties(pcsa PROPERTIES
     CXX_EXTENSIONS OFF)
 target_compile_options(pcsa PRIVATE -Werror -Wall -Wextra -Wno-stringop-truncation)
 #target_compile_definitions(pcsa PRIVATE $<$<CONFIG:Debug>:LAX_GC_DEBUG=1;LAX_DEBUG=1>)
-target_link_libraries(pcsa readline dlmalloc m)
+#target_link_libraries(pcsa readline dlmalloc m)
+target_link_libraries(pcsa readline m)

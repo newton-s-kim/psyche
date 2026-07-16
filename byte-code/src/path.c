@@ -297,7 +297,7 @@ void pathNormalize(Path* path)
 
 char* pathToString(Path* path)
 {
-    char* string = (char*)dlmalloc(path->length + 1);
+    char* string = (char*)PMALLOC(path->length + 1);
     memcpy(string, path->chars, path->length);
     string[path->length] = '\0';
     return string;

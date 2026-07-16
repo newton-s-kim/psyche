@@ -9,4 +9,5 @@ set_target_properties(pcvm PROPERTIES
     CXX_EXTENSIONS OFF)
 target_compile_options(pcvm PRIVATE -Werror -Wall -Wextra)
 #target_compile_definitions(pcvm PRIVATE $<$<CONFIG:Debug>:LAX_GC_DEBUG=1;LAX_DEBUG=1>)
-target_link_libraries(pcvm dlmalloc m)
+#target_link_libraries(pcvm dlmalloc m)
+target_link_libraries(pcvm m)
