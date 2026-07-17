@@ -2,8 +2,12 @@ var i = Vector(1,0,0);
 var j = Vector(0,1,0);
 var k = Vector(0,0,1);
 
-print 7*i - 5*j + 13*k; //expect: <7,-5,13>
+print 7*i - 5*j + 13*k; //expect: 7
+-5
+13
 
 var a = 3*i-4*j+8*k;
 var b = i -4*k;
-print 5*a-2*b; //expect: <13,-20,48>
+print 5*a-2*b; //expect: 13
+-20
+48

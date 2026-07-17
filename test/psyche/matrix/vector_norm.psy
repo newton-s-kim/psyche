@@ -1,5 +1,7 @@
 var a = Vector(2, -1);
 var norm = a.abs();
 print norm; // expect: 2.236067977
-var u = a / norm; // expect: <0.894427191,-0.447213595>
-print -u; // expect: <-0.894427191,0.447213595>
+var u = a / norm; // expect: 0.894427191
+-0.447213595
+print -u; // expect: -0.894427191
+0.447213595

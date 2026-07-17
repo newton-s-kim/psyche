@@ -21,12 +21,17 @@ print a.component(b); // expect: -0.557086015
 
 a = Vector(4, 1);
 b = Vector(2, 3);
-print a.project(b); // expect: <1.692307692,2.538461538>
+print a.project(b); // expect: 1.692307692
+2.538461538
 
 a = Vector(3, -1, 5);
 b = Vector(2, 1, 2);
-print a.project(b); // expect: <3.333333333,1.666666667,3.333333333>
-print a - a.project(b); // expect: <-0.333333333, 2.666666667,1.666666667>
+print a.project(b); // expect: 3.333333333
+1.666666667
+3.333333333
+print a - a.project(b); // expect: -0.333333333
+2.666666667
+1.666666667
 
 a = Vector(10,2,-6);
 b = Vector(-0.5,4,-3);
