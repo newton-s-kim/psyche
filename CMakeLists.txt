@@ -15,7 +15,7 @@ if(ENABLE_GPROF)
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -pg")
 endif()
 
-add_subdirectory(foss/dlmalloc)
+#add_subdirectory(foss/dlmalloc)
 add_subdirectory(byte-code)
 add_subdirectory(psyche)
 add_subdirectory(pcsa)
