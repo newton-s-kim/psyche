@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(sciche)
+project(psyche)
 
 # Option to enable gprof profiling (OFF by default)
 option(ENABLE_GPROF "Enable compiling with flags set for profiling with gprof." OFF)
