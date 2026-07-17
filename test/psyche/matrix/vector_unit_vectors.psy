@@ -1,0 +1,13 @@
+var i = Vector(1, 0);
+var j = Vector(0, 1);
+var a = Vector(4,7);
+print a == 4 * i + 7 * j; // expect: true
+
+var b = Vector(10, 8);
+print b == (2*i - 5*j) + (8*i + 13*j) == b; // expect: true
+
+print (i + j).abs(); // expect: 1.414
+
+var c = Vector(30,-10);
+print 18*(3*i-j) == c; // expect: true
+
