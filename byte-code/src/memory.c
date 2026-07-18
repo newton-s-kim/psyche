@@ -172,6 +172,8 @@ static void blackenObject(Obj* object)
     case OBJ_NATIVE_BOUND_METHOD:
     case OBJ_STRING:
     case OBJ_COMPLEX:
+    case OBJ_VECTOR:
+    case OBJ_MATRIX:
         break;
     case OBJ_LIST: {
         ObjList* list = (ObjList*)object;
@@ -280,6 +282,16 @@ static void freeObject(Obj* object)
         ObjMap* map = (ObjMap*)object;
         freeTable(&map->map);
         FREE(ObjMap, object);
+        break;
+    case OBJ_VECTOR:
+        ObjVector* vector = (ObjVector*)object;
+        PFREE(vector->values);
+        FREE(ObjVector, vector);
+        break;
+    case OBJ_MATRIX:
+        ObjMatrix* matrix = (ObjMatrix*)object;
+        PFREE(matrix->values);
+        FREE(ObjMatrix, matrix);
         break;
     case OBJ_THREAD:
         FREE(ObjThread, object);

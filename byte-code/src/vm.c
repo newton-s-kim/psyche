@@ -193,8 +193,12 @@ void initVM()
     vm.numClass = newNumClass();
     vm.listClass = newListClass();
     vm.mapClass = newMapClass();
+    vm.vectorClass = newVectorClass();
+    vm.matrixClass = newMatrixClass();
     defineValue("List", OBJ_VAL(newListClass()));
     defineValue("Map", OBJ_VAL(newMapClass()));
+    defineValue("Vector", OBJ_VAL(newVectorClass()));
+    defineValue("Matrix", OBJ_VAL(newMatrixClass()));
     defineValue("System", OBJ_VAL(newSystemClass()));
     defineNative("range", rangeNative);
     defineNative("clock", clockNative);
@@ -432,6 +436,12 @@ static bool invoke(int name, int argCount)
     }
     else if (IS_MAP(receiver)) {
         return invokeFromNative(receiver, vm.mapClass, name, argCount);
+    }
+    else if (IS_VECTOR(receiver)) {
+        return invokeFromNative(receiver, vm.vectorClass, name, argCount);
+    }
+    else if (IS_MATRIX(receiver)) {
+        return invokeFromNative(receiver, vm.matrixClass, name, argCount);
     }
     else if (IS_NUMBER(receiver)) {
         return invokeFromNative(receiver, vm.numClass, name, argCount);

@@ -14,6 +14,9 @@
 //> allocate-obj
 #include "common.h"
 #include "log.h"
+#include "psmalloc.h"
+
+#include <cblas.h>
 
 #define ALLOCATE_OBJ(type, objectType) (type*)allocateObject(sizeof(type), objectType)
 //< allocate-obj
@@ -565,6 +568,29 @@ static Value map_clear(Value receiver, int argc, Value* argv)
     initTable(&map->map);
     return NIL_VAL;
 }
+static Value map_each(Value receiver, int argc, Value* argv)
+{
+    int index = 0;
+    if (1 != argc) {
+        runtimeError("Expects 1 argument.");
+        return NIL_VAL;
+    }
+    if (!IS_CLOSURE(argv[0])) {
+        runtimeError("Expects closure.");
+        return NIL_VAL;
+    }
+    ObjMap* map = AS_MAP(receiver);
+    Value args[2];
+    for (index = 0; index < map->map.capacity; index++) {
+        if (NULL == map->map.entries[index].key)
+            continue;
+        args[0] = OBJ_VAL(map->map.entries[index].key);
+        args[1] = map->map.entries[index].value;
+        if (!runThread(argv[0], 2, args))
+            return FALSE_VAL;
+    }
+    return TRUE_VAL;
+}
 static Value map_new(int argc, Value* argv)
 {
     (void)argc;
@@ -587,7 +613,183 @@ ObjClass* newMapClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
     method = getMethodAddress(copyString("clear", 5));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_clear)));
+    method = getMethodAddress(copyString("each", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_each)));
     klass->call = newNative(map_new);
+    return klass;
+}
+static Value vector_transpose(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjVector* vector = AS_VECTOR(receiver);
+    ObjVector* result = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    result->isRow = (vector->isRow) ? false : true;
+    result->size = vector->size;
+    result->values = PMALLOC(result->size * sizeof(double));
+    memcpy(result->values, vector->values, result->size * sizeof(double));
+    return OBJ_VAL(result);
+}
+static Value vector_dot(int argc, Value* argv)
+{
+    if (argc != 2) {
+        runtimeError("Requires 2 arguments.");
+        return NIL_VAL;
+    }
+    if (!IS_VECTOR(argv[0]) || !IS_VECTOR(argv[1])) {
+        runtimeError("Vectors are expected.");
+        return NIL_VAL;
+    }
+    ObjVector* x = AS_VECTOR(argv[0]);
+    ObjVector* y = AS_VECTOR(argv[1]);
+    if (x->size != y->size) {
+        runtimeError("Vectors are not identical.");
+        return NIL_VAL;
+    }
+    double result = cblas_ddot(x->size, x->values, 1, y->values, 1);
+    return NUMBER_VAL(result);
+}
+static Value vector_cross(int argc, Value* argv)
+{
+    if (argc != 2) {
+        runtimeError("Requires 2 arguments.");
+        return NIL_VAL;
+    }
+    if (!IS_VECTOR(argv[0]) || !IS_VECTOR(argv[1])) {
+        runtimeError("Vectors are expected.");
+        return NIL_VAL;
+    }
+    ObjVector* x = AS_VECTOR(argv[0]);
+    ObjVector* y = AS_VECTOR(argv[1]);
+    if (x->size != y->size) {
+        runtimeError("Vectors are not identical.");
+        return NIL_VAL;
+    }
+    if (x->size != 3) {
+        runtimeError("Vectors should be 3 dimensional");
+        return NIL_VAL;
+    }
+    // Construct the 3x3 skew-symmetric matrix from vector 'a' in row-major order
+    // clang-format off
+    double A_skew[9] = {
+         0.0,  -x->values[2],   x->values[1],
+         x->values[2],   0.0,  -x->values[0],
+        -x->values[1],   x->values[0],   0.0
+    };
+    // clang-format on
+
+    ObjVector* result = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    result->isRow = false;
+    result->size = 3;
+    result->values = PMALLOC(result->size * sizeof(double));
+
+    // Matrix-Vector Multiplication: result = 1.0 * A_skew * b + 0.0 * result
+    cblas_dgemv(CblasRowMajor,    // Storage layout of matrix A
+                CblasNoTrans,     // Do not transpose A_skew
+                3, 3,             // Dimensions (Rows, Columns)
+                1.0,              // Alpha multiplier
+                A_skew, 3,        // Matrix A and its leading dimension (stride)
+                y->values, 1,     // Vector b and its stride
+                0.0,              // Beta multiplier
+                result->values, 1 // Output vector and its stride
+    );
+    return OBJ_VAL(result);
+}
+static Value vector_new(int argc, Value* argv)
+{
+    LAX_LOG("vector_new(%d)", argc);
+    ObjVector* vector = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    vector->isRow = false;
+    if (0 < argc) {
+        vector->size = argc;
+        vector->values = PMALLOC(vector->size * sizeof(double));
+        for (int index = 0; index < argc; index++)
+            vector->values[index] = AS_NUMBER(argv[index]);
+    }
+    else {
+        vector->size = 0;
+        vector->values = NULL;
+    }
+    LAX_LOG("vector type: %d", vector->obj.type);
+    return OBJ_VAL(vector);
+}
+ObjClass* newVectorClass()
+{
+    ObjString* name = copyString("Vector", 6);
+    ObjClass* klass = newClass(name);
+    int method = getMethodAddress(copyString("transpose", 9));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_transpose)));
+    method = getMethodAddress(copyString("dot", 3));
+    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_dot)));
+    method = getMethodAddress(copyString("cross", 5));
+    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_cross)));
+    klass->call = newNative(vector_new);
+    return klass;
+}
+static Value matrix_transpose(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjMatrix* matrix = AS_MATRIX(receiver);
+    ObjMatrix* result = ALLOCATE_OBJ(ObjMatrix, OBJ_MATRIX);
+    result->rows = matrix->columns;
+    result->columns = matrix->rows;
+    result->values = PMALLOC(result->rows * result->columns * sizeof(double));
+    cblas_domatcopy(CblasRowMajor, CblasTrans,
+                    matrix->rows,    // Number of rows in source matrix A
+                    matrix->columns, // Number of columns in source matrix A
+                    1.0,             // Scaling factor (use 1.0 for simple transpose)
+                    matrix->values,  // Pointer to source matrix A
+                    result->rows,    // Leading dimension of A
+                    result->values,  // Pointer to destination matrix B
+                    result->columns  // Leading dimension of B
+    );
+    return OBJ_VAL(result);
+}
+static Value matrix_new(int argc, Value* argv)
+{
+    LAX_LOG("matrix_new(%d)", argc);
+    ObjMatrix* matrix = ALLOCATE_OBJ(ObjMatrix, OBJ_MATRIX);
+    if (0 < argc) {
+        matrix->values = PMALLOC(argc * sizeof(double));
+        int row = 1, col = 0;
+        for (int index = 0; index < argc; index++) {
+            if (IS_NIL(argv[index])) {
+                row++;
+                col = 0;
+            }
+            else {
+                col++;
+            }
+        }
+        matrix->rows = row;
+        matrix->columns = col;
+        row = 0;
+        col = 0;
+        for (int index = 0; index < argc; index++) {
+            if (IS_NIL(argv[index])) {
+                row++;
+            }
+            else {
+                matrix->values[col + row * matrix->columns] = AS_NUMBER(argv[index]);
+            }
+        }
+    }
+    else {
+        matrix->rows = 0;
+        matrix->columns = 0;
+        matrix->values = NULL;
+    }
+    LAX_LOG("vector type: %d", matrix->obj.type);
+    return OBJ_VAL(matrix);
+}
+ObjClass* newMatrixClass()
+{
+    ObjString* name = copyString("Matrix", 6);
+    ObjClass* klass = newClass(name);
+    int method = getMethodAddress(copyString("transpose", 9));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(matrix_transpose)));
+    klass->call = newNative(matrix_new);
     return klass;
 }
 static Value num_fraction(Value receiver, int argc, Value* argv)
@@ -765,6 +967,36 @@ void printObject(Value value)
             }
         }
         printf("}");
+        break;
+    }
+    case OBJ_VECTOR: {
+        ObjVector* vector = AS_VECTOR(value);
+        if (vector->isRow) {
+            for (int i = 0; i < vector->size; i++) {
+                if (i)
+                    printf(" ");
+                printf("%f", vector->values[i]);
+            }
+        }
+        else {
+            for (int i = 0; i < vector->size; i++) {
+                if (i)
+                    printf("\n");
+                printf("%f", vector->values[i]);
+            }
+        }
+        break;
+    }
+    case OBJ_MATRIX: {
+        ObjMatrix* matrix = AS_MATRIX(value);
+        for (int row = 0; row < matrix->rows; row++) {
+            for (int column = 0; column < matrix->columns; column++) {
+                if (column)
+                    printf(" ");
+                printf("%f", matrix->values[column + matrix->columns * row]);
+            }
+            printf("\n");
+        }
         break;
     }
     case OBJ_THREAD:

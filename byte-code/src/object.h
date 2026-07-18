@@ -41,6 +41,8 @@
 //> as-string
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
 #define IS_MAP(value) isObjType(value, OBJ_MAP)
+#define IS_VECTOR(value) isObjType(value, OBJ_VECTOR)
+#define IS_MATRIX(value) isObjType(value, OBJ_MATRIX)
 #define IS_THREAD(value) isObjType(value, OBJ_THREAD)
 
 //> Methods and Initializers as-bound-method
@@ -69,6 +71,8 @@
 //> obj-type
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
 #define AS_MAP(value) ((ObjMap*)AS_OBJ(value))
+#define AS_VECTOR(value) ((ObjVector*)AS_OBJ(value))
+#define AS_MATRIX(value) ((ObjMatrix*)AS_OBJ(value))
 #define AS_THREAD(value) ((ObjThread*)AS_OBJ(value))
 
 typedef enum {
@@ -98,6 +102,8 @@ typedef enum {
     OBJ_COMPLEX,
     OBJ_LIST,
     OBJ_MAP,
+    OBJ_VECTOR,
+    OBJ_MATRIX,
     OBJ_THREAD
 } ObjType;
 //< obj-type
@@ -215,6 +221,21 @@ typedef struct {
     Obj obj;
     Table map;
 } ObjMap;
+
+typedef struct {
+    Obj obj;
+    bool isRow;
+    int size;
+    double* values;
+} ObjVector;
+
+typedef struct {
+    Obj obj;
+    int rows;
+    int columns;
+    double* values;
+} ObjMatrix;
+
 /* A Virtual Machine stack-max < Calls and Functions frame-max
 #define STACK_MAX 256
 */
@@ -289,6 +310,8 @@ ObjThread* newThread(ThreadType type);
 ObjClass* newNumClass();
 ObjClass* newListClass();
 ObjClass* newMapClass();
+ObjClass* newVectorClass();
+ObjClass* newMatrixClass();
 ObjClass* newSystemClass();
 //> print-object-h
 void printObject(Value value);
