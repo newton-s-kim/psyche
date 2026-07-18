@@ -618,16 +618,37 @@ ObjClass* newMapClass()
     klass->call = newNative(map_new);
     return klass;
 }
+ObjVector* duplicateVector(ObjVector* vector)
+{
+    ObjVector* result = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    result->isRow = vector->isRow;
+    result->size = vector->size;
+    result->values = PMALLOC(result->size * sizeof(double));
+    memcpy(result->values, vector->values, result->size * sizeof(double));
+    return result;
+}
+ObjVector* newVector(unsigned int size, double v)
+{
+    ObjVector* vector = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    vector->isRow = false;
+    vector->size = size;
+    vector->values = PMALLOC(vector->size * sizeof(double));
+    if (0 == v) {
+        memset(vector->values, 0, vector->size * sizeof(double));
+    }
+    else {
+        for (int i = 0; i < vector->size; i++)
+            vector->values[i] = v;
+    }
+    return vector;
+}
 static Value vector_transpose(Value receiver, int argc, Value* argv)
 {
     (void)argc;
     (void)argv;
     ObjVector* vector = AS_VECTOR(receiver);
-    ObjVector* result = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    ObjVector* result = duplicateVector(vector);
     result->isRow = (vector->isRow) ? false : true;
-    result->size = vector->size;
-    result->values = PMALLOC(result->size * sizeof(double));
-    memcpy(result->values, vector->values, result->size * sizeof(double));
     return OBJ_VAL(result);
 }
 static Value vector_dot(int argc, Value* argv)
@@ -725,6 +746,31 @@ ObjClass* newVectorClass()
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_cross)));
     klass->call = newNative(vector_new);
     return klass;
+}
+ObjMatrix* newMatrix(unsigned int rows, unsigned int columns, double v)
+{
+    ObjMatrix* matrix = ALLOCATE_OBJ(ObjMatrix, OBJ_MATRIX);
+    matrix->rows = rows;
+    matrix->columns = columns;
+    matrix->values = PMALLOC(matrix->rows * matrix->columns * sizeof(double));
+    if (0 == v) {
+        memset(matrix->values, 0, matrix->rows * matrix->columns * sizeof(double));
+    }
+    else {
+        int size = matrix->rows * matrix->columns;
+        for (int i = 0; i < size; i++)
+            matrix->values[i] = v;
+    }
+    return matrix;
+}
+ObjMatrix* duplicateMatrix(ObjMatrix* matrix)
+{
+    ObjMatrix* result = ALLOCATE_OBJ(ObjMatrix, OBJ_MATRIX);
+    result->rows = matrix->rows;
+    result->columns = matrix->columns;
+    result->values = PMALLOC(result->rows * result->columns * sizeof(double));
+    memcpy(result->values, matrix->values, result->rows * result->columns * sizeof(double));
+    return result;
 }
 static Value matrix_transpose(Value receiver, int argc, Value* argv)
 {

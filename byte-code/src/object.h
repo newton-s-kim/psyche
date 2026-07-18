@@ -314,6 +314,10 @@ ObjClass* newVectorClass();
 ObjClass* newMatrixClass();
 ObjClass* newSystemClass();
 //> print-object-h
+ObjVector* newVector(unsigned int size, double v);
+ObjVector* duplicateVector(ObjVector* vector);
+ObjMatrix* newMatrix(unsigned int row, unsigned int column, double v);
+ObjMatrix* duplicateMatrix(ObjMatrix* matrix);
 void printObject(Value value);
 //< print-object-h
 

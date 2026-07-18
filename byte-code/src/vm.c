@@ -28,6 +28,8 @@
 
 #include "log.h"
 
+#include <cblas.h>
+
 #define PUSH(value) (*vm.thread->stackTop++ = (value))
 #define POP() (*(--vm.thread->stackTop))
 #define DROP() (--vm.thread->stackTop)
@@ -1017,6 +1019,30 @@ static InterpretResult run()
             else if (IS_STRING(PEEK()) && IS_STRING(NPEEK(1))) {
                 concatenate();
             }
+            else if (IS_VECTOR(PEEK()) && IS_VECTOR(NPEEK(1))) {
+                ObjVector* b = AS_VECTOR(POP());
+                ObjVector* a = AS_VECTOR(POP());
+                if (a->isRow != b->isRow || a->size != b->size) {
+                    runtimeError("Vector dimension mismatch.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                ObjVector* r = duplicateVector(b);
+                // Performs: y = alpha*x + y
+                cblas_daxpy(r->size, 1.0, a->values, 1, r->values, 1);
+                PUSH(OBJ_VAL(r));
+            }
+            else if (IS_MATRIX(PEEK()) && IS_MATRIX(NPEEK(1))) {
+                ObjMatrix* b = AS_MATRIX(POP());
+                ObjMatrix* a = AS_MATRIX(POP());
+                if (b->rows != a->rows || b->columns != a->columns) {
+                    runtimeError("Matrix dimension mismatch.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                ObjMatrix* r = duplicateMatrix(b);
+                // Performs: y = alpha*x + y
+                cblas_daxpy(r->rows * r->columns, 1.0, a->values, 1, r->values, 1);
+                PUSH(OBJ_VAL(r));
+            }
             else {
                 runtimeError("Operands must be two numbers or two strings.");
                 return INTERPRET_RUNTIME_ERROR;
@@ -1056,6 +1082,30 @@ static InterpretResult run()
                     return INTERPRET_RUNTIME_ERROR;
                 }
             }
+            else if (IS_VECTOR(PEEK()) && IS_VECTOR(NPEEK(1))) {
+                ObjVector* b = AS_VECTOR(POP());
+                ObjVector* a = AS_VECTOR(POP());
+                if (a->isRow != b->isRow || a->size != b->size) {
+                    runtimeError("Vector dimension mismatch.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                ObjVector* r = duplicateVector(a);
+                // Performs: y = alpha*x + y
+                cblas_daxpy(r->size, -1.0, b->values, 1, r->values, 1);
+                PUSH(OBJ_VAL(r));
+            }
+            else if (IS_MATRIX(PEEK()) && IS_MATRIX(NPEEK(1))) {
+                ObjMatrix* b = AS_MATRIX(POP());
+                ObjMatrix* a = AS_MATRIX(POP());
+                if (b->rows != a->rows || b->columns != a->columns) {
+                    runtimeError("Matrix dimension mismatch.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                ObjMatrix* r = duplicateMatrix(a);
+                // Performs: y = alpha*x + y
+                cblas_daxpy(r->rows * r->columns, -1.0, b->values, 1, r->values, 1);
+                PUSH(OBJ_VAL(r));
+            }
             else {
                 runtimeError("Operands must be numbers.");
                 return INTERPRET_RUNTIME_ERROR;
@@ -1088,6 +1138,160 @@ static InterpretResult run()
                     ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(
                         newComplex(a->real * b->real - a->imag * b->imag, a->real * b->imag + a->imag * b->real)));
+                }
+                else {
+                    runtimeError("Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else if (IS_VECTOR(PEEK())) {
+                ObjVector* b = AS_VECTOR(POP());
+                if (IS_NUMBER(PEEK())) {
+                    double a = AS_NUMBER(POP());
+                    ObjVector* r = duplicateVector(b);
+                    cblas_dscal(r->size, a, r->values, 1);
+                    PUSH(OBJ_VAL(r));
+                }
+                else if (IS_VECTOR(PEEK())) {
+                    ObjVector* a = AS_VECTOR(POP());
+                    if (a->size != b->size || a->isRow == b->isRow) {
+                        runtimeError("Vector dimensions mismatch.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    int M = (a->isRow) ? 1 : a->size; // rows of A
+                    int N = (b->isRow) ? b->size : 1; // columns of B
+                    int K = (a->isRow) ? a->size : 1; // rows of B == columns of A
+                    double alpha = 1.0;
+                    double beta = 0.0;
+                    int lda = K;
+                    int ldb = N;
+                    int ldc = N;
+                    ObjMatrix* r = newMatrix(M, N, 0);
+                    // Perform matrix multiplication: C = alpha * A * B * beta * C
+                    cblas_dgemm(CblasRowMajor,  // Layout: row-by-row storage
+                                CblasNoTrans,   // TransA: Do not transpose matrix A
+                                CblasNoTrans,   // TransB: Do not transpose matrix B
+                                M, N, K,        // Dimensions: rows of A, cols of B, cols of A
+                                alpha,          // Scalar scaling product of A and B
+                                a->values, lda, // Matrix A pointer and its leading dimension
+                                b->values, ldb, // Matrix B pointer and its leading dimension
+                                beta,           // Scalar scaling matrix C
+                                r->values, ldc  // Matrix C pointer and its leading dimension
+                    );
+                    PUSH(OBJ_VAL(r));
+                }
+                else if (IS_MATRIX(PEEK())) {
+                    ObjMatrix* a = AS_MATRIX(POP());
+                    if (b->isRow) {
+                        if (a->columns != 1) {
+                            runtimeError("Matirx vs Vector dimension mismatches.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    }
+                    else {
+                        if (a->columns != b->size) {
+                            runtimeError("Matirx vs Vector dimension mismatches.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    }
+                    int M = a->rows;                  // rows of A
+                    int N = (b->isRow) ? b->size : 1; // columns of B
+                    int K = a->columns;               // rows of B == columns of A
+                    double alpha = 1.0;
+                    double beta = 0.0;
+                    int lda = K;
+                    int ldb = N;
+                    int ldc = N;
+                    ObjMatrix* r = newMatrix(M, N, 0);
+                    // Perform matrix multiplication: C = alpha * A * B * beta * C
+                    cblas_dgemm(CblasRowMajor,  // Layout: row-by-row storage
+                                CblasNoTrans,   // TransA: Do not transpose matrix A
+                                CblasNoTrans,   // TransB: Do not transpose matrix B
+                                M, N, K,        // Dimensions: rows of A, cols of B, cols of A
+                                alpha,          // Scalar scaling product of A and B
+                                a->values, lda, // Matrix A pointer and its leading dimension
+                                b->values, ldb, // Matrix B pointer and its leading dimension
+                                beta,           // Scalar scaling matrix C
+                                r->values, ldc  // Matrix C pointer and its leading dimension
+                    );
+                    PUSH(OBJ_VAL(r));
+                }
+                else {
+                    runtimeError("Operands must be numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            }
+            else if (IS_MATRIX(PEEK())) {
+                ObjMatrix* b = AS_MATRIX(POP());
+                if (IS_NUMBER(PEEK())) {
+                    double a = AS_NUMBER(POP());
+                    ObjMatrix* r = duplicateMatrix(b);
+                    cblas_dscal(r->rows * r->columns, a, r->values, 1);
+                    PUSH(OBJ_VAL(r));
+                }
+                else if (IS_VECTOR(PEEK())) {
+                    ObjVector* a = AS_VECTOR(POP());
+                    if (a->isRow) {
+                        if (a->size != b->columns) {
+                            runtimeError("Matirx vs Vector dimension mismatches.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    }
+                    else {
+                        if (1 != b->rows) {
+                            runtimeError("Matirx vs Vector dimension mismatches.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    }
+                    int M = (a->isRow) ? 1 : a->size; // rows of A
+                    int N = b->columns;               // columns of B
+                    int K = (a->isRow) ? a->size : 1; // rows of B == columns of A
+                    double alpha = 1.0;
+                    double beta = 0.0;
+                    int lda = K;
+                    int ldb = N;
+                    int ldc = N;
+                    ObjMatrix* r = newMatrix(M, N, 0);
+                    // Perform matrix multiplication: C = alpha * A * B * beta * C
+                    cblas_dgemm(CblasRowMajor,  // Layout: row-by-row storage
+                                CblasNoTrans,   // TransA: Do not transpose matrix A
+                                CblasNoTrans,   // TransB: Do not transpose matrix B
+                                M, N, K,        // Dimensions: rows of A, cols of B, cols of A
+                                alpha,          // Scalar scaling product of A and B
+                                a->values, lda, // Matrix A pointer and its leading dimension
+                                b->values, ldb, // Matrix B pointer and its leading dimension
+                                beta,           // Scalar scaling matrix C
+                                r->values, ldc  // Matrix C pointer and its leading dimension
+                    );
+                    PUSH(OBJ_VAL(r));
+                }
+                else if (IS_MATRIX(PEEK())) {
+                    ObjMatrix* a = AS_MATRIX(POP());
+                    if (a->columns != b->rows) {
+                        runtimeError("Matirx dimension mismatches.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    int M = a->rows;    // rows of A
+                    int N = b->columns; // columns of B
+                    int K = a->columns; // rows of B == columns of A
+                    double alpha = 1.0;
+                    double beta = 0.0;
+                    int lda = K;
+                    int ldb = N;
+                    int ldc = N;
+                    ObjMatrix* r = newMatrix(M, N, 0);
+                    // Perform matrix multiplication: C = alpha * A * B * beta * C
+                    cblas_dgemm(CblasRowMajor,  // Layout: row-by-row storage
+                                CblasNoTrans,   // TransA: Do not transpose matrix A
+                                CblasNoTrans,   // TransB: Do not transpose matrix B
+                                M, N, K,        // Dimensions: rows of A, cols of B, cols of A
+                                alpha,          // Scalar scaling product of A and B
+                                a->values, lda, // Matrix A pointer and its leading dimension
+                                b->values, ldb, // Matrix B pointer and its leading dimension
+                                beta,           // Scalar scaling matrix C
+                                r->values, ldc  // Matrix C pointer and its leading dimension
+                    );
+                    PUSH(OBJ_VAL(r));
                 }
                 else {
                     runtimeError("Operands must be numbers.");
@@ -1158,12 +1362,26 @@ static InterpretResult run()
             //< Types of Values op-not
             //> Types of Values op-negate
         case OP_NEGATE:
-            if (!IS_NUMBER(PEEK())) {
+            if (IS_NUMBER(PEEK())) {
+                double v = AS_NUMBER(POP());
+                PUSH(NUMBER_VAL(-v));
+            }
+            else if (IS_VECTOR(PEEK())) {
+                ObjVector* a = AS_VECTOR(POP());
+                ObjVector* r = duplicateVector(a);
+                cblas_dscal(r->size, -1, r->values, 1);
+                PUSH(OBJ_VAL(r));
+            }
+            else if (IS_MATRIX(PEEK())) {
+                ObjMatrix* a = AS_MATRIX(POP());
+                ObjMatrix* r = duplicateMatrix(a);
+                cblas_dscal(r->rows * r->columns, -1, r->values, 1);
+                PUSH(OBJ_VAL(r));
+            }
+            else {
                 runtimeError("Operand must be a number.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            double v = AS_NUMBER(POP());
-            PUSH(NUMBER_VAL(-v));
             break;
             //< Types of Values op-negate
             //> Global Variables interpret-print
