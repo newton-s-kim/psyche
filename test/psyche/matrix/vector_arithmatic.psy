@@ -1,15 +1,15 @@
 var a = Vector(1,4);
 var b = Vector(-6,3);
-print a + b; // expect: -5
-7
-print a - b; // expect: 7
-1
-print 2*a - 3*b; // expect: -16
-17
+print a + b; // expect: -5.000000
+// expect: 7.000000
+print a - b; // expect: 7.000000
+// expect: 1.000000
+print 2*a - 3*b; // expect: -16.000000
+// expect: 17.000000
 
 a = Vector(4,2);
 b = Vector(-2,5);
-print a + b; // expect 2
-7
-print a - b; // expect 6
--3
+print a + b; // expect 2.000000
+// expect: 7.000000
+print a - b; // expect 6.000000
+// expect: -3.000000
