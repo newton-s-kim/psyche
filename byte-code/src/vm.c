@@ -1315,6 +1315,18 @@ static InterpretResult run()
                     ObjComplex* a = AS_COMPLEX(POP());
                     PUSH(OBJ_VAL(newComplex(a->real / b, a->imag / b)));
                 }
+                else if (IS_VECTOR(PEEK())) {
+                    ObjVector* a = AS_VECTOR(POP());
+                    ObjVector* r = duplicateVector(a);
+                    cblas_dscal(r->size, 1 / b, r->values, 1);
+                    PUSH(OBJ_VAL(r));
+                }
+                else if (IS_MATRIX(PEEK())) {
+                    ObjMatrix* a = AS_MATRIX(POP());
+                    ObjMatrix* r = duplicateMatrix(a);
+                    cblas_dscal(r->rows * r->columns, 1 / b, r->values, 1);
+                    PUSH(OBJ_VAL(r));
+                }
                 else {
                     runtimeError("Operands must be numbers.");
                     return INTERPRET_RUNTIME_ERROR;
