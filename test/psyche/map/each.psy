@@ -1,0 +1,11 @@
+var map = {
+  "one": 1,
+  "two": 2,
+  "three": 3
+};
+
+var sum = 0;
+map.each(fun(key,word) {
+   sum = sum + word;
+});
+print sum; // expect: 6
