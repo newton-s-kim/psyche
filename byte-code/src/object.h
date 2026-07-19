@@ -308,6 +308,7 @@ ObjUpvalue* newUpvalue(Value* slot);
 ObjComplex* newComplex(double real, double imag);
 ObjThread* newThread(ThreadType type);
 ObjClass* newNumClass();
+ObjClass* newStringClass();
 ObjClass* newListClass();
 ObjClass* newMapClass();
 ObjClass* newVectorClass();

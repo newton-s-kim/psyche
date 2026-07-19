@@ -59,6 +59,7 @@ typedef struct {
     size_t dlCount;
     size_t dlCapacity;
     ObjClass* numClass;
+    ObjClass* stringClass;
     ObjClass* listClass;
     ObjClass* mapClass;
     ObjClass* vectorClass;

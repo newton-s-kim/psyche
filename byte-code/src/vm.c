@@ -193,6 +193,7 @@ void initVM()
     vm.systemClass = newSystemClass();
 
     vm.numClass = newNumClass();
+    vm.stringClass = newStringClass();
     vm.listClass = newListClass();
     vm.mapClass = newMapClass();
     vm.vectorClass = newVectorClass();
@@ -390,7 +391,7 @@ static bool invokeFromClass(ObjClass* klass, int name, int argCount, bool isStat
 }
 static bool invokeFromNative(Value receiver, ObjClass* klass, int name, int argCount)
 {
-    Value method = klass->methods.values[name];
+    Value method = (klass->methods.count > name) ? klass->methods.values[name] : UNDEF_VAL;
     if (IS_UNDEF(method)) {
         runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
@@ -447,6 +448,9 @@ static bool invoke(int name, int argCount)
     }
     else if (IS_NUMBER(receiver)) {
         return invokeFromNative(receiver, vm.numClass, name, argCount);
+    }
+    else if (IS_STRING(receiver)) {
+        return invokeFromNative(receiver, vm.stringClass, name, argCount);
     }
     else if (IS_CLASS(receiver)) {
         return invokeFromClass(AS_CLASS(receiver), name, argCount, true);
@@ -861,6 +865,20 @@ static InterpretResult run()
                             index += list->array.count;
                         if (0 <= index && index < list->array.count) {
                             value = list->array.values[(int)index];
+                        }
+                        else {
+                            runtimeError("Out of bound");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    }
+                    else if (IS_STRING(NPEEK(1))) {
+                        ObjString* str = AS_STRING(NPEEK(1));
+                        int idx = (int)index;
+                        if (0 > idx)
+                            idx += str->length;
+                        if (0 <= idx && idx < str->length) {
+                            ObjString* r = copyString(str->chars + idx, 1);
+                            value = OBJ_VAL(r);
                         }
                         else {
                             runtimeError("Out of bound");

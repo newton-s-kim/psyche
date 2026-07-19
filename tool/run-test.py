@@ -265,8 +265,8 @@ class Test:
             )
 
         # Normalize Windows line endings.
-        outputLines = result.stdout.decode("utf-8").split("\n")
-        errorLines = result.stderr.decode("utf-8").split("\n")
+        outputLines = result.stdout.decode("utf-8", errors="replace").split("\n")
+        errorLines = result.stderr.decode("utf-8", errors="replace").split("\n")
 
         # Validate that an expected runtime error occurred.
         if this._expectedRuntimeError is not None:

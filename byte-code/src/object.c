@@ -17,6 +17,7 @@
 #include "psmalloc.h"
 
 #include <cblas.h>
+#include <string.h>
 
 #define ALLOCATE_OBJ(type, objectType) (type*)allocateObject(sizeof(type), objectType)
 //< allocate-obj
@@ -944,6 +945,201 @@ ObjClass* newNumClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_truncate)));
     method = getMethodAddress(copyString("fraction", 8));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_fraction)));
+    return klass;
+}
+static Value str_starts_with(Value receiver, int argc, Value* argv)
+{
+    LAX_LOG("entered");
+    if (1 != argc) {
+        runtimeError("Invalid argument numbers.");
+        return NIL_VAL;
+    }
+    if (!IS_STRING(argv[0])) {
+        runtimeError("String is expected.");
+        return NIL_VAL;
+    }
+    ObjString* body = AS_STRING(receiver);
+    ObjString* str = AS_STRING(argv[0]);
+    bool found = false;
+    if (body->length >= str->length && !strncmp(body->chars, str->chars, str->length))
+        found = true;
+    LAX_LOG("startsWith: %s", (found ? "true" : "false"));
+    return BOOL_VAL(found);
+}
+static Value str_ends_with(Value receiver, int argc, Value* argv)
+{
+    if (1 != argc) {
+        runtimeError("Invalid argument numbers.");
+        return NIL_VAL;
+    }
+    if (!IS_STRING(argv[0])) {
+        runtimeError("String is expected.");
+        return NIL_VAL;
+    }
+    ObjString* body = AS_STRING(receiver);
+    ObjString* str = AS_STRING(argv[0]);
+    bool found = false;
+    if (body->length >= str->length && !strncmp(body->chars + body->length - str->length, str->chars, str->length))
+        found = true;
+    LAX_LOG("endsWith: %s", (found ? "true" : "false"));
+    return BOOL_VAL(found);
+}
+static Value str_size(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjString* body = AS_STRING(receiver);
+    return NUMBER_VAL(body->length);
+}
+static Value str_trim(Value receiver, int argc, Value* argv)
+{
+    char* delimiters = "\n\r\t \0";
+    (void)argc;
+    (void)argv;
+    ObjString* body = AS_STRING(receiver);
+    ObjString* empty = copyString("", 0);
+    char* start = body->chars;
+    bool trimmable = true;
+    while (trimmable && start) {
+        bool found = false;
+        for (char* d = delimiters; *d; d++) {
+            if (*d == *start) {
+                found = true;
+                break;
+            }
+        }
+        if (found)
+            start++;
+        else
+            trimmable = false;
+    };
+    if (0 == *start)
+        return OBJ_VAL(empty);
+    char* end = body->chars + body->length - 1;
+    trimmable = true;
+    while (trimmable && end > start) {
+        bool found = false;
+        for (char* d = delimiters; *d; d++) {
+            if (*d == *end) {
+                found = true;
+                break;
+            }
+        }
+        if (found)
+            end--;
+        else
+            trimmable = false;
+    };
+    if (end == start)
+        return OBJ_VAL(empty);
+    ObjString* target = copyString(body->chars, body->length);
+    int index = 0;
+    for (char* p = start; p < end; p++)
+        target->chars[index++] = *p;
+    target->chars[index] = 0;
+    target->length = index + 1;
+    return OBJ_VAL(target);
+}
+static Value str_trim_end(Value receiver, int argc, Value* argv)
+{
+    char* delimiters = "\n\r\t \0";
+    (void)argc;
+    (void)argv;
+    ObjString* body = AS_STRING(receiver);
+    ObjString* empty = copyString("", 0);
+    char* start = body->chars;
+    bool trimmable = true;
+    char* end = body->chars + body->length - 1;
+    trimmable = true;
+    while (trimmable && end > start) {
+        bool found = false;
+        for (char* d = delimiters; *d; d++) {
+            if (*d == *end) {
+                found = true;
+                break;
+            }
+        }
+        if (found)
+            end--;
+        else
+            trimmable = false;
+    };
+    if (end == start)
+        return OBJ_VAL(empty);
+    ObjString* target = copyString(body->chars, body->length);
+    int index = 0;
+    for (char* p = start; p < end; p++)
+        target->chars[index++] = *p;
+    target->chars[index] = 0;
+    target->length = index + 1;
+    return OBJ_VAL(target);
+}
+static Value str_trim_start(Value receiver, int argc, Value* argv)
+{
+    char* delimiters = "\n\r\t \0";
+    (void)argc;
+    (void)argv;
+    ObjString* body = AS_STRING(receiver);
+    ObjString* empty = copyString("", 0);
+    char* start = body->chars;
+    bool trimmable = true;
+    while (trimmable && start) {
+        bool found = false;
+        for (char* d = delimiters; *d; d++) {
+            if (*d == *start) {
+                found = true;
+                break;
+            }
+        }
+        if (found)
+            start++;
+        else
+            trimmable = false;
+    };
+    if (0 == *start)
+        return OBJ_VAL(empty);
+    ObjString* target = copyString(body->chars, body->length);
+    int index = 0;
+    for (char* p = start; *p; p++)
+        target->chars[index++] = *p;
+    target->chars[index] = 0;
+    target->length = index + 1;
+    return OBJ_VAL(target);
+}
+static Value str_index_of(Value receiver, int argc, Value* argv)
+{
+    if (1 != argc) {
+        runtimeError("Invalid argument numbers.");
+        return NIL_VAL;
+    }
+    if (!IS_STRING(argv[0])) {
+        runtimeError("String is expected.");
+        return NIL_VAL;
+    }
+    ObjString* body = AS_STRING(receiver);
+    ObjString* str = AS_STRING(argv[0]);
+    char* found = strstr(body->chars, str->chars);
+    int index = (found) ? found - body->chars : -1;
+    return NUMBER_VAL(index);
+}
+ObjClass* newStringClass()
+{
+    ObjString* name = copyString("String", 6);
+    ObjClass* klass = newClass(name);
+    int method = getMethodAddress(copyString("size", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_size)));
+    method = getMethodAddress(copyString("indexOf", 7));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_index_of)));
+    method = getMethodAddress(copyString("startsWith", 10));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_starts_with)));
+    method = getMethodAddress(copyString("endsWith", 8));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_ends_with)));
+    method = getMethodAddress(copyString("trim", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim)));
+    method = getMethodAddress(copyString("trimStart", 9));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim_start)));
+    method = getMethodAddress(copyString("trimEnd", 7));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim_end)));
     return klass;
 }
 //> Calls and Functions print-function-helper

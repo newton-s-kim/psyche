@@ -303,6 +303,7 @@ static void freeObject(Obj* object)
 static void markRoots()
 {
     markObject((Obj*)vm.numClass);
+    markObject((Obj*)vm.stringClass);
     markObject((Obj*)vm.listClass);
     markObject((Obj*)vm.mapClass);
     markObject((Obj*)vm.systemClass);
