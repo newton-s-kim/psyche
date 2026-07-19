@@ -6,8 +6,8 @@ print a == 4 * i + 7 * j; // expect: true
 var b = Vector(10, 8);
 print b == (2*i - 5*j) + (8*i + 13*j) == b; // expect: true
 
-print (i + j).abs(); // expect: 1.414
+print (i + j).abs(); // expect: 1.4142135623731
 
 var c = Vector(30,-10);
-print 18*(3*i-j) == c; // expect: true
+print 10*(3*i-j) == c; // expect: true
 

@@ -1,10 +1,11 @@
+include "math";
 var a = Vector(10, 2, -6);
 var b = Vector(-0.5, 4, -3);
-print Vector.dot(a, b); // expect: 21
+print Vector.dot(a, b); // expect: 21.000000
 
 a = Vector(-3, -1, 4);
 b = Vector(2, 14, 5);
-print Vector.dot(a, b); // expect: 0
+print Vector.dot(a, b); // expect: 0.000000
 
 a = Vector(2, 3, 1);
 b = Vector(-1, 5, 1);
@@ -22,21 +23,21 @@ print a.component(b); // expect: -0.557086015
 a = Vector(4, 1);
 b = Vector(2, 3);
 print a.project(b); // expect: 1.692307692
-2.538461538
+// expect: 2.538461538
 
 a = Vector(3, -1, 5);
 b = Vector(2, 1, 2);
 print a.project(b); // expect: 3.333333333
-1.666666667
-3.333333333
+// expect: 1.666666667
+// expect: 3.333333333
 print a - a.project(b); // expect: -0.333333333
-2.666666667
-1.666666667
+// expect: 2.666666667
+// expect: 1.666666667
 
 a = Vector(10,2,-6);
 b = Vector(-0.5,4,-3);
-print Vector.dot(a, b); // expect: 21
+print Vector.dot(a, b); // expect: 21.000000
 
 var i = Vector(1, 0);
 var j = Vector(0, 1);
-print Vector.dot(i, j); // expect: 0
+print Vector.dot(i, j); // expect: 0.000000

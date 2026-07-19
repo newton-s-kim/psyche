@@ -1,12 +1,12 @@
 var a = Vector(2, -3, 6);
 var b = Vector(-1, -7, 4);
 print (a - b).abs(); // expect: 5.385164807
-print (a - b) / 2; // expect 0.5
--5
-5
+print (a - b) / 2; // expect 0.500000
+// expect: -5.000000
+// expect: 5.000000
 
 a = Vector(4, 6, -2);
 b = Vector(1, 8, 3);
-print a - b; // expect: -3
-2
-5
+print a - b; // expect: -3.000000
+// expect: 2.000000
+// expect: 5.000000
