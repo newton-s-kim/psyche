@@ -144,14 +144,22 @@ bool valuesEqual(Value a, Value b)
     if (IS_NUMBER(a) && IS_NUMBER(b)) {
         return AS_NUMBER(a) == AS_NUMBER(b);
     }
-    else if (IS_STRING(a) && IS_STRING(b)) {
-        if (AS_STRING(a)->hash == AS_STRING(b)->hash)
-            return true;
-        else if (!strcmp(AS_STRING(a)->chars, AS_STRING(b)->chars))
-            return true;
+    else if (a != b) {
+        if (IS_STRING(a) && IS_STRING(b)) {
+            return objectsEqual(AS_OBJ(a), AS_OBJ(b));
+        }
+        else if (IS_VECTOR(a) && IS_VECTOR(b)) {
+            return objectsEqual(AS_OBJ(a), AS_OBJ(b));
+        }
+        else if (IS_MATRIX(a) && IS_MATRIX(b)) {
+            return objectsEqual(AS_OBJ(a), AS_OBJ(b));
+        }
+        else {
+            return false;
+        }
     }
     //< nan-equality
-    return a == b;
+    return true;
 #else
     //< Optimization values-equal
     if (a.type != b.type)

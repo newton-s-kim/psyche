@@ -233,6 +233,7 @@ static int intToUtf8(char* chars, int v)
 }
 ObjString* copyString(const char* chars, int length)
 {
+    // TODO:unify hash
     //> Hash Tables copy-string-hash
     uint32_t hash = hashString(chars, length);
     //> copy-string-intern
@@ -651,6 +652,14 @@ static Value vector_transpose(Value receiver, int argc, Value* argv)
     result->isRow = (vector->isRow) ? false : true;
     return OBJ_VAL(result);
 }
+static Value vector_abs(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjVector* vector = AS_VECTOR(receiver);
+    double norm = cblas_dnrm2(vector->size, vector->values, 1);
+    return NUMBER_VAL(norm);
+}
 static Value vector_dot(int argc, Value* argv)
 {
     if (argc != 2) {
@@ -740,6 +749,8 @@ ObjClass* newVectorClass()
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("transpose", 9));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_transpose)));
+    method = getMethodAddress(copyString("abs", 3));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_abs)));
     method = getMethodAddress(copyString("dot", 3));
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_dot)));
     method = getMethodAddress(copyString("cross", 5));
@@ -1060,8 +1071,9 @@ bool objectsEqual(Obj* a, Obj* b)
     case OBJ_STRING: {
         ObjString* stra = (ObjString*)a;
         ObjString* strb = (ObjString*)b;
+        LAX_LOG("%s(%x) vs %s(%x)", stra->chars, stra->hash, strb->chars, strb->hash);
         if (stra->hash == strb->hash && !strcmp(stra->chars, strb->chars))
-            retVal = false;
+            retVal = true;
         break;
     }
     case OBJ_LIST: {
@@ -1070,7 +1082,6 @@ bool objectsEqual(Obj* a, Obj* b)
         ObjList* lstb = (ObjList*)b;
         if (lsta->array.count != lstb->array.count) {
             retVal = false;
-            break;
         }
         else {
             for (int index = 0; index < lsta->array.count; index++) {
@@ -1079,6 +1090,34 @@ bool objectsEqual(Obj* a, Obj* b)
                     break;
                 }
             }
+        }
+        break;
+    }
+    case OBJ_VECTOR: {
+        ObjVector* vcta = (ObjVector*)a;
+        ObjVector* vctb = (ObjVector*)b;
+        if (vcta->size != vctb->size) {
+            retVal = false;
+        }
+        else {
+            ObjVector* diff = duplicateVector(vcta);
+            cblas_daxpy(vcta->size, -1.0, vctb->values, 1, diff->values, 1);
+            int max_idx = cblas_idamax(diff->size, diff->values, 1);
+            retVal = (diff->values[max_idx]) ? false : true;
+        }
+        break;
+    }
+    case OBJ_MATRIX: {
+        ObjMatrix* mtxa = (ObjMatrix*)a;
+        ObjMatrix* mtxb = (ObjMatrix*)b;
+        if (mtxa->rows != mtxb->rows || mtxa->columns != mtxb->columns) {
+            retVal = false;
+        }
+        else {
+            ObjMatrix* diff = duplicateMatrix(mtxa);
+            cblas_daxpy(mtxa->rows * mtxa->columns, -1.0, mtxb->values, 1, diff->values, 1);
+            int max_idx = cblas_idamax(diff->rows * diff->columns, diff->values, 1);
+            retVal = (diff->values[max_idx]) ? false : true;
         }
         break;
     }
