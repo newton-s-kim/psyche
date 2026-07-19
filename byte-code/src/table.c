@@ -75,10 +75,19 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key)
     }
 }
 //< find-entry
+bool tableIsEmpty(Table* table)
+{
+    if (table->count == 0)
+        return true;
+    for (int i = 0; i < table->capacity; i++)
+        if (table->entries[i].key)
+            return false;
+    return true;
+}
 //> table-get
 bool tableGet(Table* table, ObjString* key, Value* value)
 {
-    if (table->count == 0)
+    if (table->count == 0 || !table->entries)
         return false;
 
     Entry* entry = findEntry(table->entries, table->capacity, key);
@@ -149,20 +158,21 @@ bool tableSet(Table* table, ObjString* key, Value value)
 }
 //< table-set
 //> table-delete
-bool tableDelete(Table* table, ObjString* key)
+Value tableDelete(Table* table, ObjString* key)
 {
     if (table->count == 0)
-        return false;
+        return NIL_VAL;
 
     // Find the entry.
     Entry* entry = findEntry(table->entries, table->capacity, key);
     if (entry->key == NULL)
-        return false;
+        return NIL_VAL;
 
     // Place a tombstone in the entry.
+    Value v = entry->value;
     entry->key = NULL;
     entry->value = BOOL_VAL(true);
-    return true;
+    return v;
 }
 //< table-delete
 //> table-add-all

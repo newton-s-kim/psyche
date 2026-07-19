@@ -532,20 +532,44 @@ ObjClass* newSystemClass()
     return klass;
 }
 
+Value map_contains_key(Value receiver, int argc, Value* argv)
+{
+    if (1 != argc) {
+        runtimeError("Invalid arguments");
+        return NIL_VAL;
+    }
+    if (!IS_STRING(argv[0])) {
+        runtimeError("Expects string");
+        return NIL_VAL;
+    }
+    ObjMap* map = AS_MAP(receiver);
+    ObjString* str = AS_STRING(argv[0]);
+    bool found = (tableFindString(&map->map, str->chars, str->length, str->hash)) ? true : false;
+    return BOOL_VAL(found);
+}
+Value map_is_empty(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjMap* map = AS_MAP(receiver);
+    bool empty = tableIsEmpty(&map->map);
+    return BOOL_VAL(empty);
+}
 Value map_remove(Value receiver, int argc, Value* argv)
 {
     LAX_LOG("map_remove(%d)", argc);
     if (0 == argc)
         return NIL_VAL;
     ObjMap* map = AS_MAP(receiver);
+    Value found = NIL_VAL;
     for (int index = 0; index < argc; index++) {
         if (!IS_STRING(argv[index])) {
             runtimeError("Exepects a string");
             return NIL_VAL;
         }
-        tableDelete(&map->map, AS_STRING(argv[index]));
+        found = tableDelete(&map->map, AS_STRING(argv[index]));
     }
-    return NIL_VAL;
+    return found;
 }
 static Value map_size(Value receiver, int argc, Value* argv)
 {
@@ -610,6 +634,10 @@ ObjClass* newMapClass()
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("remove", 6));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)));
+    method = getMethodAddress(copyString("containsKey", 11));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_contains_key)));
+    method = getMethodAddress(copyString("isEmpty", 7));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_is_empty)));
     method = getMethodAddress(copyString("size", 4));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
     method = getMethodAddress(copyString("clear", 5));

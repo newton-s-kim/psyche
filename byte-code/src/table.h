@@ -23,6 +23,7 @@ void initTable(Table* table);
 //> free-table-h
 void freeTable(Table* table);
 //< free-table-h
+bool tableIsEmpty(Table* table);
 //> table-get-h
 bool tableGet(Table* table, ObjString* key, Value* value);
 //< table-get-h
@@ -30,7 +31,7 @@ bool tableGet(Table* table, ObjString* key, Value* value);
 bool tableSet(Table* table, ObjString* key, Value value);
 //< table-set-h
 //> table-delete-h
-bool tableDelete(Table* table, ObjString* key);
+Value tableDelete(Table* table, ObjString* key);
 //< table-delete-h
 //> table-add-all-h
 void tableAddAll(Table* from, Table* to);

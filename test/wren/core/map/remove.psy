@@ -11,7 +11,7 @@ print map.remove("three"); // expect: 3
 print map.size(); // expect: 1
 
 // Remove an already removed entry.
-print map.remove("two"); // expect: null
+print map.remove("two"); // expect: nil
 print map.size(); // expect: 1
 
 print map.remove("one"); // expect: 1
