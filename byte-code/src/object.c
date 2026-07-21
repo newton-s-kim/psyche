@@ -681,6 +681,13 @@ static Value vector_transpose(Value receiver, int argc, Value* argv)
     result->isRow = (vector->isRow) ? false : true;
     return OBJ_VAL(result);
 }
+static Value vector_size(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    ObjVector* vector = AS_VECTOR(receiver);
+    return NUMBER_VAL(vector->size);
+}
 static Value vector_abs(Value receiver, int argc, Value* argv)
 {
     (void)argc;
@@ -780,6 +787,8 @@ ObjClass* newVectorClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_transpose)));
     method = getMethodAddress(copyString("abs", 3));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_abs)));
+    method = getMethodAddress(copyString("size", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_size)));
     method = getMethodAddress(copyString("dot", 3));
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_dot)));
     method = getMethodAddress(copyString("cross", 5));
@@ -855,9 +864,12 @@ static Value matrix_new(int argc, Value* argv)
         for (int index = 0; index < argc; index++) {
             if (IS_NIL(argv[index])) {
                 row++;
+		col = 0;
             }
             else {
+                LAX_LOG("matrix[%d,%d] = %f", row, col, AS_NUMBER(argv[index]));
                 matrix->values[col + row * matrix->columns] = AS_NUMBER(argv[index]);
+		col++;
             }
         }
     }
@@ -1327,7 +1339,7 @@ bool objectsEqual(Obj* a, Obj* b)
             ObjVector* diff = duplicateVector(vcta);
             cblas_daxpy(vcta->size, -1.0, vctb->values, 1, diff->values, 1);
             int max_idx = cblas_idamax(diff->size, diff->values, 1);
-            retVal = (diff->values[max_idx]) ? false : true;
+            retVal = (0.0 < diff->values[max_idx]) ? false : true;
         }
         break;
     }
