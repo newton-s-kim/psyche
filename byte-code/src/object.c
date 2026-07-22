@@ -1329,12 +1329,12 @@ void printObject(Value value)
     case OBJ_MATRIX: {
         ObjMatrix* matrix = AS_MATRIX(value);
         for (int row = 0; row < matrix->rows; row++) {
+            if(row) printf("\n");
             for (int column = 0; column < matrix->columns; column++) {
                 if (column)
                     printf(" ");
                 printf("%f", matrix->values[column + matrix->columns * row]);
             }
-            printf("\n");
         }
         break;
     }
