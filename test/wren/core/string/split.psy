@@ -1,6 +1,6 @@
 print "something".split("meth"); // expect: [so, ing]
 print "something".split("some"); // expect: [, thing]
-print "something".split("ing")  // expect: [someth, ]
+print "something".split("ing");  // expect: [someth, ]
 print "something".split("math"); // expect: [something]
 
 // Multiple.

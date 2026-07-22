@@ -688,6 +688,48 @@ static Value vector_size(Value receiver, int argc, Value* argv)
     ObjVector* vector = AS_VECTOR(receiver);
     return NUMBER_VAL(vector->size);
 }
+static Value vector_component(Value receiver, int argc, Value* argv)
+{
+    if (argc != 1) {
+        runtimeError("Requires 1 arguments.");
+        return NIL_VAL;
+    }
+    if (!IS_VECTOR(argv[0])) {
+        runtimeError("Vector is expected.");
+        return NIL_VAL;
+    }
+    ObjVector* x = AS_VECTOR(receiver);
+    ObjVector* y = AS_VECTOR(argv[0]);
+    if (x->size != y->size) {
+        runtimeError("Vectors are not identical.");
+        return NIL_VAL;
+    }
+    double dot = cblas_ddot(x->size, x->values, 1, y->values, 1);
+    double norm = cblas_dnrm2(y->size, y->values, 1);
+    return NUMBER_VAL(dot / norm);
+}
+static Value vector_project(Value receiver, int argc, Value* argv)
+{
+    if (argc != 1) {
+        runtimeError("Requires 1 arguments.");
+        return NIL_VAL;
+    }
+    if (!IS_VECTOR(argv[0])) {
+        runtimeError("Vector is expected.");
+        return NIL_VAL;
+    }
+    ObjVector* x = AS_VECTOR(receiver);
+    ObjVector* y = AS_VECTOR(argv[0]);
+    if (x->size != y->size) {
+        runtimeError("Vectors are not identical.");
+        return NIL_VAL;
+    }
+    double dot = cblas_ddot(x->size, x->values, 1, y->values, 1);
+    double norm2 = cblas_ddot(y->size, y->values, 1, y->values, 1);
+    ObjVector* r = duplicateVector(y);
+    cblas_dscal(r->size, dot / norm2, r->values, 1);
+    return OBJ_VAL(r);
+}
 static Value vector_abs(Value receiver, int argc, Value* argv)
 {
     (void)argc;
@@ -789,6 +831,10 @@ ObjClass* newVectorClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_abs)));
     method = getMethodAddress(copyString("size", 4));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_size)));
+    method = getMethodAddress(copyString("component", 9));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_component)));
+    method = getMethodAddress(copyString("project", 7));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_project)));
     method = getMethodAddress(copyString("dot", 3));
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_dot)));
     method = getMethodAddress(copyString("cross", 5));
@@ -864,12 +910,12 @@ static Value matrix_new(int argc, Value* argv)
         for (int index = 0; index < argc; index++) {
             if (IS_NIL(argv[index])) {
                 row++;
-		col = 0;
+                col = 0;
             }
             else {
                 LAX_LOG("matrix[%d,%d] = %f", row, col, AS_NUMBER(argv[index]));
                 matrix->values[col + row * matrix->columns] = AS_NUMBER(argv[index]);
-		col++;
+                col++;
             }
         }
     }
