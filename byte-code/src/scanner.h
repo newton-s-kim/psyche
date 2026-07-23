@@ -35,6 +35,8 @@ typedef enum {
     TOKEN_INCLUDE,
     TOKEN_STRING,
     TOKEN_NUMBER,
+    TOKEN_HEX_NUMBER,
+    TOKEN_OCT_NUMBER,
     TOKEN_COMPLEX_NUMBER,
     // Keywords.
     TOKEN_AND,

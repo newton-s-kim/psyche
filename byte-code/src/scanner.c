@@ -212,6 +212,20 @@ static Token identifier()
     return makeToken(identifierType());
 }
 //< identifier
+/*
+static Token hex_number()
+{
+    while (isDigit(peek()) || ('a' <= peek() && 'z' >= peek()) || ('A' <= peek() && 'Z' >= peek()))
+        advance();
+    return makeToken(TOKEN_HEX_NUMBER);
+}
+static Token oct_number()
+{
+    while ('0' <= peek() && '7' >= peek())
+        advance();
+    return makeToken(TOKEN_OCT_NUMBER);
+}
+*/
 //> number
 static Token number()
 {

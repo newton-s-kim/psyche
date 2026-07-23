@@ -929,6 +929,46 @@ static void number(bool canAssign)
     emitConstant(NUMBER_VAL(value));
     //< Types of Values const-number-val
 }
+static void hex_number(bool canAssign)
+{
+    (void)canAssign;
+    //< Global Variables number
+    double value = 0;
+    for (int i = 2; i < parser.previous.length; i++) {
+        char c = parser.previous.start[i];
+        value *= 16;
+        if ('a' <= c && 'z' >= c)
+            value += c - 'a' + 10;
+        else if ('A' <= c && 'Z' >= c)
+            value += c - 'A' + 10;
+        else if ('0' <= c && '9' >= c)
+            value += c - '0';
+    }
+    /* Compiling Expressions number < Types of Values const-number-val
+      emitConstant(value);
+    */
+    //> Types of Values const-number-val
+    emitConstant(NUMBER_VAL(value));
+    //< Types of Values const-number-val
+}
+static void oct_number(bool canAssign)
+{
+    (void)canAssign;
+    //< Global Variables number
+    double value = 0;
+    for (int i = 1; i < parser.previous.length; i++) {
+        char c = parser.previous.start[i];
+        value *= 8;
+        if ('0' <= c && '8' >= c)
+            value += c - '0';
+    }
+    /* Compiling Expressions number < Types of Values const-number-val
+      emitConstant(value);
+    */
+    //> Types of Values const-number-val
+    emitConstant(NUMBER_VAL(value));
+    //< Types of Values const-number-val
+}
 static void complex_number(bool canAssign)
 {
     (void)canAssign;
@@ -1205,6 +1245,8 @@ ParseRule rules[] = {
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
     //< Strings table-string
     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
+    [TOKEN_HEX_NUMBER] = {hex_number, NULL, PREC_NONE},
+    [TOKEN_OCT_NUMBER] = {oct_number, NULL, PREC_NONE},
     [TOKEN_COMPLEX_NUMBER] = {complex_number, NULL, PREC_NONE},
     /* Compiling Expressions rules < Jumping Back and Forth table-and
       [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},

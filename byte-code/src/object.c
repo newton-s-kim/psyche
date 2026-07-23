@@ -936,6 +936,13 @@ ObjClass* newMatrixClass()
     klass->call = newNative(matrix_new);
     return klass;
 }
+static Value num_type(Value receiver, int argc, Value* argv)
+{
+    (void)receiver;
+    (void)argc;
+    (void)argv;
+    return OBJ_VAL(copyString("Num", 3));
+}
 static Value num_fraction(Value receiver, int argc, Value* argv)
 {
     (void)argc;
@@ -1003,6 +1010,8 @@ ObjClass* newNumClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_truncate)));
     method = getMethodAddress(copyString("fraction", 8));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_fraction)));
+    method = getMethodAddress(copyString("type", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_type)));
     return klass;
 }
 static Value str_starts_with(Value receiver, int argc, Value* argv)
@@ -1329,7 +1338,8 @@ void printObject(Value value)
     case OBJ_MATRIX: {
         ObjMatrix* matrix = AS_MATRIX(value);
         for (int row = 0; row < matrix->rows; row++) {
-            if(row) printf("\n");
+            if (row)
+                printf("\n");
             for (int column = 0; column < matrix->columns; column++) {
                 if (column)
                     printf(" ");
