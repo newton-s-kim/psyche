@@ -3,7 +3,7 @@ var x = 0xFF;
 print x; // expect: 255
 print x + 1; // expect: 256
 print x == 255; // expect: true
-print 0x09 is Num; // expect: true
-print x is Num; // expect: true
+print 0x09.type() == "Num"; // expect: true
+print x.type() == "Num"; // expect: true
 print -0xFF; // expect: -255
 print 0xdeadbeef; // expect: 3735928559

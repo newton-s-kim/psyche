@@ -18,7 +18,7 @@ print acos(4 / a.abs()); // expect: 0.93193118255949
 
 a = Vector(2, 3, -4);
 b = Vector(1, 1, 2);
-print a.component(b); // expect: -0.557086015
+print a.component(b); // expect: -1.2247448713916
 
 a = Vector(4, 1);
 b = Vector(2, 3);
