@@ -212,7 +212,6 @@ static Token identifier()
     return makeToken(identifierType());
 }
 //< identifier
-/*
 static Token hex_number()
 {
     while (isDigit(peek()) || ('a' <= peek() && 'z' >= peek()) || ('A' <= peek() && 'Z' >= peek()))
@@ -225,7 +224,6 @@ static Token oct_number()
         advance();
     return makeToken(TOKEN_OCT_NUMBER);
 }
-*/
 //> number
 static Token number()
 {
@@ -293,6 +291,18 @@ Token scanToken()
         return identifier();
     //< scan-identifier
     //> scan-number
+    if ('0' == c) {
+        if ('x' == peek()) {
+            advance();
+            return hex_number();
+        }
+        else if (isDigit(peek())) {
+            return oct_number();
+        }
+        else {
+            makeToken(TOKEN_NUMBER);
+        }
+    }
     if (isDigit(c))
         return number();
     //< scan-number
