@@ -474,7 +474,7 @@ static bool invoke(int name, int argCount)
         }
 
         //< invoke-field
-        return invokeFromClass(instance->klass, name, argCount, false);
+        return invokeFromNative(receiver, instance->klass, name, argCount);
     }
     else if (IS_LIST(receiver)) {
         return invokeFromNative(receiver, vm.listClass, name, argCount);
@@ -881,23 +881,21 @@ static InterpretResult run()
 
                 if (instance->fields.count > name) {
                     ClassMember value = instance->fields.values[name];
-                    DROP(); // Instance.
-                    switch (value.type) {
-                    case MEMBER_VALUE: {
+                    if (MEMBER_VALUE == value.type) {
+                        DROP(); // Instance.
                         PUSH(value.as.value);
                         break;
                     }
-                    case MEMBER_NATIVE_FN: {
+                    else if (MEMBER_NATIVE_FN == value.type) {
                         ObjNative* native = newNative(value.as.nativeFn);
+                        DROP(); // Instance.
                         PUSH(OBJ_VAL(native));
                         break;
                     }
-                    case MEMBER_NATIVE_BOUND_METHOD: {
+                    else if (MEMBER_NATIVE_BOUND_METHOD == value.type) {
                         ObjNativeBoundMethod* native = newNativeBoundMethod(value.as.nativeBoundMethod);
+                        DROP(); // Instance.
                         PUSH(OBJ_VAL(native));
-                        break;
-                    }
-                    case MEMBER_UNDEFINED:
                         break;
                     }
                 }

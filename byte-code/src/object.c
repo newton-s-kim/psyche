@@ -525,6 +525,7 @@ ObjClass* newListClass()
     member.as.nativeBoundMethod = list_each;
     setAtClassMemberArray(&klass->methods, method, member, defmbr);
     method = getMethodAddress(copyString("filled", 6));
+    member.type = MEMBER_NATIVE_FN;
     member.as.nativeFn = list_filled;
     setAtClassMemberArray(&klass->staticMethods, method, member, defmbr);
     klass->call = newNative(list_new);
@@ -545,7 +546,7 @@ ObjClass* newSystemClass()
     ClassMember defmbr;
     defmbr.type = MEMBER_UNDEFINED;
     ClassMember member;
-    member.type = MEMBER_NATIVE_BOUND_METHOD;
+    member.type = MEMBER_NATIVE_FN;
     int method = getMethodAddress(copyString("gc", 2));
     member.as.nativeFn = sys_gc;
     setAtClassMemberArray(&klass->staticMethods, method, member, defmbr);
@@ -874,6 +875,7 @@ ObjClass* newVectorClass()
     member.as.nativeBoundMethod = vector_project;
     setAtClassMemberArray(&klass->methods, method, member, defmbr);
     method = getMethodAddress(copyString("dot", 3));
+    member.type = MEMBER_NATIVE_FN;
     member.as.nativeFn = vector_dot;
     setAtClassMemberArray(&klass->staticMethods, method, member, defmbr);
     method = getMethodAddress(copyString("cross", 5));
