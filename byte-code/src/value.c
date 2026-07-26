@@ -55,8 +55,9 @@ void setAtValueArray(ValueArray* array, int index, Value value)
             array->capacity = GROW_CAPACITY(array->capacity);
         }
         array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
-        for (int i = oldCapacity; i < array->capacity; i++)
-            array->values[i] = UNDEF_VAL;
+        Value* end = array->values + array->capacity;
+        for (Value* i = array->values + oldCapacity; i < end; i++)
+            *i = UNDEF_VAL;
     }
     array->values[index] = value;
     if (array->count <= index)

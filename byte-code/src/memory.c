@@ -90,17 +90,20 @@ void markObject(Obj* object)
 }
 //< Garbage Collection mark-object
 //> Garbage Collection mark-value
+/*
 void markValue(Value value)
 {
     if (IS_OBJ(value))
         markObject(AS_OBJ(value));
 }
+*/
 //< Garbage Collection mark-value
 //> Garbage Collection mark-array
 static void markArray(ValueArray* array)
 {
-    for (int i = 0; i < array->count; i++) {
-        markValue(array->values[i]);
+    Value* end = array->values + array->count;
+    for (Value* i = array->values; i < end; i++) {
+        markValue(*i);
     }
 }
 //< Garbage Collection mark-array
@@ -141,8 +144,9 @@ static void blackenObject(Obj* object)
     case OBJ_CLOSURE: {
         ObjClosure* closure = (ObjClosure*)object;
         markObject((Obj*)closure->function);
-        for (int i = 0; i < closure->upvalueCount; i++) {
-            markObject((Obj*)closure->upvalues[i]);
+        ObjUpvalue** end = closure->upvalues + closure->upvalueCount;
+        for (ObjUpvalue** i = closure->upvalues; i < end; i++) {
+            markObject((Obj*)*i);
         }
         break;
     }
@@ -187,8 +191,9 @@ static void blackenObject(Obj* object)
     }
     case OBJ_THREAD: {
         ObjThread* thread = (ObjThread*)object;
-        for (int i = 0; i < thread->frameCount; i++)
-            markObject((Obj*)thread->frames[i].closure);
+        CallFrame* end = thread->frames + thread->frameCount;
+        for (CallFrame* i = thread->frames; i < end; i++)
+            markObject((Obj*)i->closure);
         for (Value* stk = thread->stack; stk < thread->stackTop; stk++)
             markValue(*stk);
         if (thread->caller)
@@ -306,6 +311,8 @@ static void markRoots()
     markObject((Obj*)vm.stringClass);
     markObject((Obj*)vm.listClass);
     markObject((Obj*)vm.mapClass);
+    markObject((Obj*)vm.vectorClass);
+    markObject((Obj*)vm.matrixClass);
     markObject((Obj*)vm.systemClass);
     for (ObjThread* thread = vm.thread; thread; thread = thread->caller) {
         markObject((Obj*)thread);

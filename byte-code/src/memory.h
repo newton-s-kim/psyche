@@ -32,7 +32,11 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize);
 void markObject(Obj* object);
 //< Garbage Collection mark-object-h
 //> Garbage Collection mark-value-h
-void markValue(Value value);
+inline void markValue(Value value)
+{
+    if (IS_OBJ(value))
+        markObject(AS_OBJ(value));
+}
 //< Garbage Collection mark-value-h
 //> Garbage Collection collect-garbage-h
 void collectGarbage();
