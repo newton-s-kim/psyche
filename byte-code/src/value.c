@@ -12,79 +12,8 @@
 #include "memory.h"
 #include "value.h"
 
-void initValueArray(ValueArray* array)
-{
-    array->values = NULL;
-    array->capacity = 0;
-    array->count = 0;
-}
-void insertValueArray(ValueArray* array, int index, Value value)
-{
-    if (array->capacity < array->count + 1) {
-        int oldCapacity = array->capacity;
-        array->capacity = GROW_CAPACITY(oldCapacity);
-        array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
-    }
-    if (index == array->count) {
-        array->values[index] = value;
-        array->count++;
-    }
-    /*
-    else if (index == -1) {
-        //memmove(array->values, array->values + 1, sizeof(Value) * array->count);
-        for(int i = array->count - 1; i >= 0; i--) array->values[i + 1] = array->values[i];
-        array->values[0] = value;
-        array->count++;
-    }
-    */
-    else if (0 <= index && index < array->count) {
-        // memmove(array->values + index, array->values + index + 1, sizeof(Value) * array->count - index);
-        for (int i = array->count - 1; i >= index; i--)
-            array->values[i + 1] = array->values[i];
-        array->values[index] = value;
-        array->count++;
-    }
-}
-void setAtValueArray(ValueArray* array, int index, Value value)
-{
-    LAX_LOG("enter(0x%p, %d, 0x%lx)", array, index, value);
-    LAX_LOG_ARRAY(*array);
-    if (array->capacity < index + 1) {
-        int oldCapacity = array->capacity;
-        while (array->capacity < index + 1) {
-            array->capacity = GROW_CAPACITY(array->capacity);
-        }
-        array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
-        Value* end = array->values + array->capacity;
-        for (Value* i = array->values + oldCapacity; i < end; i++)
-            *i = UNDEF_VAL;
-    }
-    array->values[index] = value;
-    if (array->count <= index)
-        array->count = index + 1;
-    LAX_LOG_ARRAY(*array);
-}
-//> write-value-array
-void writeValueArray(ValueArray* array, Value value)
-{
-    if (array->capacity < array->count + 1) {
-        int oldCapacity = array->capacity;
-        array->capacity = GROW_CAPACITY(oldCapacity);
-        array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
-    }
+DEFINE_ARRAY(Value, Value);
 
-    array->values[array->count] = value;
-    array->count++;
-}
-//< write-value-array
-//> free-value-array
-void freeValueArray(ValueArray* array)
-{
-    LAX_LOG("freeValueArray:0x%p", array->values);
-    FREE_ARRAY(Value, array->values, array->capacity);
-    initValueArray(array);
-}
-//< free-value-array
 //> print-value
 void printValue(Value value)
 {
