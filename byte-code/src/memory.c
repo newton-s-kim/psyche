@@ -107,6 +107,16 @@ static void markArray(ValueArray* array)
     }
 }
 //< Garbage Collection mark-array
+static void markMemberArray(ClassMemberArray* array)
+{
+    ClassMember* end = array->values + array->count;
+    for (ClassMember* i = array->values; i < end; i++) {
+        if (MEMBER_VALUE != i->type)
+            continue;
+        markValue(i->as.value);
+    }
+}
+
 //> Garbage Collection blacken-object
 static void blackenObject(Obj* object)
 {
@@ -132,8 +142,8 @@ static void blackenObject(Obj* object)
         ObjClass* klass = (ObjClass*)object;
         markObject((Obj*)klass->name);
         //> Methods and Initializers mark-methods
-        markArray(&klass->methods);
-        markArray(&klass->staticMethods);
+        markMemberArray(&klass->methods);
+        markMemberArray(&klass->staticMethods);
         if (klass->call)
             markObject((Obj*)klass->call);
         //< Methods and Initializers mark-methods
@@ -163,7 +173,7 @@ static void blackenObject(Obj* object)
     case OBJ_INSTANCE: {
         ObjInstance* instance = (ObjInstance*)object;
         markObject((Obj*)instance->klass);
-        markArray(&instance->fields);
+        markMemberArray(&instance->fields);
         break;
     }
         //< Classes and Instances blacken-instance
@@ -222,8 +232,8 @@ static void freeObject(Obj* object)
     case OBJ_CLASS: {
         //> Methods and Initializers free-methods
         ObjClass* klass = (ObjClass*)object;
-        freeValueArray(&klass->methods);
-        freeValueArray(&klass->staticMethods);
+        freeClassMemberArray(&klass->methods);
+        freeClassMemberArray(&klass->staticMethods);
         //< Methods and Initializers free-methods
         FREE(ObjClass, object);
         break;
@@ -250,7 +260,7 @@ static void freeObject(Obj* object)
         //> Classes and Instances free-instance
     case OBJ_INSTANCE: {
         ObjInstance* instance = (ObjInstance*)object;
-        freeValueArray(&instance->fields);
+        freeClassMemberArray(&instance->fields);
         FREE(ObjInstance, object);
         break;
     }

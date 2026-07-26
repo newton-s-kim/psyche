@@ -180,7 +180,14 @@ typedef struct {
     NativeBoundMethod method;
 } ObjNativeBoundMethod;
 
-typedef enum { MEMBER_VALUE = 0, MEMBER_NATIVE_FN, MEMBER_NATIVE_BOUND_METHOD } ClassMemberType;
+// clang-format off
+typedef enum {
+    MEMBER_UNDEFINED = 0,
+    MEMBER_VALUE,
+    MEMBER_NATIVE_FN,
+    MEMBER_NATIVE_BOUND_METHOD
+} ClassMemberType;
+// clang-format on
 
 typedef struct {
     ClassMemberType type;
@@ -197,9 +204,9 @@ typedef struct {
     Obj obj;
     ObjString* name;
     //> Methods and Initializers class-methods
-    ValueArray methods;
+    ClassMemberArray methods;
     //< Methods and Initializers class-methods
-    ValueArray staticMethods;
+    ClassMemberArray staticMethods;
     ObjNative* call;
 } ObjClass;
 //< Classes and Instances obj-class
@@ -208,7 +215,7 @@ typedef struct {
 typedef struct {
     Obj obj;
     ObjClass* klass;
-    ValueArray fields; // [fields]
+    ClassMemberArray fields; // [fields]
 } ObjInstance;
 //< Classes and Instances obj-instance
 

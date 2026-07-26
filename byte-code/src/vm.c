@@ -328,13 +328,14 @@ static bool callValue(Value callee, int argCount)
             }
             vm.thread->stackTop[-argCount - 1] = instance;
             //> Methods and Initializers call-init
-            Value initializer =
-                (klass->methods.count > vm.initAddress) ? klass->methods.values[vm.initAddress] : UNDEF_VAL;
-            LAX_LOG("initialiser=0x%lx", initializer);
-            // if (tableGet(&klass->methods, vm.initString, &initializer)) {
-            if (!IS_UNDEF(initializer)) {
-                return call(AS_CLOSURE(initializer), argCount);
-                //> no-init-arity-error
+            if (klass->methods.count > vm.initAddress) {
+                ClassMember initializer = klass->methods.values[vm.initAddress];
+                LAX_LOG("initialiser=0x%lx", initializer.as.value);
+                // if (tableGet(&klass->methods, vm.initString, &initializer)) {
+                if (MEMBER_VALUE == initializer.type) {
+                    return call(AS_CLOSURE(initializer.as.value), argCount);
+                    //> no-init-arity-error
+                }
             }
             else if (argCount != 0) {
                 LAX_LOG("Expected 0 arguments but got %d.", argCount);
@@ -374,37 +375,75 @@ static bool callValue(Value callee, int argCount)
 //> Methods and Initializers invoke-from-class
 static bool invokeFromClass(ObjClass* klass, int name, int argCount, bool isStatic)
 {
-    Value method = NIL_VAL;
+    ClassMember method;
     if (isStatic) {
         LAX_LOG_ARRAY(klass->staticMethods);
-        method = (klass->staticMethods.count > name) ? klass->staticMethods.values[name] : UNDEF_VAL;
+        if (klass->staticMethods.count > name) {
+            runtimeError("Undefined property '%s'.", undefinedMethod(name));
+            return false;
+        }
+        method = klass->staticMethods.values[name];
     }
     else {
         LAX_LOG_ARRAY(klass->methods);
-        method = (klass->methods.count > name) ? klass->methods.values[name] : UNDEF_VAL;
-    }
-    if (IS_UNDEF(method)) {
-        runtimeError("Undefined property '%s'.", undefinedMethod(name));
-        return false;
-    }
-    return callValue(method, argCount);
-}
-static bool invokeFromNative(Value receiver, ObjClass* klass, int name, int argCount)
-{
-    Value method = (klass->methods.count > name) ? klass->methods.values[name] : UNDEF_VAL;
-    if (IS_UNDEF(method)) {
-        runtimeError("Undefined property '%s'.", undefinedMethod(name));
-        return false;
+        if (klass->methods.count > name) {
+            runtimeError("Undefined property '%s'.", undefinedMethod(name));
+            return false;
+        }
+        method = klass->methods.values[name];
     }
     bool retVal = false;
-    if (IS_BOUND_METHOD(method)) {
-        retVal = callValue(method, argCount);
+    switch (method.type) {
+    case MEMBER_UNDEFINED: {
+        runtimeError("Undefined property '%s'.", undefinedMethod(name));
+        return false;
+        break;
     }
-    else if (IS_NATIVE_BOUND_METHOD(method)) {
-        Value result = AS_NATIVE_BOUND_METHOD(method)(receiver, argCount, vm.thread->stackTop - argCount);
+    case MEMBER_VALUE: {
+        retVal = callValue(method.as.value, argCount);
+        break;
+    }
+    case MEMBER_NATIVE_FN: {
+        Value result = method.as.nativeFn(argCount, vm.thread->stackTop - argCount);
         vm.thread->stackTop -= argCount + 1;
         PUSH(result);
         retVal = true;
+        break;
+    }
+    case MEMBER_NATIVE_BOUND_METHOD: {
+        break;
+    }
+    }
+    return retVal;
+}
+static bool invokeFromNative(Value receiver, ObjClass* klass, int name, int argCount)
+{
+    if (klass->methods.count > name) {
+        runtimeError("Undefined property '%s'.", undefinedMethod(name));
+        return false;
+    }
+    ClassMember method = klass->methods.values[name];
+    bool retVal = false;
+    switch (method.type) {
+    case MEMBER_UNDEFINED: {
+        runtimeError("Undefined property '%s'.", undefinedMethod(name));
+        return false;
+        break;
+    }
+    case MEMBER_VALUE: {
+        retVal = callValue(method.as.value, argCount);
+        break;
+    }
+    case MEMBER_NATIVE_BOUND_METHOD: {
+        Value result = method.as.nativeBoundMethod(receiver, argCount, vm.thread->stackTop - argCount);
+        vm.thread->stackTop -= argCount + 1;
+        PUSH(result);
+        retVal = true;
+        break;
+    }
+    case MEMBER_NATIVE_FN: {
+        break;
+    }
     }
     return retVal;
 }
@@ -423,12 +462,15 @@ static bool invoke(int name, int argCount)
         //> invoke-field
 
         LAX_LOG_ARRAY(instance->fields);
-        Value value = (instance->fields.count > name) ? instance->fields.values[name] : UNDEF_VAL;
-        // if (tableGet(&instance->fields, name, &value)) {
-        if (!IS_UNDEF(value)) {
-            LAX_LOG("method %d is found", name);
-            vm.thread->stackTop[-argCount - 1] = value;
-            return callValue(value, argCount);
+        if (instance->fields.count > name) {
+            ClassMember method = instance->fields.values[name];
+            // if (tableGet(&instance->fields, name, &value)) {
+            if (MEMBER_VALUE == method.type) {
+                LAX_LOG("method %d is found", name);
+                vm.thread->stackTop[-argCount - 1] = method.as.value;
+                return callValue(method.as.value, argCount);
+            }
+            // TODO: handling native fn and native bound method
         }
 
         //< invoke-field
@@ -464,15 +506,37 @@ static bool invoke(int name, int argCount)
 //> Methods and Initializers bind-method
 static bool bindMethod(ObjClass* klass, int name)
 {
-    Value method = (klass->methods.count > name) ? klass->methods.values[name] : UNDEF_VAL;
-    if (IS_UNDEF(method)) {
+    if (klass->methods.count <= name) {
         runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
     }
+    ClassMember method = klass->methods.values[name];
 
-    ObjBoundMethod* bound = newBoundMethod(PEEK(), AS_CLOSURE(method));
-    DROP();
-    PUSH(OBJ_VAL(bound));
+    switch (method.type) {
+    case MEMBER_UNDEFINED: {
+        runtimeError("Undefined property '%s'.", undefinedMethod(name));
+        return false;
+        break;
+    }
+    case MEMBER_NATIVE_FN: {
+        ObjNative* native = newNative(method.as.nativeFn);
+        DROP();
+        PUSH(OBJ_VAL(native));
+        break;
+    }
+    case MEMBER_NATIVE_BOUND_METHOD: {
+        ObjNativeBoundMethod* native = newNativeBoundMethod(method.as.nativeBoundMethod);
+        DROP();
+        PUSH(OBJ_VAL(native));
+        break;
+    }
+    case MEMBER_VALUE: {
+        ObjBoundMethod* bound = newBoundMethod(PEEK(), AS_CLOSURE(method.as.value));
+        DROP();
+        PUSH(OBJ_VAL(bound));
+        break;
+    }
+    }
     return true;
 }
 //< Methods and Initializers bind-method
@@ -524,7 +588,12 @@ static void defineMethod(int name)
     LAX_LOG("defineMethod(%d)", name);
     Value method = PEEK();
     ObjClass* klass = AS_CLASS(NPEEK(1));
-    setAtValueArray(&klass->methods, name, method, UNDEF_VAL);
+    ClassMember defmbr;
+    defmbr.type = MEMBER_UNDEFINED;
+    ClassMember mbr;
+    mbr.type = MEMBER_VALUE;
+    mbr.as.value = method;
+    setAtClassMemberArray(&klass->methods, name, mbr, defmbr);
     LAX_LOG_ARRAY(klass->methods);
     DROP();
 }
@@ -810,11 +879,27 @@ static InterpretResult run()
                 ObjInstance* instance = AS_INSTANCE(PEEK());
                 int name = READ_SHORT();
 
-                Value value = (instance->fields.count > name) ? instance->fields.values[name] : UNDEF_VAL;
-                if (!IS_UNDEF(value)) {
+                if (instance->fields.count > name) {
+                    ClassMember value = instance->fields.values[name];
                     DROP(); // Instance.
-                    PUSH(value);
-                    break;
+                    switch (value.type) {
+                    case MEMBER_VALUE: {
+                        PUSH(value.as.value);
+                        break;
+                    }
+                    case MEMBER_NATIVE_FN: {
+                        ObjNative* native = newNative(value.as.nativeFn);
+                        PUSH(OBJ_VAL(native));
+                        break;
+                    }
+                    case MEMBER_NATIVE_BOUND_METHOD: {
+                        ObjNativeBoundMethod* native = newNativeBoundMethod(value.as.nativeBoundMethod);
+                        PUSH(OBJ_VAL(native));
+                        break;
+                    }
+                    case MEMBER_UNDEFINED:
+                        break;
+                    }
                 }
                 //> get-undefined
 
@@ -846,7 +931,23 @@ static InterpretResult run()
 
             //< set-not-instance
             ObjInstance* instance = AS_INSTANCE(NPEEK(1));
-            setAtValueArray(&instance->fields, READ_SHORT(), PEEK(), UNDEF_VAL);
+            ClassMember defmbr;
+            defmbr.type = MEMBER_UNDEFINED;
+            ClassMember mbr;
+            Value v = PEEK();
+            if (IS_NATIVE(v)) {
+                mbr.type = MEMBER_NATIVE_FN;
+                mbr.as.nativeFn = AS_NATIVE(v);
+            }
+            else if (IS_NATIVE_BOUND_METHOD(v)) {
+                mbr.type = MEMBER_NATIVE_BOUND_METHOD;
+                mbr.as.nativeBoundMethod = AS_NATIVE_BOUND_METHOD(v);
+            }
+            else {
+                mbr.type = MEMBER_VALUE;
+                mbr.as.value = v;
+            }
+            setAtClassMemberArray(&instance->fields, READ_SHORT(), mbr, defmbr);
             Value value = POP();
             DROP();
             PUSH(value);
@@ -1593,7 +1694,7 @@ static InterpretResult run()
             ObjClass* subclass = AS_CLASS(PEEK());
             // tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
             for (int i = 0; i < pSuperClass->methods.count; i++) {
-                writeValueArray(&subclass->methods, pSuperClass->methods.values[i]);
+                writeClassMemberArray(&subclass->methods, pSuperClass->methods.values[i]);
                 /*
             if (IS_UNDEF(pSuperClass->methods.values[i]))
                 continue;
