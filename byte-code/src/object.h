@@ -180,6 +180,19 @@ typedef struct {
     NativeBoundMethod method;
 } ObjNativeBoundMethod;
 
+typedef enum { MEMBER_VALUE = 0, MEMBER_NATIVE_FN, MEMBER_NATIVE_BOUND_METHOD } ClassMemberType;
+
+typedef struct {
+    ClassMemberType type;
+    union {
+        NativeFn nativeFn;
+        NativeBoundMethod nativeBoundMethod;
+        Value value;
+    } as;
+} ClassMember;
+
+DECLARE_ARRAY(ClassMember, ClassMember);
+
 typedef struct {
     Obj obj;
     ObjString* name;

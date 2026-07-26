@@ -524,7 +524,7 @@ static void defineMethod(int name)
     LAX_LOG("defineMethod(%d)", name);
     Value method = PEEK();
     ObjClass* klass = AS_CLASS(NPEEK(1));
-    setAtValueArray(&klass->methods, name, method);
+    setAtValueArray(&klass->methods, name, method, UNDEF_VAL);
     LAX_LOG_ARRAY(klass->methods);
     DROP();
 }
@@ -846,7 +846,7 @@ static InterpretResult run()
 
             //< set-not-instance
             ObjInstance* instance = AS_INSTANCE(NPEEK(1));
-            setAtValueArray(&instance->fields, READ_SHORT(), PEEK());
+            setAtValueArray(&instance->fields, READ_SHORT(), PEEK(), UNDEF_VAL);
             Value value = POP();
             DROP();
             PUSH(value);

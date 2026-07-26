@@ -23,6 +23,8 @@
 //< allocate-obj
 //> allocate-object
 
+DEFINE_ARRAY(ClassMember, ClassMember);
+
 static Obj* allocateObject(size_t size, ObjType type)
 {
     Obj* object = (Obj*)reallocate(NULL, 0, size);
@@ -498,21 +500,21 @@ ObjClass* newListClass()
     ObjString* name = copyString("List", 4);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("add", 3));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_add)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_add)), UNDEF_VAL);
     method = getMethodAddress(copyString("size", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_size)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_size)), UNDEF_VAL);
     method = getMethodAddress(copyString("insert", 6));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_insert)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_insert)), UNDEF_VAL);
     method = getMethodAddress(copyString("contains", 8));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_contains)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_contains)), UNDEF_VAL);
     method = getMethodAddress(copyString("clear", 5));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)), UNDEF_VAL);
     method = getMethodAddress(copyString("indexOf", 7));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)), UNDEF_VAL);
     method = getMethodAddress(copyString("each", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_each)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_each)), UNDEF_VAL);
     method = getMethodAddress(copyString("filled", 6));
-    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
+    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)), UNDEF_VAL);
     klass->call = newNative(list_new);
     return klass;
 }
@@ -529,7 +531,7 @@ ObjClass* newSystemClass()
     ObjString* name = copyString("System", 6);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("gc", 2));
-    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(sys_gc)));
+    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(sys_gc)), UNDEF_VAL);
     return klass;
 }
 
@@ -634,17 +636,17 @@ ObjClass* newMapClass()
     ObjString* name = copyString("Map", 3);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("remove", 6));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_remove)), UNDEF_VAL);
     method = getMethodAddress(copyString("containsKey", 11));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_contains_key)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_contains_key)), UNDEF_VAL);
     method = getMethodAddress(copyString("isEmpty", 7));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_is_empty)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_is_empty)), UNDEF_VAL);
     method = getMethodAddress(copyString("size", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)), UNDEF_VAL);
     method = getMethodAddress(copyString("clear", 5));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_clear)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_clear)), UNDEF_VAL);
     method = getMethodAddress(copyString("each", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_each)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_each)), UNDEF_VAL);
     klass->call = newNative(map_new);
     return klass;
 }
@@ -826,19 +828,19 @@ ObjClass* newVectorClass()
     ObjString* name = copyString("Vector", 6);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("transpose", 9));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_transpose)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_transpose)), UNDEF_VAL);
     method = getMethodAddress(copyString("abs", 3));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_abs)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_abs)), UNDEF_VAL);
     method = getMethodAddress(copyString("size", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_size)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_size)), UNDEF_VAL);
     method = getMethodAddress(copyString("component", 9));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_component)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_component)), UNDEF_VAL);
     method = getMethodAddress(copyString("project", 7));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_project)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(vector_project)), UNDEF_VAL);
     method = getMethodAddress(copyString("dot", 3));
-    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_dot)));
+    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_dot)), UNDEF_VAL);
     method = getMethodAddress(copyString("cross", 5));
-    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_cross)));
+    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_cross)), UNDEF_VAL);
     klass->call = newNative(vector_new);
     return klass;
 }
@@ -932,7 +934,7 @@ ObjClass* newMatrixClass()
     ObjString* name = copyString("Matrix", 6);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("transpose", 9));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(matrix_transpose)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(matrix_transpose)), UNDEF_VAL);
     klass->call = newNative(matrix_new);
     return klass;
 }
@@ -997,21 +999,21 @@ ObjClass* newNumClass()
     ObjString* name = copyString("Number", 6);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("abs", 3));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_abs)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_abs)), UNDEF_VAL);
     method = getMethodAddress(copyString("sign", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_sign)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_sign)), UNDEF_VAL);
     method = getMethodAddress(copyString("ceil", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_ceil)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_ceil)), UNDEF_VAL);
     method = getMethodAddress(copyString("floor", 5));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_floor)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_floor)), UNDEF_VAL);
     method = getMethodAddress(copyString("round", 5));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_round)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_round)), UNDEF_VAL);
     method = getMethodAddress(copyString("truncate", 8));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_truncate)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_truncate)), UNDEF_VAL);
     method = getMethodAddress(copyString("fraction", 8));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_fraction)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_fraction)), UNDEF_VAL);
     method = getMethodAddress(copyString("type", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_type)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(num_type)), UNDEF_VAL);
     return klass;
 }
 static Value str_starts_with(Value receiver, int argc, Value* argv)
@@ -1194,19 +1196,19 @@ ObjClass* newStringClass()
     ObjString* name = copyString("String", 6);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("size", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_size)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_size)), UNDEF_VAL);
     method = getMethodAddress(copyString("indexOf", 7));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_index_of)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_index_of)), UNDEF_VAL);
     method = getMethodAddress(copyString("startsWith", 10));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_starts_with)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_starts_with)), UNDEF_VAL);
     method = getMethodAddress(copyString("endsWith", 8));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_ends_with)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_ends_with)), UNDEF_VAL);
     method = getMethodAddress(copyString("trim", 4));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim)), UNDEF_VAL);
     method = getMethodAddress(copyString("trimStart", 9));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim_start)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim_start)), UNDEF_VAL);
     method = getMethodAddress(copyString("trimEnd", 7));
-    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim_end)));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim_end)), UNDEF_VAL);
     return klass;
 }
 //> Calls and Functions print-function-helper
