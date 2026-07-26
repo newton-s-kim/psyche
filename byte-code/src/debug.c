@@ -34,8 +34,7 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset)
 static int variableInstruction(const char* name, Chunk* chunk, int offset)
 {
     uint16_t constant = READ_ADDRESS();
-    printf("%-16s %4d '", name, constant);
-    printf("'\n");
+    printf("%-16s %4d\n", name, constant);
     //> return-after-operand
     return offset + 3;
     //< return-after-operand
@@ -45,9 +44,7 @@ static int invokeInstruction(const char* name, Chunk* chunk, int offset)
 {
     uint16_t constant = READ_ADDRESS();
     uint8_t argCount = chunk->code[offset + 3];
-    printf("%-16s (%d args) %4d '", name, argCount, constant);
-    printValue(chunk->constants.values[constant]);
-    printf("'\n");
+    printf("%-16s (%d args) %4d\n", name, argCount, constant);
     return offset + 4;
 }
 //< Methods and Initializers invoke-instruction
