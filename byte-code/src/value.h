@@ -17,6 +17,11 @@ typedef struct ObjString ObjString;
 //< Strings forward-declare-obj
 //> Optimization nan-boxing
 #ifdef NAN_BOXING
+typedef union {
+    uint64_t bits64;
+    uint32_t bits32[2];
+    double num;
+} doubleBits;
 //> qnan
 
 //> sign-bit
@@ -79,18 +84,18 @@ typedef uint64_t Value;
 
 static inline double valueToNum(Value value)
 {
-    double num;
-    memcpy(&num, &value, sizeof(Value));
-    return num;
+    doubleBits data;
+    data.bits64 = value;
+    return data.num;
 }
 //< value-to-num
 //> num-to-value
 
 static inline Value numToValue(double num)
 {
-    Value value;
-    memcpy(&value, &num, sizeof(double));
-    return value;
+    doubleBits data;
+    data.num = num;
+    return data.bits64;
 }
 //< num-to-value
 
