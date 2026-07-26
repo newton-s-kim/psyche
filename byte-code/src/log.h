@@ -13,7 +13,8 @@
     }
 #define LAX_LOG_ARRAY(a)                                                                                               \
     {                                                                                                                  \
-        printf("(%d,%d)[", (a).count, (a).capacity);                                                                   \
+        fprintf(stderr, "%s(%d):%s  ", __FILE__, __LINE__, __FUNCTION__);                                              \
+        printf("0x%p(%d/%d)[", (void*)&(a), (a).count, (a).capacity);                                                  \
         for (int i = 0; i < (a).count; i++) {                                                                          \
             if (i)                                                                                                     \
                 printf(", ");                                                                                          \
