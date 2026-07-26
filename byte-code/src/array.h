@@ -39,8 +39,7 @@
     }                                                                                                                  \
     void setAt##name##Array(name##Array* array, int index, type value, type defVal)                                    \
     {                                                                                                                  \
-        LAX_LOG("enter(0x%p, %d, 0x%lx)", array, index, value);                                                        \
-        LAX_LOG_ARRAY(*array);                                                                                         \
+        LAX_LOG("enter(0x%p, %d)", array, index);                                                                      \
         if (array->capacity < index + 1) {                                                                             \
             int oldCapacity = array->capacity;                                                                         \
             while (array->capacity < index + 1) {                                                                      \
@@ -54,7 +53,6 @@
         array->values[index] = value;                                                                                  \
         if (array->count <= index)                                                                                     \
             array->count = index + 1;                                                                                  \
-        LAX_LOG_ARRAY(*array);                                                                                         \
     }                                                                                                                  \
     void write##name##Array(name##Array* array, type value)                                                            \
     {                                                                                                                  \

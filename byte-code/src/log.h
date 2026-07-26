@@ -18,7 +18,7 @@
         for (int i = 0; i < (a).count; i++) {                                                                          \
             if (i)                                                                                                     \
                 printf(", ");                                                                                          \
-            printValue((a).values[i]);                                                                                 \
+            printf("%d", (a).values[i].type);                                                                          \
         }                                                                                                              \
         printf("]\n");                                                                                                 \
     }

@@ -378,7 +378,7 @@ static bool invokeFromClass(ObjClass* klass, int name, int argCount, bool isStat
     ClassMember method;
     if (isStatic) {
         LAX_LOG_ARRAY(klass->staticMethods);
-        if (klass->staticMethods.count > name) {
+        if (klass->staticMethods.count <= name) {
             runtimeError("Undefined property '%s'.", undefinedMethod(name));
             return false;
         }
@@ -386,7 +386,7 @@ static bool invokeFromClass(ObjClass* klass, int name, int argCount, bool isStat
     }
     else {
         LAX_LOG_ARRAY(klass->methods);
-        if (klass->methods.count > name) {
+        if (klass->methods.count <= name) {
             runtimeError("Undefined property '%s'.", undefinedMethod(name));
             return false;
         }
@@ -418,7 +418,7 @@ static bool invokeFromClass(ObjClass* klass, int name, int argCount, bool isStat
 }
 static bool invokeFromNative(Value receiver, ObjClass* klass, int name, int argCount)
 {
-    if (klass->methods.count > name) {
+    if (klass->methods.count <= name) {
         runtimeError("Undefined property '%s'.", undefinedMethod(name));
         return false;
     }
