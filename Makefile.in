@@ -2,10 +2,16 @@ BUILD_DIR=@__build_dir__@
 PROGRAMME=psyche
 
 all:
-	$(MAKE) -C $(BUILD_DIR) -j`nproc`
+	$(MAKE) -C byte-code $@ -j`nproc`
+	$(MAKE) -C libs/math $@ -j`nproc`
+	$(MAKE) -C pcsa $@ -j`nproc`
+	$(MAKE) -C psyche $@ -j`nproc`
 
 clean:
-	$(MAKE) -C $(BUILD_DIR) clean/fast
+	$(MAKE) -C byte-code $@ -j`nproc`
+	$(MAKE) -C libs/math $@ -j`nproc`
+	$(MAKE) -C pcsa $@ -j`nproc`
+	$(MAKE) -C psyche $@ -j`nproc`
 
 run:
 	$(BUILD_DIR)/$(PROGRAMME)
@@ -19,9 +25,10 @@ bm:
 prof:
 	for f in `find test/wren/benchmark/ -name "*.psy"`; do ./profile.sh $$f; done
 
-distclean:
-	rm Makefile
-	rm byte-code/src/common.h
+distclean: clean
 	rm -rf $(BUILD_DIR)
+	rm byte-code/src/common.h
+	rm Makefile byte-code/Makefile libs/math/Makefile pcsa/Makefile psyche/Makefile
 	find test -name "*.gmon" -exec rm {} \;
 	find test -name "*.png" -exec rm {} \;
+

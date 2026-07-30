@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROGRAMME=./build/pcsa/pcsa
+PROGRAMME=./build/pcsa
 GPROF=gprof
 GPROF2DOT=gprof2dot
 

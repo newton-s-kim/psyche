@@ -1543,8 +1543,15 @@ static void varDeclaration()
 static Path* findPath(Path* file)
 {
     Path* path = NULL;
-    const char* dirs[] = {"./build/libs/math", "./build/libs/container", "./build/libs/sigpack", "./build/libs/json",
-                          "./build/libs/io",   "/usr/local/lib/psyche",  "/usr/lib/psyche",      NULL};
+    const char* dirs[] = {"./build",
+                          "./build/libs/math",
+                          "./build/libs/container",
+                          "./build/libs/sigpack",
+                          "./build/libs/json",
+                          "./build/libs/io",
+                          "/usr/local/lib/psyche",
+                          "/usr/lib/psyche",
+                          NULL};
     for (int i = 0; NULL != dirs[i]; i++) {
         if (path)
             pathFree(path);

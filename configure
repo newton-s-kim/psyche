@@ -112,9 +112,13 @@ if [ $PROFILING == "yes" ]; then
 fi
 
 # generate Makefiles
-mkdir -p "$BUILD" && pushd "$BUILD" && cmake -DENABLE_GPROF=$PROF -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Unix Makefiles" .. && popd > /dev/null
+#mkdir -p "$BUILD" && pushd "$BUILD" && cmake -DENABLE_GPROF=$PROF -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Unix Makefiles" .. && popd > /dev/null
 
 # store current build type
-printf "$BUILD_TYPE" > "$BUILD_TYPE_FILE_PATH"
+#printf "$BUILD_TYPE" > "$BUILD_TYPE_FILE_PATH"
 
-sed "s#@__build_dir__@#$BUILD#g" < Makefile.in > Makefile
+for f in `find . -name "Makefile.in"`
+do
+	sed "s#@__build_dir__@#$BUILD#g" < $f > ${f%.in}
+done
+mkdir -p $BUILD

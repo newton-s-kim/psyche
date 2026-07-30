@@ -1,0 +1,26 @@
+BUILD_DIR=@__build_dir__@
+LIBNAME=$(BUILD_DIR)/libscmath.so
+
+GXX=g++
+
+OBJ_DIR=obj
+OBJS=$(OBJ_DIR)/main.o
+
+CXXFLAGS=-I../../byte-code/src -fPIC -O3 -flto
+LIBS=-larmadillo
+LDFLAGS=-shared -flto
+
+$(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
+	$(GXX) $(CXXFLAGS) -o $@ -c $<
+
+all: $(LIBNAME)
+
+$(OBJ_DIR):
+	mkdir -p $@
+
+$(LIBNAME): $(OBJS)
+	$(GXX) -o $@ $(LDFLAGS) $^ $(LIBS)
+
+clean:
+	rm -rf $(OBJ_DIR)
+	rm -f $(LIBNAME)

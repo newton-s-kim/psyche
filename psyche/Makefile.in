@@ -1,0 +1,24 @@
+BUILD_DIR=@__build_dir__@
+PROGRAMME=$(BUILD_DIR)/psyche
+
+GCC=gcc
+
+OBJ_DIR=obj
+
+OBJS=main.o
+
+CFLAGS=-I../byte-code/src -O3 -flto
+LDFLAGS=-L $(BUILD_DIR)
+LIBS=-lpcvm -lreadline
+
+$(OBJ_DIR)/%o: %.c | $(OBJ_DIR)
+	$(GCC) $(CFLAGS) -o $@ -c $<
+
+all: $(PROGRAMME)
+
+$(PROGRAMME): $(OBJS)
+	$(GCC) -o $@ $^ $(LDFLAGS) $(LIBS)
+
+clean:
+	rm -rf $(OBJ_DIR)
+	rm -f $(PROGRAMME)

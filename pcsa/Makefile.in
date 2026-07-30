@@ -1,0 +1,42 @@
+BUILD_DIR=@__build_dir__@
+PROGRAMME=$(BUILD_DIR)/pcsa
+
+GCC=gcc
+
+OBJ_DIR=obj
+PCVM_DIR=byte-code/src
+PSYCHE_DIR=psyche
+
+OBJS=$(OBJ_DIR)/$(PCVM_DIR)/chunk.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/compiler.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/debug.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/dl.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/memory.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/object.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/path.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/scanner.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/str.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/table.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/value.o \
+     $(OBJ_DIR)/$(PCVM_DIR)/vm.o \
+     $(OBJ_DIR)/$(PSYCHE_DIR)/main.o
+
+CFLAGS=-I../byte-code/src -O0 -pg -g -I/usr/include/x86_64-linux-gnu/openblas64-openmp
+LIBS=-lreadline -lm -lopenblas64
+$(OBJ_DIR)/%.o: ../%.c | $(OBJ_DIR)/$(PCVM_DIR) $(OBJ_DIR)/$(PSYCHE_DIR)
+	$(GCC) $(CFLAGS) -o $@ -c $<
+
+all: $(PROGRAMME)
+
+$(OBJ_DIR)/$(PCVM_DIR):
+	mkdir -p $@
+
+$(OBJ_DIR)/$(PSYCHE_DIR):
+	mkdir -p $@
+
+$(PROGRAMME): $(OBJS)
+	$(GCC) -o $@ $^ $(LDFLAGS) $(LIBS)
+
+clean:
+	rm -rf $(OBJ_DIR)
+	rm -f $(PROGRAMME)

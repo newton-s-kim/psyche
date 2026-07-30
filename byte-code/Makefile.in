@@ -1,0 +1,39 @@
+BUILD_DIR=@__build_dir__@
+LIBNAME=$(BUILD_DIR)/libpcvm.so
+
+GCC=gcc
+
+SRC_DIR=src
+OBJ_DIR=obj
+
+OBJS=$(OBJ_DIR)/chunk.o \
+     $(OBJ_DIR)/compiler.o \
+     $(OBJ_DIR)/debug.o \
+     $(OBJ_DIR)/dl.o \
+     $(OBJ_DIR)/memory.o \
+     $(OBJ_DIR)/object.o \
+     $(OBJ_DIR)/path.o \
+     $(OBJ_DIR)/scanner.o \
+     $(OBJ_DIR)/str.o \
+     $(OBJ_DIR)/table.o \
+     $(OBJ_DIR)/value.o \
+     $(OBJ_DIR)/vm.o
+
+CFLAGS=-O3 -fPIC -flto -Isrc -I/usr/include/x86_64-linux-gnu/openblas64-openmp
+LIBS=-lopenblas64
+LDFLAGS=-shared -flto
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(GCC) $(CFLAGS) -o $@ -c $<
+
+all: $(LIBNAME)
+
+$(OBJ_DIR):
+	mkdir -p $@
+
+$(LIBNAME): $(OBJS)
+	$(GCC) -o $@ $(LDFLAGS) $^ $(LIBS)
+
+clean:
+	rm -rf $(OBJ_DIR)
+	rm -f $(LIBNAME)

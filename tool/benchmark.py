@@ -40,7 +40,7 @@ from os.path import relpath
 # To generate a baseline file, run this script with "--generate-baseline".
 
 PSYCHE_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-PSYCHE_BIN = os.path.join("build", "psyche")
+PSYCHE_BIN = os.path.join("build")
 BENCHMARK_DIR = os.path.join("test", "wren", "benchmark")
 BENCHMARK_DIR = relpath(BENCHMARK_DIR).replace("\\", "/")
 

@@ -10,7 +10,7 @@ import argparse
 # The original test runner code can be found at:
 # https://github.com/munificent/craftinginterpreters/blob/9f7cb4dbce88b1904d8067586abe04045383468c/tool/bin/test.dart
 
-_executable = "build/psyche/psyche"
+_executable = "build/psyche"
 
 _expectedOutputPattern = re.compile(r"// expect: ?(.*)")
 _expectedErrorPattern = re.compile(r"// (Error.*)")
