@@ -307,13 +307,6 @@ static void freeObject(Obj* object)
 //> Garbage Collection mark-roots
 static void markRoots()
 {
-    markObject((Obj*)vm.numClass);
-    markObject((Obj*)vm.stringClass);
-    markObject((Obj*)vm.listClass);
-    markObject((Obj*)vm.mapClass);
-    markObject((Obj*)vm.vectorClass);
-    markObject((Obj*)vm.matrixClass);
-    markObject((Obj*)vm.systemClass);
     for (ObjThread* thread = vm.thread; thread; thread = thread->caller) {
         markObject((Obj*)thread);
     }

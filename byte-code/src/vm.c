@@ -198,11 +198,13 @@ void initVM()
     vm.mapClass = newMapClass();
     vm.vectorClass = newVectorClass();
     vm.matrixClass = newMatrixClass();
-    defineValue("List", OBJ_VAL(newListClass()));
-    defineValue("Map", OBJ_VAL(newMapClass()));
-    defineValue("Vector", OBJ_VAL(newVectorClass()));
-    defineValue("Matrix", OBJ_VAL(newMatrixClass()));
-    defineValue("System", OBJ_VAL(newSystemClass()));
+    defineValue("Number", OBJ_VAL(vm.numClass));
+    defineValue("String", OBJ_VAL(vm.stringClass));
+    defineValue("List", OBJ_VAL(vm.listClass));
+    defineValue("Map", OBJ_VAL(vm.mapClass));
+    defineValue("Vector", OBJ_VAL(vm.vectorClass));
+    defineValue("Matrix", OBJ_VAL(vm.matrixClass));
+    defineValue("System", OBJ_VAL(vm.systemClass));
     defineNative("range", rangeNative);
     defineNative("clock", clockNative);
     //< Calls and Functions define-native-clock
