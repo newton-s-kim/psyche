@@ -7,8 +7,8 @@ OBJ_DIR=obj
 
 OBJS=main.o
 
-CFLAGS=-I../byte-code/src -O3 -flto
-LDFLAGS=-L $(BUILD_DIR)
+CFLAGS=-I../byte-code/src -O3 -flto -m64
+LDFLAGS=-flto -m64 -L $(BUILD_DIR)
 LIBS=-lpcvm -lreadline
 
 $(OBJ_DIR)/%o: %.c | $(OBJ_DIR)

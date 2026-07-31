@@ -22,6 +22,7 @@ if $COLDSTART; then
 	pip3 install gprof2dot
 fi
 
+rm -f gmon.out
 $PROGRAMME $SCRIPT
 $GPROF $PROGRAMME gmon.out > $GMONOUT
 echo gmonout: $GMONOUT

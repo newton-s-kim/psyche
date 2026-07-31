@@ -23,6 +23,7 @@ OBJS=$(OBJ_DIR)/$(PCVM_DIR)/chunk.o \
 
 CFLAGS=-I../byte-code/src -O0 -pg -g -I/usr/include/x86_64-linux-gnu/openblas64-openmp
 LIBS=-lreadline -lm -lopenblas64
+LDFLAGS=-pg -O0 -g
 $(OBJ_DIR)/%.o: ../%.c | $(OBJ_DIR)/$(PCVM_DIR) $(OBJ_DIR)/$(PSYCHE_DIR)
 	$(GCC) $(CFLAGS) -o $@ -c $<
 

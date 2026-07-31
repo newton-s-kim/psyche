@@ -6,9 +6,9 @@ GXX=g++
 OBJ_DIR=obj
 OBJS=$(OBJ_DIR)/main.o
 
-CXXFLAGS=-I../../byte-code/src -fPIC -O3 -flto
+CXXFLAGS=-I../../byte-code/src -fPIC -O3 -flto -m64
 LIBS=-larmadillo
-LDFLAGS=-shared -flto
+LDFLAGS=-shared -flto -m64
 
 $(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
 	$(GXX) $(CXXFLAGS) -o $@ -c $<
