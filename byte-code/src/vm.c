@@ -669,35 +669,49 @@ static InterpretResult run()
     } while (false)
     //< Types of Values binary-op
 
-    for (;;) {
 //> trace-execution
 #ifdef DEBUG_TRACE_EXECUTION
-        //> trace-stack
-        printf("          ");
-        for (Value* slot = vm.thread->stack; slot < vm.thread->stackTop; slot++) {
-            printf("[ ");
-            printValue(*slot);
-            printf(" ]");
-        }
-        printf("\n");
-        //< trace-stack
-        /* A Virtual Machine trace-execution < Calls and Functions trace-execution
-            disassembleInstruction(vm.chunk,
-                                   (int)(vm.ip - vm.chunk->code));
-        */
-        /* Calls and Functions trace-execution < Closures disassemble-instruction
-            disassembleInstruction(&frame->function->chunk,
-                (int)(frame->ip - frame->function->chunk.code));
-        */
-        //> Closures disassemble-instruction
-        disassembleInstruction(&frame->closure->function->chunk,
-                               (int)(frame->ip - frame->closure->function->chunk.code));
-//< Closures disassemble-instruction
-#endif
+#define DEBUG_TRACE_INSTRUCTION()                                                                                      \
+    {                                                                                                                  \
+        printf("          ");                                                                                          \
+        for (Value* slot = vm.thread->stack; slot < vm.thread->stackTop; slot++) {                                     \
+            printf("[ ");                                                                                              \
+            printValue(*slot);                                                                                         \
+            printf(" ]");                                                                                              \
+        }                                                                                                              \
+        printf("\n");                                                                                                  \
+        disassembleInstruction(&frame->closure->function->chunk,                                                       \
+                               (int)(frame->ip - frame->closure->function->chunk.code));                               \
+    }
+#else // DEBUG_TRACE_EXECUTION
+#define DEBUG_TRACE_INSTRUCTION()
+#endif // DEBUG_TRACE_EXECUTION
 
-        //< trace-execution
+#ifdef USE_COMPUTED_LOOP
+    static void* dispatchTable[] = {
+#define OPCODE(name) &&goto_name,
+#include "opcode.h"
+#undef OPCODE
+    };
+#define DISPATCH()                                                                                                     \
+    do {                                                                                                               \
+        DEBUG_TRACE_INSTRUCTION();                                                                                     \
+        goto* dispatchTable[instruction = READ_BYTE()];                                                                \
+    } while (true);
+#define INTERPRET_LOOP DISPATCH();
+#define CASE(name) goto_##name
+#else // USE_COMPUTED_LOOP
+#define DISPATCH() break;
+#define INTERPRET_LOOP                                                                                                 \
+    DEBUG_TRACE_INSTRUCTION();                                                                                         \
+    switch (instruction = READ_BYTE())
+#define CASE(name) case name
+#endif // USE_COMPUTED_LOOP
+
+    for (;;) {
         uint8_t instruction;
-        switch (instruction = READ_BYTE()) {
+        INTERPRET_LOOP
+        {
             //> op-constant
         case OP_CONSTANT: {
             Value constant = READ_CONSTANT();
