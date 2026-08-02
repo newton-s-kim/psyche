@@ -689,7 +689,7 @@ static InterpretResult run()
 
 #ifdef USE_COMPUTED_LOOP
     static void* dispatchTable[] = {
-#define OPCODE(name) &&goto_name,
+#define OPCODE(name) &&goto_##name,
 #include "opcode.h"
 #undef OPCODE
     };
@@ -701,7 +701,7 @@ static InterpretResult run()
 #define INTERPRET_LOOP DISPATCH();
 #define CASE(name) goto_##name
 #else // USE_COMPUTED_LOOP
-#define DISPATCH() break;
+#define DISPATCH() break
 #define INTERPRET_LOOP                                                                                                 \
     DEBUG_TRACE_INSTRUCTION();                                                                                         \
     switch (instruction = READ_BYTE())
@@ -722,24 +722,24 @@ static InterpretResult run()
             //> push-constant
             PUSH(constant);
             //< push-constant
-            break;
+            DISPATCH();
         }
             //< op-constant
             //> Types of Values interpret-literals
         CASE(OP_NIL):
             PUSH(NIL_VAL);
-            break;
+            DISPATCH();
         CASE(OP_TRUE):
             PUSH(BOOL_VAL(true));
-            break;
+            DISPATCH();
         CASE(OP_FALSE):
             PUSH(BOOL_VAL(false));
-            break;
+            DISPATCH();
             //< Types of Values interpret-literals
             //> Global Variables interpret-pop
         CASE(OP_POP):
             DROP();
-            break;
+            DISPATCH();
             //< Global Variables interpret-pop
             //> Local Variables interpret-get-local
         CASE(OP_GET_LOCAL): {
@@ -750,7 +750,7 @@ static InterpretResult run()
             //> Calls and Functions push-local
             PUSH(frame->slots[slot]);
             //< Calls and Functions push-local
-            break;
+            DISPATCH();
         }
             //< Local Variables interpret-get-local
             //> Local Variables interpret-set-local
@@ -762,7 +762,7 @@ static InterpretResult run()
             //> Calls and Functions set-local
             frame->slots[slot] = PEEK();
             //< Calls and Functions set-local
-            break;
+            DISPATCH();
         }
             //< Local Variables interpret-set-local
             //> Global Variables interpret-get-global
@@ -778,7 +778,7 @@ static InterpretResult run()
                 value = vm.globals.values[name];
             }
             PUSH(value);
-            break;
+            DISPATCH();
         }
             //< Global Variables interpret-get-global
             //> Global Variables interpret-define-global
@@ -786,7 +786,7 @@ static InterpretResult run()
             uint16_t name = READ_SHORT();
             vm.globals.values[name] = PEEK();
             DROP();
-            break;
+            DISPATCH();
         }
             //< Global Variables interpret-define-global
             //> Global Variables interpret-set-global
@@ -800,21 +800,21 @@ static InterpretResult run()
             else {
                 vm.globals.values[name] = PEEK();
             }
-            break;
+            DISPATCH();
         }
             //< Global Variables interpret-set-global
             //> Closures interpret-get-upvalue
         CASE(OP_GET_UPVALUE): {
             uint16_t slot = READ_SHORT();
             PUSH(*frame->closure->upvalues[slot]->location);
-            break;
+            DISPATCH();
         }
             //< Closures interpret-get-upvalue
             //> Closures interpret-set-upvalue
         CASE(OP_SET_UPVALUE): {
             uint16_t slot = READ_SHORT();
             *frame->closure->upvalues[slot]->location = PEEK();
-            break;
+            DISPATCH();
         }
             //< Closures interpret-set-upvalue
             //> Classes and Instances interpret-get-property
@@ -830,7 +830,7 @@ static InterpretResult run()
                 if (!IS_UNDEF(value)) {
                     DROP(); // Instance.
                     PUSH(value);
-                    break;
+                    DISPATCH();
                 }
                 //> get-undefined
 
@@ -848,7 +848,7 @@ static InterpretResult run()
                 runtimeError("Only instances have properties.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            break;
+            DISPATCH();
             //< Methods and Initializers get-method
         }
             //< Classes and Instances interpret-get-property
@@ -866,7 +866,7 @@ static InterpretResult run()
             Value value = POP();
             DROP();
             PUSH(value);
-            break;
+            DISPATCH();
         }
             //< Classes and Instances interpret-set-property
         CASE(OP_GET_ELEMENT): {
@@ -932,7 +932,7 @@ static InterpretResult run()
                 return INTERPRET_RUNTIME_ERROR;
             }
             PUSH(value);
-            break;
+            DISPATCH();
         }
         CASE(OP_SET_ELEMENT): {
             size_t argCount = READ_BYTE();
@@ -977,7 +977,7 @@ static InterpretResult run()
                 DROP();
                 PUSH(value);
             }
-            break;
+            DISPATCH();
         }
             //> Superclasses interpret-get-super
         CASE(OP_GET_SUPER): {
@@ -987,7 +987,7 @@ static InterpretResult run()
             if (!bindMethod(superclass, name)) {
                 return INTERPRET_RUNTIME_ERROR;
             }
-            break;
+            DISPATCH();
         }
             //< Superclasses interpret-get-super
             //> Types of Values interpret-equal
@@ -995,28 +995,28 @@ static InterpretResult run()
             Value b = POP();
             Value a = POP();
             PUSH(BOOL_VAL(valuesEqual(a, b)));
-            break;
+            DISPATCH();
         }
             //< Types of Values interpret-equal
             //> Types of Values interpret-comparison
         CASE(OP_GREATER):
             BINARY_CMP(BOOL_VAL, >);
-            break;
+            DISPATCH();
         CASE(OP_LESS):
             BINARY_CMP(BOOL_VAL, <);
-            break;
+            DISPATCH();
             //< Types of Values interpret-comparison
             /* A Virtual Machine op-binary < Types of Values op-arithmetic
-                  CASE(OP_ADD):      BINARY_OP(+); break;
-                  CASE(OP_SUBTRACT): BINARY_OP(-); break;
-                  CASE(OP_MULTIPLY): BINARY_OP(*); break;
-                  CASE(OP_DIVIDE):   BINARY_OP(/); break;
+                  CASE(OP_ADD):      BINARY_OP(+); DISPATCH();
+                  CASE(OP_SUBTRACT): BINARY_OP(-); DISPATCH();
+                  CASE(OP_MULTIPLY): BINARY_OP(*); DISPATCH();
+                  CASE(OP_DIVIDE):   BINARY_OP(/); DISPATCH();
             */
             /* A Virtual Machine op-negate < Types of Values op-negate
-                  CASE(OP_NEGATE):   PUSH(-POP()); break;
+                  CASE(OP_NEGATE):   PUSH(-POP()); DISPATCH();
             */
             /* Types of Values op-arithmetic < Strings add-strings
-                  CASE(OP_ADD):      BINARY_OP(NUMBER_VAL, +); break;
+                  CASE(OP_ADD):      BINARY_OP(NUMBER_VAL, +); DISPATCH();
             */
             //> Strings add-strings
         CASE(OP_ADD): {
@@ -1081,7 +1081,7 @@ static InterpretResult run()
                 runtimeError("Operands must be two numbers or two strings.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            break;
+            DISPATCH();
         }
             //< Strings add-strings
             //> Types of Values op-arithmetic
@@ -1144,7 +1144,7 @@ static InterpretResult run()
                 runtimeError("Operands must be numbers.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            break;
+            DISPATCH();
         }
         CASE(OP_MULTIPLY): {
             if (IS_NUMBER(PEEK())) {
@@ -1336,7 +1336,7 @@ static InterpretResult run()
                 runtimeError("Operands must be numbers.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            break;
+            DISPATCH();
         }
         CASE(OP_DIVIDE): {
             if (IS_NUMBER(PEEK())) {
@@ -1389,21 +1389,21 @@ static InterpretResult run()
                 return INTERPRET_RUNTIME_ERROR;
             }
 
-            break;
+            DISPATCH();
         }
         CASE(OP_MODULO):
             POWER_OP(NUMBER_VAL, fmod);
-            break;
+            DISPATCH();
         CASE(OP_EXPONENT):
             POWER_OP(NUMBER_VAL, pow);
-            break;
+            DISPATCH();
             //< Types of Values op-arithmetic
             //> Types of Values op-not
         CASE(OP_NOT): {
             Value b = POP();
             bool v = IS_FALSEY(b);
             PUSH(BOOL_VAL(v));
-            break;
+            DISPATCH();
         }
             //< Types of Values op-not
             //> Types of Values op-negate
@@ -1428,13 +1428,13 @@ static InterpretResult run()
                 runtimeError("Operand must be a number.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            break;
+            DISPATCH();
             //< Types of Values op-negate
             //> Global Variables interpret-print
         CASE(OP_PRINT): {
             printValue(POP());
             printf("\n");
-            break;
+            DISPATCH();
         }
             //< Global Variables interpret-print
             //> Jumping Back and Forth op-jump
@@ -1446,7 +1446,7 @@ static InterpretResult run()
             //> Calls and Functions jump
             frame->ip += offset;
             //< Calls and Functions jump
-            break;
+            DISPATCH();
         }
             //< Jumping Back and Forth op-jump
             //> Jumping Back and Forth op-jump-if-false
@@ -1459,7 +1459,7 @@ static InterpretResult run()
             if (IS_FALSEY(PEEK()))
                 frame->ip += offset;
             //< Calls and Functions jump-if-false
-            break;
+            DISPATCH();
         }
             //< Jumping Back and Forth op-jump-if-false
             //> Jumping Back and Forth op-loop
@@ -1471,7 +1471,7 @@ static InterpretResult run()
             //> Calls and Functions loop
             frame->ip -= offset;
             //< Calls and Functions loop
-            break;
+            DISPATCH();
         }
             //< Jumping Back and Forth op-loop
             //> Calls and Functions interpret-call
@@ -1483,7 +1483,7 @@ static InterpretResult run()
             //> update-frame-after-call
             frame = &vm.thread->frames[vm.thread->frameCount - 1];
             //< update-frame-after-call
-            break;
+            DISPATCH();
         }
             //< Calls and Functions interpret-call
             //> Methods and Initializers interpret-invoke
@@ -1494,7 +1494,7 @@ static InterpretResult run()
                 return INTERPRET_RUNTIME_ERROR;
             }
             frame = &vm.thread->frames[vm.thread->frameCount - 1];
-            break;
+            DISPATCH();
         }
             //< Methods and Initializers interpret-invoke
             //> Superclasses interpret-super-invoke
@@ -1506,7 +1506,7 @@ static InterpretResult run()
                 return INTERPRET_RUNTIME_ERROR;
             }
             frame = &vm.thread->frames[vm.thread->frameCount - 1];
-            break;
+            DISPATCH();
         }
             //< Superclasses interpret-super-invoke
             //> Closures interpret-closure
@@ -1526,14 +1526,14 @@ static InterpretResult run()
                 }
             }
             //< interpret-capture-upvalues
-            break;
+            DISPATCH();
         }
             //< Closures interpret-closure
             //> Closures interpret-close-upvalue
         CASE(OP_CLOSE_UPVALUE):
             closeUpvalues(vm.thread->stackTop - 1);
             DROP();
-            break;
+            DISPATCH();
             //< Closures interpret-close-upvalue
         CASE(OP_RETURN): {
             /* A Virtual Machine print-return < Global Variables op-return
@@ -1573,13 +1573,13 @@ static InterpretResult run()
             vm.thread->stackTop = frame->slots;
             PUSH(result);
             frame = &vm.thread->frames[vm.thread->frameCount - 1];
-            break;
+            DISPATCH();
             //< Calls and Functions interpret-return
         }
             //> Classes and Instances interpret-class
         CASE(OP_CLASS):
             PUSH(OBJ_VAL(newClass(READ_STRING())));
-            break;
+            DISPATCH();
             //< Classes and Instances interpret-class
             //> Superclasses interpret-inherit
         CASE(OP_LIST): {
@@ -1587,14 +1587,14 @@ static InterpretResult run()
             Value lst = vm.listClass->call->function(argCount, vm.thread->stackTop - argCount);
             vm.thread->stackTop -= argCount;
             PUSH(lst);
-            break;
+            DISPATCH();
         }
         CASE(OP_MAP): {
             size_t argCount = READ_BYTE();
             Value lst = vm.mapClass->call->function(argCount, vm.thread->stackTop - argCount);
             vm.thread->stackTop -= argCount;
             PUSH(lst);
-            break;
+            DISPATCH();
         }
         CASE(OP_INHERIT): {
             Value superclass = NPEEK(1);
@@ -1618,13 +1618,13 @@ static InterpretResult run()
             }
             LAX_LOG_ARRAY(subclass->methods);
             DROP(); // Subclass.
-            break;
+            DISPATCH();
         }
             //< Superclasses interpret-inherit
             //> Methods and Initializers interpret-method
         CASE(OP_METHOD):
             defineMethod(READ_SHORT());
-            break;
+            DISPATCH();
             //< Methods and Initializers interpret-method
         }
     }
