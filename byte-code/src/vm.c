@@ -713,7 +713,7 @@ static InterpretResult run()
         INTERPRET_LOOP
         {
             //> op-constant
-        case OP_CONSTANT: {
+        CASE(OP_CONSTANT): {
             Value constant = READ_CONSTANT();
             /* A Virtual Machine op-constant < A Virtual Machine push-constant
                     printValue(constant);
@@ -726,23 +726,23 @@ static InterpretResult run()
         }
             //< op-constant
             //> Types of Values interpret-literals
-        case OP_NIL:
+        CASE(OP_NIL):
             PUSH(NIL_VAL);
             break;
-        case OP_TRUE:
+        CASE(OP_TRUE):
             PUSH(BOOL_VAL(true));
             break;
-        case OP_FALSE:
+        CASE(OP_FALSE):
             PUSH(BOOL_VAL(false));
             break;
             //< Types of Values interpret-literals
             //> Global Variables interpret-pop
-        case OP_POP:
+        CASE(OP_POP):
             DROP();
             break;
             //< Global Variables interpret-pop
             //> Local Variables interpret-get-local
-        case OP_GET_LOCAL: {
+        CASE(OP_GET_LOCAL): {
             uint16_t slot = READ_SHORT();
             /* Local Variables interpret-get-local < Calls and Functions push-local
                     PUSH(vm.stack[slot]); // [slot]
@@ -754,7 +754,7 @@ static InterpretResult run()
         }
             //< Local Variables interpret-get-local
             //> Local Variables interpret-set-local
-        case OP_SET_LOCAL: {
+        CASE(OP_SET_LOCAL): {
             uint16_t slot = READ_SHORT();
             /* Local Variables interpret-set-local < Calls and Functions set-local
                     vm.stack[slot] = PEEK();
@@ -766,7 +766,7 @@ static InterpretResult run()
         }
             //< Local Variables interpret-set-local
             //> Global Variables interpret-get-global
-        case OP_GET_GLOBAL: {
+        CASE(OP_GET_GLOBAL): {
             uint16_t name = READ_SHORT();
             Value value;
             LAX_LOG("global.count=%d", vm.globals.count);
@@ -782,7 +782,7 @@ static InterpretResult run()
         }
             //< Global Variables interpret-get-global
             //> Global Variables interpret-define-global
-        case OP_DEFINE_GLOBAL: {
+        CASE(OP_DEFINE_GLOBAL): {
             uint16_t name = READ_SHORT();
             vm.globals.values[name] = PEEK();
             DROP();
@@ -790,7 +790,7 @@ static InterpretResult run()
         }
             //< Global Variables interpret-define-global
             //> Global Variables interpret-set-global
-        case OP_SET_GLOBAL: {
+        CASE(OP_SET_GLOBAL): {
             uint16_t name = READ_SHORT();
             if (vm.globals.count <= name || IS_UNDEF(vm.globals.values[name])) {
                 // tableDelete(&vm.globals, name); // [delete]
@@ -804,21 +804,21 @@ static InterpretResult run()
         }
             //< Global Variables interpret-set-global
             //> Closures interpret-get-upvalue
-        case OP_GET_UPVALUE: {
+        CASE(OP_GET_UPVALUE): {
             uint16_t slot = READ_SHORT();
             PUSH(*frame->closure->upvalues[slot]->location);
             break;
         }
             //< Closures interpret-get-upvalue
             //> Closures interpret-set-upvalue
-        case OP_SET_UPVALUE: {
+        CASE(OP_SET_UPVALUE): {
             uint16_t slot = READ_SHORT();
             *frame->closure->upvalues[slot]->location = PEEK();
             break;
         }
             //< Closures interpret-set-upvalue
             //> Classes and Instances interpret-get-property
-        case OP_GET_PROPERTY: {
+        CASE(OP_GET_PROPERTY): {
             //> get-not-instance
             if (IS_INSTANCE(PEEK())) {
 
@@ -853,7 +853,7 @@ static InterpretResult run()
         }
             //< Classes and Instances interpret-get-property
             //> Classes and Instances interpret-set-property
-        case OP_SET_PROPERTY: {
+        CASE(OP_SET_PROPERTY): {
             //> set-not-instance
             if (!IS_INSTANCE(NPEEK(1))) {
                 runtimeError("Only instances have fields.");
@@ -869,7 +869,7 @@ static InterpretResult run()
             break;
         }
             //< Classes and Instances interpret-set-property
-        case OP_GET_ELEMENT: {
+        CASE(OP_GET_ELEMENT): {
             size_t argCount = READ_BYTE();
             Value value = NIL_VAL;
             if (1 == argCount) {
@@ -934,7 +934,7 @@ static InterpretResult run()
             PUSH(value);
             break;
         }
-        case OP_SET_ELEMENT: {
+        CASE(OP_SET_ELEMENT): {
             size_t argCount = READ_BYTE();
             Value value = PEEK();
             if (1 == argCount) {
@@ -980,7 +980,7 @@ static InterpretResult run()
             break;
         }
             //> Superclasses interpret-get-super
-        case OP_GET_SUPER: {
+        CASE(OP_GET_SUPER): {
             int name = READ_SHORT();
             ObjClass* superclass = AS_CLASS(POP());
 
@@ -991,7 +991,7 @@ static InterpretResult run()
         }
             //< Superclasses interpret-get-super
             //> Types of Values interpret-equal
-        case OP_EQUAL: {
+        CASE(OP_EQUAL): {
             Value b = POP();
             Value a = POP();
             PUSH(BOOL_VAL(valuesEqual(a, b)));
@@ -999,27 +999,27 @@ static InterpretResult run()
         }
             //< Types of Values interpret-equal
             //> Types of Values interpret-comparison
-        case OP_GREATER:
+        CASE(OP_GREATER):
             BINARY_CMP(BOOL_VAL, >);
             break;
-        case OP_LESS:
+        CASE(OP_LESS):
             BINARY_CMP(BOOL_VAL, <);
             break;
             //< Types of Values interpret-comparison
             /* A Virtual Machine op-binary < Types of Values op-arithmetic
-                  case OP_ADD:      BINARY_OP(+); break;
-                  case OP_SUBTRACT: BINARY_OP(-); break;
-                  case OP_MULTIPLY: BINARY_OP(*); break;
-                  case OP_DIVIDE:   BINARY_OP(/); break;
+                  CASE(OP_ADD):      BINARY_OP(+); break;
+                  CASE(OP_SUBTRACT): BINARY_OP(-); break;
+                  CASE(OP_MULTIPLY): BINARY_OP(*); break;
+                  CASE(OP_DIVIDE):   BINARY_OP(/); break;
             */
             /* A Virtual Machine op-negate < Types of Values op-negate
-                  case OP_NEGATE:   PUSH(-POP()); break;
+                  CASE(OP_NEGATE):   PUSH(-POP()); break;
             */
             /* Types of Values op-arithmetic < Strings add-strings
-                  case OP_ADD:      BINARY_OP(NUMBER_VAL, +); break;
+                  CASE(OP_ADD):      BINARY_OP(NUMBER_VAL, +); break;
             */
             //> Strings add-strings
-        case OP_ADD: {
+        CASE(OP_ADD): {
             if (IS_NUMBER(PEEK())) {
                 double b = AS_NUMBER(POP());
                 if (IS_NUMBER(PEEK())) {
@@ -1061,7 +1061,7 @@ static InterpretResult run()
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 ObjVector* r = duplicateVector(b);
-                // Performs: y = alpha*x + y
+                // Performs): y = alpha*x + y
                 cblas_daxpy(r->size, 1.0, a->values, 1, r->values, 1);
                 PUSH(OBJ_VAL(r));
             }
@@ -1073,7 +1073,7 @@ static InterpretResult run()
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 ObjMatrix* r = duplicateMatrix(b);
-                // Performs: y = alpha*x + y
+                // Performs): y = alpha*x + y
                 cblas_daxpy(r->rows * r->columns, 1.0, a->values, 1, r->values, 1);
                 PUSH(OBJ_VAL(r));
             }
@@ -1085,7 +1085,7 @@ static InterpretResult run()
         }
             //< Strings add-strings
             //> Types of Values op-arithmetic
-        case OP_SUBTRACT: {
+        CASE(OP_SUBTRACT): {
             if (IS_NUMBER(PEEK())) {
                 double b = AS_NUMBER(POP());
                 if (IS_NUMBER(PEEK())) {
@@ -1124,7 +1124,7 @@ static InterpretResult run()
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 ObjVector* r = duplicateVector(a);
-                // Performs: y = alpha*x + y
+                // Performs): y = alpha*x + y
                 cblas_daxpy(r->size, -1.0, b->values, 1, r->values, 1);
                 PUSH(OBJ_VAL(r));
             }
@@ -1136,7 +1136,7 @@ static InterpretResult run()
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 ObjMatrix* r = duplicateMatrix(a);
-                // Performs: y = alpha*x + y
+                // Performs): y = alpha*x + y
                 cblas_daxpy(r->rows * r->columns, -1.0, b->values, 1, r->values, 1);
                 PUSH(OBJ_VAL(r));
             }
@@ -1146,7 +1146,7 @@ static InterpretResult run()
             }
             break;
         }
-        case OP_MULTIPLY: {
+        CASE(OP_MULTIPLY): {
             if (IS_NUMBER(PEEK())) {
                 double b = AS_NUMBER(POP());
                 if (IS_NUMBER(PEEK())) {
@@ -1201,11 +1201,11 @@ static InterpretResult run()
                     int ldb = N;
                     int ldc = N;
                     ObjMatrix* r = newMatrix(M, N, 0);
-                    // Perform matrix multiplication: C = alpha * A * B * beta * C
-                    cblas_dgemm(CblasRowMajor,  // Layout: row-by-row storage
-                                CblasNoTrans,   // TransA: Do not transpose matrix A
-                                CblasNoTrans,   // TransB: Do not transpose matrix B
-                                M, N, K,        // Dimensions: rows of A, cols of B, cols of A
+                    // Perform matrix multiplication): C = alpha * A * B * beta * C
+                    cblas_dgemm(CblasRowMajor,  // Layout): row-by-row storage
+                                CblasNoTrans,   // TransA): Do not transpose matrix A
+                                CblasNoTrans,   // TransB): Do not transpose matrix B
+                                M, N, K,        // Dimensions): rows of A, cols of B, cols of A
                                 alpha,          // Scalar scaling product of A and B
                                 a->values, lda, // Matrix A pointer and its leading dimension
                                 b->values, ldb, // Matrix B pointer and its leading dimension
@@ -1237,11 +1237,11 @@ static InterpretResult run()
                     int ldb = N;
                     int ldc = N;
                     ObjMatrix* r = newMatrix(M, N, 0);
-                    // Perform matrix multiplication: C = alpha * A * B * beta * C
-                    cblas_dgemm(CblasRowMajor,  // Layout: row-by-row storage
-                                CblasNoTrans,   // TransA: Do not transpose matrix A
-                                CblasNoTrans,   // TransB: Do not transpose matrix B
-                                M, N, K,        // Dimensions: rows of A, cols of B, cols of A
+                    // Perform matrix multiplication): C = alpha * A * B * beta * C
+                    cblas_dgemm(CblasRowMajor,  // Layout): row-by-row storage
+                                CblasNoTrans,   // TransA): Do not transpose matrix A
+                                CblasNoTrans,   // TransB): Do not transpose matrix B
+                                M, N, K,        // Dimensions): rows of A, cols of B, cols of A
                                 alpha,          // Scalar scaling product of A and B
                                 a->values, lda, // Matrix A pointer and its leading dimension
                                 b->values, ldb, // Matrix B pointer and its leading dimension
@@ -1286,11 +1286,11 @@ static InterpretResult run()
                     int ldb = N;
                     int ldc = N;
                     ObjMatrix* r = newMatrix(M, N, 0);
-                    // Perform matrix multiplication: C = alpha * A * B * beta * C
-                    cblas_dgemm(CblasRowMajor,  // Layout: row-by-row storage
-                                CblasNoTrans,   // TransA: Do not transpose matrix A
-                                CblasNoTrans,   // TransB: Do not transpose matrix B
-                                M, N, K,        // Dimensions: rows of A, cols of B, cols of A
+                    // Perform matrix multiplication): C = alpha * A * B * beta * C
+                    cblas_dgemm(CblasRowMajor,  // Layout): row-by-row storage
+                                CblasNoTrans,   // TransA): Do not transpose matrix A
+                                CblasNoTrans,   // TransB): Do not transpose matrix B
+                                M, N, K,        // Dimensions): rows of A, cols of B, cols of A
                                 alpha,          // Scalar scaling product of A and B
                                 a->values, lda, // Matrix A pointer and its leading dimension
                                 b->values, ldb, // Matrix B pointer and its leading dimension
@@ -1314,11 +1314,11 @@ static InterpretResult run()
                     int ldb = N;
                     int ldc = N;
                     ObjMatrix* r = newMatrix(M, N, 0);
-                    // Perform matrix multiplication: C = alpha * A * B * beta * C
-                    cblas_dgemm(CblasRowMajor,  // Layout: row-by-row storage
-                                CblasNoTrans,   // TransA: Do not transpose matrix A
-                                CblasNoTrans,   // TransB: Do not transpose matrix B
-                                M, N, K,        // Dimensions: rows of A, cols of B, cols of A
+                    // Perform matrix multiplication): C = alpha * A * B * beta * C
+                    cblas_dgemm(CblasRowMajor,  // Layout): row-by-row storage
+                                CblasNoTrans,   // TransA): Do not transpose matrix A
+                                CblasNoTrans,   // TransB): Do not transpose matrix B
+                                M, N, K,        // Dimensions): rows of A, cols of B, cols of A
                                 alpha,          // Scalar scaling product of A and B
                                 a->values, lda, // Matrix A pointer and its leading dimension
                                 b->values, ldb, // Matrix B pointer and its leading dimension
@@ -1338,7 +1338,7 @@ static InterpretResult run()
             }
             break;
         }
-        case OP_DIVIDE: {
+        CASE(OP_DIVIDE): {
             if (IS_NUMBER(PEEK())) {
                 double b = AS_NUMBER(POP());
                 if (IS_NUMBER(PEEK())) {
@@ -1391,15 +1391,15 @@ static InterpretResult run()
 
             break;
         }
-        case OP_MODULO:
+        CASE(OP_MODULO):
             POWER_OP(NUMBER_VAL, fmod);
             break;
-        case OP_EXPONENT:
+        CASE(OP_EXPONENT):
             POWER_OP(NUMBER_VAL, pow);
             break;
             //< Types of Values op-arithmetic
             //> Types of Values op-not
-        case OP_NOT: {
+        CASE(OP_NOT): {
             Value b = POP();
             bool v = IS_FALSEY(b);
             PUSH(BOOL_VAL(v));
@@ -1407,7 +1407,7 @@ static InterpretResult run()
         }
             //< Types of Values op-not
             //> Types of Values op-negate
-        case OP_NEGATE:
+        CASE(OP_NEGATE):
             if (IS_NUMBER(PEEK())) {
                 double v = AS_NUMBER(POP());
                 PUSH(NUMBER_VAL(-v));
@@ -1431,14 +1431,14 @@ static InterpretResult run()
             break;
             //< Types of Values op-negate
             //> Global Variables interpret-print
-        case OP_PRINT: {
+        CASE(OP_PRINT): {
             printValue(POP());
             printf("\n");
             break;
         }
             //< Global Variables interpret-print
             //> Jumping Back and Forth op-jump
-        case OP_JUMP: {
+        CASE(OP_JUMP): {
             uint16_t offset = READ_SHORT();
             /* Jumping Back and Forth op-jump < Calls and Functions jump
                     vm.ip += offset;
@@ -1450,7 +1450,7 @@ static InterpretResult run()
         }
             //< Jumping Back and Forth op-jump
             //> Jumping Back and Forth op-jump-if-false
-        case OP_JUMP_IF_FALSE: {
+        CASE(OP_JUMP_IF_FALSE): {
             uint16_t offset = READ_SHORT();
             /* Jumping Back and Forth op-jump-if-false < Calls and Functions jump-if-false
                     if (IS_FALSEY(PEEK())) vm.ip += offset;
@@ -1463,7 +1463,7 @@ static InterpretResult run()
         }
             //< Jumping Back and Forth op-jump-if-false
             //> Jumping Back and Forth op-loop
-        case OP_LOOP: {
+        CASE(OP_LOOP): {
             uint16_t offset = READ_SHORT();
             /* Jumping Back and Forth op-loop < Calls and Functions loop
                     vm.ip -= offset;
@@ -1475,7 +1475,7 @@ static InterpretResult run()
         }
             //< Jumping Back and Forth op-loop
             //> Calls and Functions interpret-call
-        case OP_CALL: {
+        CASE(OP_CALL): {
             int argCount = READ_BYTE();
             if (!callValue(NPEEK(argCount), argCount)) {
                 return INTERPRET_RUNTIME_ERROR;
@@ -1487,7 +1487,7 @@ static InterpretResult run()
         }
             //< Calls and Functions interpret-call
             //> Methods and Initializers interpret-invoke
-        case OP_INVOKE: {
+        CASE(OP_INVOKE): {
             int method = READ_SHORT();
             int argCount = READ_BYTE();
             if (!invoke(method, argCount)) {
@@ -1498,7 +1498,7 @@ static InterpretResult run()
         }
             //< Methods and Initializers interpret-invoke
             //> Superclasses interpret-super-invoke
-        case OP_SUPER_INVOKE: {
+        CASE(OP_SUPER_INVOKE): {
             int method = READ_SHORT();
             int argCount = READ_BYTE();
             ObjClass* superclass = AS_CLASS(POP());
@@ -1510,7 +1510,7 @@ static InterpretResult run()
         }
             //< Superclasses interpret-super-invoke
             //> Closures interpret-closure
-        case OP_CLOSURE: {
+        CASE(OP_CLOSURE): {
             ObjFunction* function = AS_FUNCTION(READ_CONSTANT());
             ObjClosure* closure = newClosure(function);
             PUSH(OBJ_VAL(closure));
@@ -1530,12 +1530,12 @@ static InterpretResult run()
         }
             //< Closures interpret-closure
             //> Closures interpret-close-upvalue
-        case OP_CLOSE_UPVALUE:
+        CASE(OP_CLOSE_UPVALUE):
             closeUpvalues(vm.thread->stackTop - 1);
             DROP();
             break;
             //< Closures interpret-close-upvalue
-        case OP_RETURN: {
+        CASE(OP_RETURN): {
             /* A Virtual Machine print-return < Global Variables op-return
                     printValue(POP());
                     printf("\n");
@@ -1577,26 +1577,26 @@ static InterpretResult run()
             //< Calls and Functions interpret-return
         }
             //> Classes and Instances interpret-class
-        case OP_CLASS:
+        CASE(OP_CLASS):
             PUSH(OBJ_VAL(newClass(READ_STRING())));
             break;
             //< Classes and Instances interpret-class
             //> Superclasses interpret-inherit
-        case OP_LIST: {
+        CASE(OP_LIST): {
             size_t argCount = READ_BYTE();
             Value lst = vm.listClass->call->function(argCount, vm.thread->stackTop - argCount);
             vm.thread->stackTop -= argCount;
             PUSH(lst);
             break;
         }
-        case OP_MAP: {
+        CASE(OP_MAP): {
             size_t argCount = READ_BYTE();
             Value lst = vm.mapClass->call->function(argCount, vm.thread->stackTop - argCount);
             vm.thread->stackTop -= argCount;
             PUSH(lst);
             break;
         }
-        case OP_INHERIT: {
+        CASE(OP_INHERIT): {
             Value superclass = NPEEK(1);
             //> inherit-non-class
             if (!IS_CLASS(superclass)) {
@@ -1622,7 +1622,7 @@ static InterpretResult run()
         }
             //< Superclasses interpret-inherit
             //> Methods and Initializers interpret-method
-        case OP_METHOD:
+        CASE(OP_METHOD):
             defineMethod(READ_SHORT());
             break;
             //< Methods and Initializers interpret-method
