@@ -17,6 +17,7 @@ void initValueArray(ValueArray* array)
     array->values = NULL;
     array->capacity = 0;
     array->count = 0;
+    array->base = -1;
 }
 void insertValueArray(ValueArray* array, int index, Value value)
 {
@@ -44,7 +45,22 @@ void insertValueArray(ValueArray* array, int index, Value value)
         array->values[index] = value;
         array->count++;
     }
+    if (-1 == array->base)
+        array->base = 0;
 }
+/*
+static inline int power2Ceil(int n)
+{
+        n--;
+        n |= n >> 1;
+        n |= n >> 2;
+        n |= n >> 4;
+        n |= n >> 8;
+        n |= n >> 16;
+        n++;
+        return n;
+}
+*/
 void setAtValueArray(ValueArray* array, int index, Value value)
 {
     LAX_LOG("enter(0x%p, %d, 0x%lx)", array, index, value);
@@ -54,6 +70,7 @@ void setAtValueArray(ValueArray* array, int index, Value value)
         while (array->capacity < index + 1) {
             array->capacity = GROW_CAPACITY(array->capacity);
         }
+        // array->capacity = power2Ceil(index + 1);
         array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
         Value* end = array->values + array->capacity;
         for (Value* i = array->values + oldCapacity; i < end; i++)
@@ -63,6 +80,8 @@ void setAtValueArray(ValueArray* array, int index, Value value)
     if (array->count <= index)
         array->count = index + 1;
     LAX_LOG_ARRAY(*array);
+    if (-1 == array->base || array->base > index)
+        array->base = index;
 }
 //> write-value-array
 void writeValueArray(ValueArray* array, Value value)
@@ -75,6 +94,8 @@ void writeValueArray(ValueArray* array, Value value)
 
     array->values[array->count] = value;
     array->count++;
+    if (-1 == array->base)
+        array->base = 0;
 }
 //< write-value-array
 //> free-value-array

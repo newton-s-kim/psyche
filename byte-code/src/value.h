@@ -166,6 +166,7 @@ typedef struct {
 typedef struct {
     int capacity;
     int count;
+    int base;
     Value* values;
 } ValueArray;
 //< value-array

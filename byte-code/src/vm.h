@@ -45,6 +45,7 @@ typedef struct {
     //> Garbage Collection vm-fields
 
     size_t bytesAllocated;
+    size_t initialGC;
     size_t nextGC;
     //< Garbage Collection vm-fields
     //> Strings objects-root

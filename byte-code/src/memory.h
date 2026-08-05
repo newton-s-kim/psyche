@@ -34,7 +34,7 @@ void markObject(Obj* object);
 //> Garbage Collection mark-value-h
 #define markValue(value)                                                                                               \
     {                                                                                                                  \
-        if (IS_OBJ((value)))                                                                                           \
+        if (IS_OBJ((value)) && (!AS_OBJ((value))->isMarked))                                                           \
             markObject(AS_OBJ((value)));                                                                               \
     }
 //< Garbage Collection mark-value-h

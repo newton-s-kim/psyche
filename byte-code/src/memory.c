@@ -101,8 +101,9 @@ void markValue(Value value)
 //> Garbage Collection mark-array
 static void markArray(ValueArray* array)
 {
+    Value* start = array->values + array->base;
     Value* end = array->values + array->count;
-    for (Value* i = array->values; i < end; i++) {
+    for (Value* i = start; i < end; i++) {
         markValue(*i);
     }
 }
@@ -397,6 +398,8 @@ void collectGarbage()
     //> update-next-gc
 
     vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
+    if (vm.nextGC < vm.initialGC)
+        vm.nextGC = vm.initialGC;
     //< update-next-gc
     //> log-after-collect
 
