@@ -101,8 +101,9 @@ void markValue(Value value)
 //> Garbage Collection mark-array
 static void markArray(ValueArray* array)
 {
+    Value* start = array->values + array->base;
     Value* end = array->values + array->count;
-    for (Value* i = array->values; i < end; i++) {
+    for (Value* i = start; i < end; i++) {
         markValue(*i);
     }
 }
@@ -317,13 +318,6 @@ static void freeObject(Obj* object)
 //> Garbage Collection mark-roots
 static void markRoots()
 {
-    markObject((Obj*)vm.numClass);
-    markObject((Obj*)vm.stringClass);
-    markObject((Obj*)vm.listClass);
-    markObject((Obj*)vm.mapClass);
-    markObject((Obj*)vm.vectorClass);
-    markObject((Obj*)vm.matrixClass);
-    markObject((Obj*)vm.systemClass);
     for (ObjThread* thread = vm.thread; thread; thread = thread->caller) {
         markObject((Obj*)thread);
     }
@@ -414,6 +408,8 @@ void collectGarbage()
     //> update-next-gc
 
     vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
+    if (vm.nextGC < vm.initialGC)
+        vm.nextGC = vm.initialGC;
     //< update-next-gc
     //> log-after-collect
 

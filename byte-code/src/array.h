@@ -4,6 +4,7 @@
     typedef struct {                                                                                                   \
         int capacity;                                                                                                  \
         int count;                                                                                                     \
+        int base;                                                                                                      \
         type* values;                                                                                                  \
     } name##Array;                                                                                                     \
     void init##name##Array(name##Array* array);                                                                        \
@@ -18,6 +19,7 @@
         array->values = NULL;                                                                                          \
         array->capacity = 0;                                                                                           \
         array->count = 0;                                                                                              \
+        array->base = -1;                                                                                              \
     }                                                                                                                  \
     void insert##name##Array(name##Array* array, int index, type value)                                                \
     {                                                                                                                  \
@@ -36,6 +38,8 @@
             array->values[index] = value;                                                                              \
             array->count++;                                                                                            \
         }                                                                                                              \
+        if (-1 == array->base)                                                                                         \
+            array->base = 0;                                                                                           \
     }                                                                                                                  \
     void setAt##name##Array(name##Array* array, int index, type value, type defVal)                                    \
     {                                                                                                                  \
@@ -53,6 +57,8 @@
         array->values[index] = value;                                                                                  \
         if (array->count <= index)                                                                                     \
             array->count = index + 1;                                                                                  \
+        if (-1 == array->base || array->base > index)                                                                  \
+            array->base = index;                                                                                       \
     }                                                                                                                  \
     void write##name##Array(name##Array* array, type value)                                                            \
     {                                                                                                                  \
@@ -63,6 +69,8 @@
         }                                                                                                              \
         array->values[array->count] = value;                                                                           \
         array->count++;                                                                                                \
+        if (-1 == array->base)                                                                                         \
+            array->base = 0;                                                                                           \
     }                                                                                                                  \
     void free##name##Array(name##Array* array)                                                                         \
     {                                                                                                                  \

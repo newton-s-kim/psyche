@@ -29,6 +29,7 @@
 //< Local Variables uint8-count
 
 #define USE_DLMALLOC
+#define USE_COMPUTED_LOOP
 #endif
 //> omit
 // In the book, we show them defined, but for working on them locally,
