@@ -1747,7 +1747,6 @@ bool loadLibrary(Path* path, String* dl_name)
     Value* values = NULL;
 
     if (NULL == vm.dls) {
-        // TODO: The array is not managed by GC
         vm.dlCapacity = GROW_CAPACITY(vm.dlCapacity);
         vm.dls = ALLOCATE(DL*, vm.dlCapacity);
     }
