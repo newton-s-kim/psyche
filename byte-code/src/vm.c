@@ -187,6 +187,10 @@ void initVM()
     vm.initString = copyString("init", 4);
     vm.initAddress = getMethodAddress(vm.initString);
     LAX_LOG("initAddress = %d", vm.initAddress);
+    ObjString* name = copyString("iterator", 8);
+    vm.iteratorAddress = getMethodAddress(name);
+    name = copyString("next", 4);
+    vm.nextAddress = getMethodAddress(name);
     //< Methods and Initializers init-init-string
     //> Calls and Functions define-native-clock
 

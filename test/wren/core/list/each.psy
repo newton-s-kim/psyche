@@ -1,6 +1,6 @@
 var words = "";
 var a = List("One", "Two", "Three");
-a.each(fun (key, word) {
+a.visit(fun (key, word) {
   //println(words,"+=",word);
   words = words + word;
 });

@@ -1263,6 +1263,7 @@ ParseRule rules[] = {
     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
     //< Types of Values table-false
     [TOKEN_FOR] = {NULL, NULL, PREC_NONE},
+    [TOKEN_EACH] = {NULL, NULL, PREC_NONE},
     [TOKEN_FUN] = {fun, NULL, PREC_NONE},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
     /* Compiling Expressions rules < Types of Values table-nil
@@ -1660,6 +1661,54 @@ static void forStatement()
     //< for-end-scope
 }
 //< Jumping Back and Forth for-statement
+static void eachStatement()
+{
+    int16_t keyAddress = 0;
+    int16_t valAddress = 0;
+    int16_t iterAddress = 0;
+    beginScope();
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+    consume(TOKEN_IDENTIFIER, "Expect identifier.");
+    declareVariable();
+    keyAddress = resolveLocal(current, &parser.previous);
+    consume(TOKEN_COMMA, "Expect ',' after a loop variable.");
+    consume(TOKEN_IDENTIFIER, "Expect identifier.");
+    declareVariable();
+    valAddress = resolveLocal(current, &parser.previous);
+    // TODO: add variable space for iterator
+    {
+        Token tkn = {TOKEN_IDENTIFIER, "iter ", 5, -1};
+        iterAddress = resolveLocal(current, &tkn);
+        if (0 > iterAddress) {
+            addLocal(tkn);
+            iterAddress = resolveLocal(current, &tkn);
+        }
+    }
+    consume(TOKEN_COLON, "Expect ':' after loop variables.");
+    expression();
+    emitShort(OP_INVOKE, vm.iteratorAddress);
+    emitShort(OP_SET_LOCAL, iterAddress);
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+    int loopStart = currentChunk()->count;
+    int exitJump = -1;
+    emitShort(OP_GET_LOCAL, iterAddress);
+    emitShort(OP_INVOKE, vm.nextAddress);
+    exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP); // Condition.
+    emitShort(OP_SET_LOCAL, keyAddress);
+    emitShort(OP_SET_LOCAL, valAddress);
+    emitByte(OP_POP); // Condition.
+
+    statement();
+    emitLoop(loopStart);
+
+    if (exitJump != -1) {
+        patchJump(exitJump);
+        emitByte(OP_POP); // Condition.
+    }
+
+    endScope();
+}
 //> Jumping Back and Forth if-statement
 static void ifStatement()
 {
@@ -1822,6 +1871,9 @@ static void statement()
         forStatement();
         //< Jumping Back and Forth parse-for
         //> Jumping Back and Forth parse-if
+    }
+    else if (match(TOKEN_EACH)) {
+        eachStatement();
     }
     else if (match(TOKEN_IF)) {
         ifStatement();

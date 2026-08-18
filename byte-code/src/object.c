@@ -509,7 +509,7 @@ ObjClass* newListClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_clear)));
     method = getMethodAddress(copyString("indexOf", 7));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
-    method = getMethodAddress(copyString("each", 4));
+    method = getMethodAddress(copyString("visit", 5));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_each)));
     method = getMethodAddress(copyString("filled", 6));
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
@@ -643,7 +643,7 @@ ObjClass* newMapClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_size)));
     method = getMethodAddress(copyString("clear", 5));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_clear)));
-    method = getMethodAddress(copyString("each", 4));
+    method = getMethodAddress(copyString("visit", 5));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_each)));
     klass->call = newNative(map_new);
     return klass;

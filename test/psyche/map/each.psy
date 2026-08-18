@@ -5,7 +5,7 @@ var map = {
 };
 
 var sum = 0;
-map.each(fun(key,word) {
+map.visit(fun(key,word) {
    sum = sum + word;
 });
 print sum; // expect: 6

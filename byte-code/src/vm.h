@@ -38,6 +38,8 @@ typedef struct {
     //> Methods and Initializers vm-init-string
     ObjString* initString;
     int initAddress;
+    int iteratorAddress;
+    int nextAddress;
     //< Methods and Initializers vm-init-string
     //> Closures open-upvalues-field
     ObjUpvalue* openUpvalues;
