@@ -213,6 +213,22 @@ static Chunk* currentChunk() {
 */
 //> Calls and Functions current-chunk
 
+#ifdef LAX_DEBUG
+#define LAX_LOG_LOCAL()                                                                                                \
+    {                                                                                                                  \
+        printf("[\n");                                                                                                 \
+        for (int i = 0; i < current->localCount; i++) {                                                                \
+            Local* local = current->locals + i;                                                                        \
+            printf("{");                                                                                               \
+            printToken(local->name);                                                                                   \
+            printf("/%d", local->depth);                                                                               \
+            printf("}\n");                                                                                             \
+        }                                                                                                              \
+        printf("]\n");                                                                                                 \
+    }
+#else // LAX_DEBUG
+#define LAX_LOG_LOCAL()
+#endif // LAX_DEBUG
 static Chunk* currentChunk()
 {
     return &current->function->chunk;
@@ -1539,6 +1555,7 @@ static void varDeclaration()
     consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
     defineVariable(global);
+    LAX_LOG_LOCAL();
 }
 //< Global Variables var-declaration
 static Path* findPath(Path* file)
@@ -1660,6 +1677,22 @@ static void forStatement()
     endScope();
     //< for-end-scope
 }
+static int findLocal(Token name)
+{
+    for (int i = current->localCount - 1; i >= 0; i--) {
+        Local* local = &current->locals[i];
+        if (local->depth != -1 && local->depth < current->scopeDepth) {
+            break; // [negative]
+        }
+
+        if (identifiersEqual(&name, &local->name)) {
+            error("Already a variable with this name in this scope.");
+        }
+    }
+    addLocal(name);
+    markInitialized();
+    return current->localCount - 1;
+}
 //< Jumping Back and Forth for-statement
 static void eachStatement()
 {
@@ -1669,26 +1702,20 @@ static void eachStatement()
     beginScope();
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
     consume(TOKEN_IDENTIFIER, "Expect identifier.");
-    declareVariable();
-    keyAddress = resolveLocal(current, &parser.previous);
+    keyAddress = findLocal(parser.previous);
     consume(TOKEN_COMMA, "Expect ',' after a loop variable.");
     consume(TOKEN_IDENTIFIER, "Expect identifier.");
-    declareVariable();
-    valAddress = resolveLocal(current, &parser.previous);
-    // TODO: add variable space for iterator
+    valAddress = findLocal(parser.previous);
     {
         Token tkn = {TOKEN_IDENTIFIER, "iter ", 5, -1};
-        iterAddress = resolveLocal(current, &tkn);
-        if (0 > iterAddress) {
-            addLocal(tkn);
-            iterAddress = resolveLocal(current, &tkn);
-        }
+        iterAddress = findLocal(tkn);
     }
     consume(TOKEN_COLON, "Expect ':' after loop variables.");
     expression();
     emitShort(OP_INVOKE, vm.iteratorAddress);
     emitShort(OP_SET_LOCAL, iterAddress);
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+    LAX_LOG_LOCAL();
     int loopStart = currentChunk()->count;
     int exitJump = -1;
     emitShort(OP_GET_LOCAL, iterAddress);

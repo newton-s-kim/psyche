@@ -368,3 +368,15 @@ Token scanToken()
     return errorToken("Unexpected character.");
 }
 //< scan-token
+#ifdef LAX_DEBUG
+void printToken(Token token)
+{
+    printf("{%d,", token.type);
+    if (0 < token.length) {
+        for (const char* p = token.start; p < token.start + token.length; p++) {
+            printf("%c", *p);
+        }
+    }
+    printf(",%d}", token.line);
+}
+#endif // LAX_DEBUG

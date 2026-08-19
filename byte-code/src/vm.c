@@ -422,7 +422,7 @@ static bool invoke(int name, int argCount)
     Value receiver = NPEEK(argCount);
     //> invoke-check-type
 
-    LAX_LOG("receiver type: %d", AS_OBJ(receiver)->type);
+    // LAX_LOG("receiver type: %d", AS_OBJ(receiver)->type);
     LAX_LOG("method ID: %d", name);
     if (IS_INSTANCE(receiver)) {
         //< invoke-check-type

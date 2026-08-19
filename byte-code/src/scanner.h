@@ -75,5 +75,7 @@ void initScanner(const char* source);
 //> scan-token-h
 Token scanToken();
 //< scan-token-h
-
+#ifdef LAX_DEBUG
+void printToken(Token token);
+#endif // LAX_DEBUG
 #endif
