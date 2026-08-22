@@ -69,10 +69,10 @@ var animals = List(
 );
 
 var keys = List();
-each (animal : range(animals.size() - 1)) {
-  each (adjective : range(adjectives.size() - 1)) {
-    each (adverb : range(adverbs.size() - 1)) {
-      keys.add(adverbs[adverb] + " " + adjectives[adjective] + " " + animals[animal]);
+each (animal : animals) {
+  each (adjective : adjectives) {
+    each (adverb : adverbs) {
+      keys.add(adverb + " " + adjective + " " + animal);
     }
   }
 }
@@ -82,18 +82,18 @@ var start = clock();
 var map = Map();
 
 var i = 0;
-each (key : range(keys.size() - 1)) {
-  map[keys[key]] = i;
+each (key : keys) {
+  map[key] = i;
   i = i + 1;
 }
 
 var sum = 0;
-each (key : range(keys.size() - 1)) {
-  sum = sum + map[keys[key]];
+each (key : keys) {
+  sum = sum + map[key];
 }
 
-each (key : range(keys.size() - 1)) {
-  map.remove(keys[key]);
+each (key : keys) {
+  map.remove(key);
 }
 
 print sum;
