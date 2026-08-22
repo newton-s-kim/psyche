@@ -1679,16 +1679,18 @@ static void forStatement()
 }
 static int findLocal(Token name)
 {
-    for (int i = current->localCount - 1; i >= 0; i--) {
-        Local* local = &current->locals[i];
-        if (local->depth != -1 && local->depth < current->scopeDepth) {
-            break; // [negative]
-        }
-
-        if (identifiersEqual(&name, &local->name)) {
-            error("Already a variable with this name in this scope.");
-        }
+    /*
+for (int i = current->localCount - 1; i >= 0; i--) {
+    Local* local = &current->locals[i];
+    if (local->depth != -1 && local->depth < current->scopeDepth) {
+        break; // [negative]
     }
+
+    if (identifiersEqual(&name, &local->name)) {
+        error("Already a variable with this name in this scope.");
+    }
+}
+*/
     addLocal(name);
     markInitialized();
     return current->localCount - 1;
@@ -1696,33 +1698,36 @@ static int findLocal(Token name)
 //< Jumping Back and Forth for-statement
 static void eachStatement()
 {
-    int16_t keyAddress = 0;
     int16_t valAddress = 0;
     int16_t iterAddress = 0;
     beginScope();
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
     consume(TOKEN_IDENTIFIER, "Expect identifier.");
-    keyAddress = findLocal(parser.previous);
-    consume(TOKEN_COMMA, "Expect ',' after a loop variable.");
-    consume(TOKEN_IDENTIFIER, "Expect identifier.");
     valAddress = findLocal(parser.previous);
+    emitConstant(NIL_VAL);
     {
         Token tkn = {TOKEN_IDENTIFIER, "iter ", 5, -1};
         iterAddress = findLocal(tkn);
     }
+    emitConstant(NIL_VAL);
     consume(TOKEN_COLON, "Expect ':' after loop variables.");
     expression();
     emitShort(OP_INVOKE, vm.iteratorAddress);
+    emitByte(0);
     emitShort(OP_SET_LOCAL, iterAddress);
+    emitByte(OP_POP);
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
     LAX_LOG_LOCAL();
     int loopStart = currentChunk()->count;
     int exitJump = -1;
     emitShort(OP_GET_LOCAL, iterAddress);
     emitShort(OP_INVOKE, vm.nextAddress);
+    emitByte(0);
     exitJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP); // Condition.
-    emitShort(OP_SET_LOCAL, keyAddress);
+    emitShort(OP_GET_LOCAL, iterAddress);
+    emitShort(OP_INVOKE, vm.valueAddress);
+    emitByte(0);
     emitShort(OP_SET_LOCAL, valAddress);
     emitByte(OP_POP); // Condition.
 

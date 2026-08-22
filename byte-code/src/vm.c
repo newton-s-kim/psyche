@@ -191,6 +191,8 @@ void initVM()
     vm.iteratorAddress = getMethodAddress(name);
     name = copyString("next", 4);
     vm.nextAddress = getMethodAddress(name);
+    name = copyString("value", 5);
+    vm.valueAddress = getMethodAddress(name);
     //< Methods and Initializers init-init-string
     //> Calls and Functions define-native-clock
 
@@ -201,6 +203,7 @@ void initVM()
     vm.stringClass = newStringClass();
     vm.listClass = newListClass();
     vm.mapClass = newMapClass();
+    vm.iteratorClass = newIteratorClass();
     vm.vectorClass = newVectorClass();
     vm.matrixClass = newMatrixClass();
     defineValue("Number", OBJ_VAL(vm.numClass));
@@ -446,6 +449,9 @@ static bool invoke(int name, int argCount)
     }
     else if (IS_MAP(receiver)) {
         return invokeFromNative(receiver, vm.mapClass, name, argCount);
+    }
+    else if (IS_ITERATOR(receiver)) {
+        return invokeFromNative(receiver, vm.iteratorClass, name, argCount);
     }
     else if (IS_VECTOR(receiver)) {
         return invokeFromNative(receiver, vm.vectorClass, name, argCount);

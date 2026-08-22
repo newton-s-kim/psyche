@@ -41,6 +41,7 @@
 //> as-string
 #define IS_LIST(value) isObjType(value, OBJ_LIST)
 #define IS_MAP(value) isObjType(value, OBJ_MAP)
+#define IS_ITERATOR(value) isObjType(value, OBJ_ITERATOR)
 #define IS_VECTOR(value) isObjType(value, OBJ_VECTOR)
 #define IS_MATRIX(value) isObjType(value, OBJ_MATRIX)
 #define IS_THREAD(value) isObjType(value, OBJ_THREAD)
@@ -71,6 +72,7 @@
 //> obj-type
 #define AS_LIST(value) ((ObjList*)AS_OBJ(value))
 #define AS_MAP(value) ((ObjMap*)AS_OBJ(value))
+#define AS_ITERATOR(value) ((ObjIterator*)AS_OBJ(value))
 #define AS_VECTOR(value) ((ObjVector*)AS_OBJ(value))
 #define AS_MATRIX(value) ((ObjMatrix*)AS_OBJ(value))
 #define AS_THREAD(value) ((ObjThread*)AS_OBJ(value))
@@ -102,6 +104,7 @@ typedef enum {
     OBJ_COMPLEX,
     OBJ_LIST,
     OBJ_MAP,
+    OBJ_ITERATOR,
     OBJ_VECTOR,
     OBJ_MATRIX,
     OBJ_THREAD
@@ -224,6 +227,12 @@ typedef struct {
 
 typedef struct {
     Obj obj;
+    Obj* parent;
+    int index;
+} ObjIterator;
+
+typedef struct {
+    Obj obj;
     bool isRow;
     int size;
     double* values;
@@ -311,6 +320,7 @@ ObjClass* newNumClass();
 ObjClass* newStringClass();
 ObjClass* newListClass();
 ObjClass* newMapClass();
+ObjClass* newIteratorClass();
 ObjClass* newVectorClass();
 ObjClass* newMatrixClass();
 ObjClass* newSystemClass();

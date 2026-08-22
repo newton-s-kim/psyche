@@ -40,6 +40,7 @@ typedef struct {
     int initAddress;
     int iteratorAddress;
     int nextAddress;
+    int valueAddress;
     //< Methods and Initializers vm-init-string
     //> Closures open-upvalues-field
     ObjUpvalue* openUpvalues;
@@ -65,6 +66,7 @@ typedef struct {
     ObjClass* stringClass;
     ObjClass* listClass;
     ObjClass* mapClass;
+    ObjClass* iteratorClass;
     ObjClass* vectorClass;
     ObjClass* matrixClass;
     ObjClass* systemClass;

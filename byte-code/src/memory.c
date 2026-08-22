@@ -190,6 +190,11 @@ static void blackenObject(Obj* object)
         markTable(&map->map);
         break;
     }
+    case OBJ_ITERATOR: {
+        ObjIterator* iterator = (ObjIterator*)object;
+        markObject(iterator->parent);
+        break;
+    }
     case OBJ_THREAD: {
         ObjThread* thread = (ObjThread*)object;
         CallFrame* end = thread->frames + thread->frameCount;
@@ -289,6 +294,9 @@ static void freeObject(Obj* object)
         freeTable(&map->map);
         FREE(ObjMap, object);
         break;
+    case OBJ_ITERATOR:
+        FREE(ObjIterator, object);
+        break;
     case OBJ_VECTOR:
         ObjVector* vector = (ObjVector*)object;
         PFREE(vector->values);
@@ -308,6 +316,7 @@ static void freeObject(Obj* object)
 //> Garbage Collection mark-roots
 static void markRoots()
 {
+    markObject((Obj*)vm.iteratorClass);
     for (ObjThread* thread = vm.thread; thread; thread = thread->caller) {
         markObject((Obj*)thread);
     }

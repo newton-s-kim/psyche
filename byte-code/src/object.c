@@ -333,6 +333,76 @@ ObjUpvalue* newUpvalue(Value* slot)
     return upvalue;
 }
 //< Closures new-upvalue
+Value iterator_next(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    Value retVal = FALSE_VAL;
+    ObjIterator* iterator = AS_ITERATOR(receiver);
+    if (!iterator->parent) {
+        runtimeError("Iterator points no object");
+        return retVal;
+    }
+    if (OBJ_LIST == iterator->parent->type) {
+        ObjList* list = (ObjList*)iterator->parent;
+        if (iterator->index + 1 < list->array.count) {
+            iterator->index++;
+            retVal = TRUE_VAL;
+        }
+    }
+    else if (OBJ_MAP == iterator->parent->type) {
+        ObjMap* map = (ObjMap*)iterator->parent;
+        for (; iterator->index < map->map.capacity; iterator->index++) {
+            if (map->map.entries[iterator->index].key) {
+                retVal = TRUE_VAL;
+                break;
+            }
+        }
+    }
+    else {
+        runtimeError("Invalid iterator type");
+    }
+    return retVal;
+}
+Value iterator_value(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    Value retVal = NIL_VAL;
+    ObjIterator* iterator = AS_ITERATOR(receiver);
+    if (!iterator->parent) {
+        runtimeError("Iterator points no object");
+        return retVal;
+    }
+    if (OBJ_LIST == iterator->parent->type) {
+        ObjList* list = (ObjList*)iterator->parent;
+        if (iterator->index < list->array.count) {
+            retVal = list->array.values[iterator->index];
+        }
+    }
+    else if (OBJ_MAP == iterator->parent->type) {
+        ObjMap* map = (ObjMap*)iterator->parent;
+        if (iterator->index < map->map.capacity) {
+            iterator->index++;
+            retVal = TRUE_VAL;
+        }
+    }
+    else {
+        runtimeError("Invalid iterator type");
+    }
+    return retVal;
+}
+ObjClass* newIteratorClass()
+{
+    ObjString* name = copyString("Iterator", 4);
+    ObjClass* klass = newClass(name);
+    int method = getMethodAddress(copyString("next", 4));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(iterator_next)));
+    method = getMethodAddress(copyString("value", 5));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(iterator_value)));
+    klass->call = NULL;
+    return klass;
+}
 ObjComplex* newComplex(double real, double imag)
 {
     ObjComplex* cmplx = ALLOCATE_OBJ(ObjComplex, OBJ_COMPLEX);
@@ -456,6 +526,17 @@ Value list_add(Value receiver, int argc, Value* argv)
     LAX_LOG("list size: %d", list->array.count);
     return argv[0];
 }
+Value list_iterator(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    LAX_LOG("list_iterator(%d)", argc);
+    ObjList* list = AS_LIST(receiver);
+    ObjIterator* iterator = ALLOCATE_OBJ(ObjIterator, OBJ_ITERATOR);
+    iterator->parent = (Obj*)list;
+    iterator->index = -1;
+    return OBJ_VAL(iterator);
+}
 static Value list_new(int argc, Value* argv)
 {
     LAX_LOG("list_new(%d)", argc);
@@ -511,6 +592,8 @@ ObjClass* newListClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_indexof)));
     method = getMethodAddress(copyString("visit", 5));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_each)));
+    method = getMethodAddress(copyString("iterator", 8));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_iterator)));
     method = getMethodAddress(copyString("filled", 6));
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
     klass->call = newNative(list_new);
@@ -617,6 +700,17 @@ static Value map_each(Value receiver, int argc, Value* argv)
     }
     return TRUE_VAL;
 }
+Value map_iterator(Value receiver, int argc, Value* argv)
+{
+    (void)argc;
+    (void)argv;
+    LAX_LOG("map_iterator(%d)", argc);
+    ObjMap* map = AS_MAP(receiver);
+    ObjIterator* iterator = ALLOCATE_OBJ(ObjIterator, OBJ_ITERATOR);
+    iterator->parent = (Obj*)map;
+    iterator->index = -1;
+    return OBJ_VAL(iterator);
+}
 static Value map_new(int argc, Value* argv)
 {
     (void)argc;
@@ -645,6 +739,8 @@ ObjClass* newMapClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_clear)));
     method = getMethodAddress(copyString("visit", 5));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_each)));
+    method = getMethodAddress(copyString("iterator", 8));
+    setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_iterator)));
     klass->call = newNative(map_new);
     return klass;
 }
@@ -1315,6 +1411,10 @@ void printObject(Value value)
             }
         }
         printf("}");
+        break;
+    }
+    case OBJ_ITERATOR: {
+        printf("iterator");
         break;
     }
     case OBJ_VECTOR: {
