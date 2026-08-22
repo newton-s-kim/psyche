@@ -39,7 +39,7 @@ var iterations = 2 ^ maxDepth;
 var depth = minDepth;
 while (depth <= stretchDepth) {
   var check = 0;
-  for (var i = 1; i <= iterations; i = i + 1) {
+  each (i : range(1, iterations)) {
     check = check + Tree(i, depth).check() + Tree(-i, depth).check();
   }
 

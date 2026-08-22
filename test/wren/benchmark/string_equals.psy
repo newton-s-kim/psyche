@@ -1,7 +1,7 @@
 var start = clock();
 
 var count = 0;
-for (var i = 1 ; i <= 1000000 ; i = i + 1) {
+each (i : range(1, 1000000)) {
   if ("abc" == "abc") count = count + 1;
   if ("a slightly longer string" ==
       "a slightly longer string") count = count + 1;
