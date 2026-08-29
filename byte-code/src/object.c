@@ -600,22 +600,6 @@ ObjClass* newListClass()
     return klass;
 }
 
-Value sys_gc(int argc, Value* argv)
-{
-    (void)argc;
-    (void)argv;
-    collectGarbage();
-    return NIL_VAL;
-}
-ObjClass* newSystemClass()
-{
-    ObjString* name = copyString("System", 6);
-    ObjClass* klass = newClass(name);
-    int method = getMethodAddress(copyString("gc", 2));
-    setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(sys_gc)));
-    return klass;
-}
-
 Value map_contains_key(Value receiver, int argc, Value* argv)
 {
     if (1 != argc) {

@@ -138,6 +138,11 @@ static void defineValue(const char* name, Value value)
     PUSH(value);
     uint16_t offset = getGlobalAddress(on, NIL_VAL);
     vm.globals.values[offset] = vm.thread->stack[1];
+#ifdef LAX_DEBUG
+    printf("global.values[%d]=", offset);
+    printValue(vm.thread->stack[1]);
+    printf("\n");
+#endif
     DROP();
     DROP();
 }
@@ -197,7 +202,6 @@ void initVM()
     //> Calls and Functions define-native-clock
 
     // native interfaces
-    vm.systemClass = newSystemClass();
 
     vm.numClass = newNumClass();
     vm.stringClass = newStringClass();
@@ -212,7 +216,6 @@ void initVM()
     defineValue("Map", OBJ_VAL(vm.mapClass));
     defineValue("Vector", OBJ_VAL(vm.vectorClass));
     defineValue("Matrix", OBJ_VAL(vm.matrixClass));
-    defineValue("System", OBJ_VAL(vm.systemClass));
     defineNative("range", rangeNative);
     defineNative("clock", clockNative);
     //< Calls and Functions define-native-clock
@@ -780,7 +783,7 @@ static InterpretResult run()
             {
                 uint16_t name = READ_SHORT();
                 Value value;
-                LAX_LOG("global.count=%d", vm.globals.count);
+                LAX_LOG("global.name=%d, global.count=%d", name, vm.globals.count);
                 if (vm.globals.count <= name || IS_UNDEF(vm.globals.values[name])) {
                     runtimeError("Undefined variable '%s'.", undefinedSymbol(name));
                     return INTERPRET_RUNTIME_ERROR;
@@ -1753,7 +1756,7 @@ InterpretResult interpret(const char* source)
 
 bool loadLibrary(Path* path, String* dl_name)
 {
-    const char** names;
+    const char** names = NULL;
     Value* values = NULL;
 
     if (NULL == vm.dls) {
@@ -1761,13 +1764,16 @@ bool loadLibrary(Path* path, String* dl_name)
         vm.dls = ALLOCATE(DL*, vm.dlCapacity);
     }
     else if (vm.dlCount == vm.dlCapacity) {
-        vm.dlCapacity++;
         vm.dlCapacity = GROW_CAPACITY(vm.dlCapacity);
         vm.dls = GROW_ARRAY(DL*, vm.dls, vm.dlCount, vm.dlCapacity);
     }
     DL* dl = dlNew(path, dl_name);
     vm.dls[vm.dlCount++] = dl;
-    dlSymbols(dl, &names, &values);
+    bool tf = dlSymbols(dl, &names, &values);
+    if (!tf) {
+        LAX_LOG("symbol table is not available.");
+        return tf;
+    }
     for (size_t i = 0; NULL != names[i]; i++)
         defineValue(names[i], values[i]);
     return true;

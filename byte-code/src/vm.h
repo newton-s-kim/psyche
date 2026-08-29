@@ -69,7 +69,6 @@ typedef struct {
     ObjClass* iteratorClass;
     ObjClass* vectorClass;
     ObjClass* matrixClass;
-    ObjClass* systemClass;
 } VM;
 
 //> interpret-result

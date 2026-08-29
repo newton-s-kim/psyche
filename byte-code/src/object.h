@@ -323,7 +323,6 @@ ObjClass* newMapClass();
 ObjClass* newIteratorClass();
 ObjClass* newVectorClass();
 ObjClass* newMatrixClass();
-ObjClass* newSystemClass();
 //> print-object-h
 ObjVector* newVector(unsigned int size, double v);
 ObjVector* duplicateVector(ObjVector* vector);
