@@ -54,6 +54,14 @@ ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method)
     return bound;
 }
 //< Methods and Initializers new-bound-method
+Value defaultClassOperator(Value receiver, Value operand, bool reverse)
+{
+    (void)receiver;
+    (void)operand;
+    (void)reverse;
+    runtimeError("Operation not defined");
+    return NIL_VAL;
+}
 //> Classes and Instances new-class
 ObjClass* newClass(ObjString* name)
 {
@@ -64,6 +72,12 @@ ObjClass* newClass(ObjString* name)
     initValueArray(&klass->staticMethods);
     //< Methods and Initializers init-methods
     klass->call = NULL;
+    klass->add = defaultClassOperator;
+    klass->sub = defaultClassOperator;
+    klass->mul = defaultClassOperator;
+    klass->div = defaultClassOperator;
+    klass->mod = defaultClassOperator;
+    klass->pwr = defaultClassOperator;
     return klass;
 }
 //< Classes and Instances new-class
@@ -922,6 +936,29 @@ static Value vector_new(Value receiver, int argc, Value* argv)
     LAX_LOG("vector type: %d", vector->obj.type);
     return OBJ_VAL(vector);
 }
+
+static Value vector_add(Value receiver, Value operand, bool reverse)
+{
+    (void)reverse;
+    Value ret = UNDEF_VAL;
+    ObjVector* a = AS_VECTOR(receiver);
+    if (IS_VECTOR(operand)) {
+        ObjVector* b = AS_VECTOR(operand);
+        if (a->isRow != b->isRow || a->size != b->size) {
+            runtimeError("Vector dimension mismatch.");
+        }
+        else {
+            ObjVector* r = duplicateVector(b);
+            // Performs): y = alpha*x + y
+            cblas_daxpy(r->size, 1.0, a->values, 1, r->values, 1);
+            ret = OBJ_VAL(r);
+        }
+    }
+    else {
+        runtimeError("Invalid operand.");
+    }
+    return ret;
+}
 ObjClass* newVectorClass()
 {
     ObjString* name = copyString("Vector", 6);
@@ -941,6 +978,7 @@ ObjClass* newVectorClass()
     method = getMethodAddress(copyString("cross", 5));
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_cross)));
     klass->call = vector_new;
+    klass->add = vector_add;
     return klass;
 }
 ObjMatrix* newMatrix(unsigned int rows, unsigned int columns, double v)
@@ -1040,6 +1078,28 @@ static Value matrix_new(Value receiver, int argc, Value* argv)
     LAX_LOG("vector type: %d", matrix->obj.type);
     return OBJ_VAL(matrix);
 }
+
+static Value matrix_add(Value receiver, Value operand, bool reverse)
+{
+    (void)reverse;
+    Value ret = UNDEF_VAL;
+    ObjMatrix* a = AS_MATRIX(receiver);
+    if (IS_MATRIX(operand)) {
+        ObjMatrix* b = AS_MATRIX(operand);
+        if (b->rows != a->rows || b->columns != a->columns) {
+            runtimeError("Matrix dimension mismatch.");
+            return ret;
+        }
+        ObjMatrix* r = duplicateMatrix(b);
+        // Performs): y = alpha*x + y
+        cblas_daxpy(r->rows * r->columns, 1.0, a->values, 1, r->values, 1);
+        ret = OBJ_VAL(r);
+    }
+    else {
+        runtimeError("Invalid operand.");
+    }
+    return ret;
+}
 ObjClass* newMatrixClass()
 {
     ObjString* name = copyString("Matrix", 6);
@@ -1047,6 +1107,7 @@ ObjClass* newMatrixClass()
     int method = getMethodAddress(copyString("transpose", 9));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(matrix_transpose)));
     klass->call = matrix_new;
+    klass->add = matrix_add;
     return klass;
 }
 static Value num_type(Value receiver, int argc, Value* argv)
@@ -1302,6 +1363,27 @@ static Value str_index_of(Value receiver, int argc, Value* argv)
     int index = (found) ? found - body->chars : -1;
     return NUMBER_VAL(index);
 }
+static Value str_add(Value receiver, Value operand, bool reverse)
+{
+    (void)reverse;
+    Value retVal = UNDEF_VAL;
+    ObjString* a = AS_STRING(receiver);
+    if (IS_STRING(operand)) {
+        ObjString* b = AS_STRING(operand);
+        int length = a->length + b->length;
+        char* chars = ALLOCATE(char, length + 1);
+        memcpy(chars, a->chars, a->length);
+        memcpy(chars + a->length, b->chars, b->length);
+        chars[length] = '\0';
+
+        ObjString* result = takeString(chars, length);
+        retVal = OBJ_VAL(result);
+    }
+    else {
+        runtimeError("Operands must be two numbers or two strings.");
+    }
+    return retVal;
+}
 ObjClass* newStringClass()
 {
     ObjString* name = copyString("String", 6);
@@ -1320,6 +1402,7 @@ ObjClass* newStringClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim_start)));
     method = getMethodAddress(copyString("trimEnd", 7));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(str_trim_end)));
+    klass->add = str_add;
     return klass;
 }
 //> Calls and Functions print-function-helper

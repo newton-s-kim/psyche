@@ -554,12 +554,9 @@ static bool isFalsey(Value value)
 */
 //< Types of Values is-falsey
 //> Strings concatenate
+/*
 static void concatenate()
 {
-    /* Strings concatenate < Garbage Collection concatenate-peek
-      ObjString* b = AS_STRING(POP());
-      ObjString* a = AS_STRING(POP());
-    */
     //> Garbage Collection concatenate-peek
     ObjString* b = AS_STRING(PEEK());
     ObjString* a = AS_STRING(NPEEK(1));
@@ -578,6 +575,7 @@ static void concatenate()
     //< Garbage Collection concatenate-pop
     PUSH(OBJ_VAL(result));
 }
+*/
 //< Strings concatenate
 //> run
 static InterpretResult run()
@@ -1073,32 +1071,38 @@ static InterpretResult run()
                         return INTERPRET_RUNTIME_ERROR;
                     }
                 }
-                else if (IS_STRING(PEEK()) && IS_STRING(NPEEK(1))) {
-                    concatenate();
+                else if (IS_STRING(NPEEK(1))) {
+                    // concatenate();
+                    Value ret = vm.stringClass->add(NPEEK(1), PEEK(), false);
+                    if (IS_UNDEF(ret))
+                        return INTERPRET_RUNTIME_ERROR;
+                    DROP();
+                    DROP();
+                    PUSH(ret);
                 }
-                else if (IS_VECTOR(PEEK()) && IS_VECTOR(NPEEK(1))) {
-                    ObjVector* b = AS_VECTOR(POP());
-                    ObjVector* a = AS_VECTOR(POP());
-                    if (a->isRow != b->isRow || a->size != b->size) {
-                        runtimeError("Vector dimension mismatch.");
+                else if (IS_VECTOR(NPEEK(1))) {
+                    if (!vm.vectorClass) {
+                        runtimeError("Vector must be loaded in the first place.");
                         return INTERPRET_RUNTIME_ERROR;
                     }
-                    ObjVector* r = duplicateVector(b);
-                    // Performs): y = alpha*x + y
-                    cblas_daxpy(r->size, 1.0, a->values, 1, r->values, 1);
-                    PUSH(OBJ_VAL(r));
+                    Value ret = vm.vectorClass->add(NPEEK(1), PEEK(), false);
+                    if (IS_UNDEF(ret))
+                        return INTERPRET_RUNTIME_ERROR;
+                    DROP();
+                    DROP();
+                    PUSH(ret);
                 }
-                else if (IS_MATRIX(PEEK()) && IS_MATRIX(NPEEK(1))) {
-                    ObjMatrix* b = AS_MATRIX(POP());
-                    ObjMatrix* a = AS_MATRIX(POP());
-                    if (b->rows != a->rows || b->columns != a->columns) {
-                        runtimeError("Matrix dimension mismatch.");
+                else if (IS_MATRIX(NPEEK(1))) {
+                    if (!vm.matrixClass) {
+                        runtimeError("Matrix must be loaded in the first place.");
                         return INTERPRET_RUNTIME_ERROR;
                     }
-                    ObjMatrix* r = duplicateMatrix(b);
-                    // Performs): y = alpha*x + y
-                    cblas_daxpy(r->rows * r->columns, 1.0, a->values, 1, r->values, 1);
-                    PUSH(OBJ_VAL(r));
+                    Value ret = vm.matrixClass->add(NPEEK(1), PEEK(), false);
+                    if (IS_UNDEF(ret))
+                        return INTERPRET_RUNTIME_ERROR;
+                    DROP();
+                    DROP();
+                    PUSH(ret);
                 }
                 else {
                     runtimeError("Operands must be two numbers or two strings.");

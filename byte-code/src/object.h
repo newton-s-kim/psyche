@@ -183,7 +183,7 @@ typedef struct {
     NativeBoundMethod method;
 } ObjNativeBoundMethod;
 
-typedef (*NativeBoundOperator)(Value receiver, Value operand, bool reverse);
+typedef Value (*NativeBoundOperator)(Value receiver, Value operand, bool reverse);
 typedef struct {
     Obj obj;
     ObjString* name;
