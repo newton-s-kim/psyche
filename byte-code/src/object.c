@@ -537,10 +537,15 @@ Value list_iterator(Value receiver, int argc, Value* argv)
     iterator->index = -1;
     return OBJ_VAL(iterator);
 }
-static Value list_new(int argc, Value* argv)
+static Value list_new(Value receiver, int argc, Value* argv)
 {
     LAX_LOG("list_new(%d)", argc);
     ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST);
+    if (!IS_CLASS(receiver)) {
+        runtimeError("Expects class.");
+        return NIL_VAL;
+    }
+    list->klass = AS_CLASS(receiver);
     initValueArray(&list->array);
     if (0 < argc)
         for (int index = 0; index < argc; index++)
@@ -596,7 +601,7 @@ ObjClass* newListClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(list_iterator)));
     method = getMethodAddress(copyString("filled", 6));
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(list_filled)));
-    klass->call = newNative(list_new);
+    klass->call = list_new;
     return klass;
 }
 
@@ -695,12 +700,17 @@ Value map_iterator(Value receiver, int argc, Value* argv)
     iterator->index = -1;
     return OBJ_VAL(iterator);
 }
-static Value map_new(int argc, Value* argv)
+static Value map_new(Value receiver, int argc, Value* argv)
 {
     (void)argc;
     (void)argv;
     LAX_LOG("map_new(%d)", argc);
     ObjMap* map = ALLOCATE_OBJ(ObjMap, OBJ_MAP);
+    if (!IS_CLASS(receiver)) {
+        runtimeError("Expects class.");
+        return NIL_VAL;
+    }
+    map->klass = AS_CLASS(receiver);
     initTable(&map->map);
     if (0 < argc)
         for (int index = 0; index < argc; index += 2)
@@ -725,12 +735,13 @@ ObjClass* newMapClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_each)));
     method = getMethodAddress(copyString("iterator", 8));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(map_iterator)));
-    klass->call = newNative(map_new);
+    klass->call = map_new;
     return klass;
 }
 ObjVector* duplicateVector(ObjVector* vector)
 {
     ObjVector* result = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    result->klass = vector->klass;
     result->isRow = vector->isRow;
     result->size = vector->size;
     result->values = PMALLOC(result->size * sizeof(double));
@@ -740,6 +751,11 @@ ObjVector* duplicateVector(ObjVector* vector)
 ObjVector* newVector(unsigned int size, double v)
 {
     ObjVector* vector = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    if (!vm.vectorClass) {
+        runtimeError("Expects class.");
+        return NULL;
+    }
+    vector->klass = vm.vectorClass;
     vector->isRow = false;
     vector->size = size;
     vector->values = PMALLOC(vector->size * sizeof(double));
@@ -883,10 +899,15 @@ static Value vector_cross(int argc, Value* argv)
     );
     return OBJ_VAL(result);
 }
-static Value vector_new(int argc, Value* argv)
+static Value vector_new(Value receiver, int argc, Value* argv)
 {
     LAX_LOG("vector_new(%d)", argc);
     ObjVector* vector = ALLOCATE_OBJ(ObjVector, OBJ_VECTOR);
+    if (!IS_CLASS(receiver)) {
+        runtimeError("Expects class.");
+        return NIL_VAL;
+    }
+    vector->klass = AS_CLASS(receiver);
     vector->isRow = false;
     if (0 < argc) {
         vector->size = argc;
@@ -919,12 +940,17 @@ ObjClass* newVectorClass()
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_dot)));
     method = getMethodAddress(copyString("cross", 5));
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_cross)));
-    klass->call = newNative(vector_new);
+    klass->call = vector_new;
     return klass;
 }
 ObjMatrix* newMatrix(unsigned int rows, unsigned int columns, double v)
 {
     ObjMatrix* matrix = ALLOCATE_OBJ(ObjMatrix, OBJ_MATRIX);
+    if (!vm.matrixClass) {
+        runtimeError("Expects class.");
+        return NULL;
+    }
+    matrix->klass = vm.matrixClass;
     matrix->rows = rows;
     matrix->columns = columns;
     matrix->values = PMALLOC(matrix->rows * matrix->columns * sizeof(double));
@@ -941,6 +967,7 @@ ObjMatrix* newMatrix(unsigned int rows, unsigned int columns, double v)
 ObjMatrix* duplicateMatrix(ObjMatrix* matrix)
 {
     ObjMatrix* result = ALLOCATE_OBJ(ObjMatrix, OBJ_MATRIX);
+    result->klass = matrix->klass;
     result->rows = matrix->rows;
     result->columns = matrix->columns;
     result->values = PMALLOC(result->rows * result->columns * sizeof(double));
@@ -953,6 +980,7 @@ static Value matrix_transpose(Value receiver, int argc, Value* argv)
     (void)argv;
     ObjMatrix* matrix = AS_MATRIX(receiver);
     ObjMatrix* result = ALLOCATE_OBJ(ObjMatrix, OBJ_MATRIX);
+    result->klass = matrix->klass;
     result->rows = matrix->columns;
     result->columns = matrix->rows;
     result->values = PMALLOC(result->rows * result->columns * sizeof(double));
@@ -967,10 +995,15 @@ static Value matrix_transpose(Value receiver, int argc, Value* argv)
     );
     return OBJ_VAL(result);
 }
-static Value matrix_new(int argc, Value* argv)
+static Value matrix_new(Value receiver, int argc, Value* argv)
 {
     LAX_LOG("matrix_new(%d)", argc);
     ObjMatrix* matrix = ALLOCATE_OBJ(ObjMatrix, OBJ_MATRIX);
+    if (!IS_CLASS(receiver)) {
+        runtimeError("Expects class.");
+        return NIL_VAL;
+    }
+    matrix->klass = AS_CLASS(receiver);
     if (0 < argc) {
         matrix->values = PMALLOC(argc * sizeof(double));
         int row = 1, col = 0;
@@ -1013,7 +1046,7 @@ ObjClass* newMatrixClass()
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("transpose", 9));
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(matrix_transpose)));
-    klass->call = newNative(matrix_new);
+    klass->call = matrix_new;
     return klass;
 }
 static Value num_type(Value receiver, int argc, Value* argv)

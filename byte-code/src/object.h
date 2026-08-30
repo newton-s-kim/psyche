@@ -183,6 +183,7 @@ typedef struct {
     NativeBoundMethod method;
 } ObjNativeBoundMethod;
 
+typedef (*NativeBoundOperator)(Value receiver, Value operand, bool reverse);
 typedef struct {
     Obj obj;
     ObjString* name;
@@ -190,7 +191,13 @@ typedef struct {
     ValueArray methods;
     //< Methods and Initializers class-methods
     ValueArray staticMethods;
-    ObjNative* call;
+    NativeBoundMethod call;
+    NativeBoundOperator add;
+    NativeBoundOperator sub;
+    NativeBoundOperator mul;
+    NativeBoundOperator div;
+    NativeBoundOperator mod;
+    NativeBoundOperator pwr;
 } ObjClass;
 //< Classes and Instances obj-class
 //> Classes and Instances obj-instance
@@ -217,11 +224,13 @@ typedef struct {
 
 typedef struct {
     Obj obj;
+    ObjClass* klass;
     ValueArray array;
 } ObjList;
 
 typedef struct {
     Obj obj;
+    ObjClass* klass;
     Table map;
 } ObjMap;
 
@@ -233,6 +242,7 @@ typedef struct {
 
 typedef struct {
     Obj obj;
+    ObjClass* klass;
     bool isRow;
     int size;
     double* values;
@@ -240,6 +250,7 @@ typedef struct {
 
 typedef struct {
     Obj obj;
+    ObjClass* klass;
     int rows;
     int columns;
     double* values;

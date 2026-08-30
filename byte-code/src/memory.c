@@ -135,8 +135,6 @@ static void blackenObject(Obj* object)
         //> Methods and Initializers mark-methods
         markArray(&klass->methods);
         markArray(&klass->staticMethods);
-        if (klass->call)
-            markObject((Obj*)klass->call);
         //< Methods and Initializers mark-methods
         break;
     }

@@ -41,7 +41,7 @@ VM vm; // [one]
 //> Calls and Functions clock-native
 static Value rangeNative(int argCount, Value* args)
 {
-    ObjList* list = AS_LIST(vm.listClass->call->function(0, NULL));
+    ObjList* list = AS_LIST(vm.listClass->call(OBJ_VAL(vm.listClass), 0, NULL));
     int start = 0, end = 0, increment = 1;
     switch (argCount) {
     case 3:
@@ -332,7 +332,7 @@ static bool callValue(Value callee, int argCount)
             ObjClass* klass = AS_CLASS(callee);
             Value instance = NIL_VAL;
             if (klass->call) {
-                instance = klass->call->function(argCount, vm.thread->stackTop - argCount);
+                instance = klass->call(OBJ_VAL(klass), argCount, vm.thread->stackTop - argCount);
                 vm.thread->stackTop -= argCount;
                 argCount = 0;
             }
@@ -1620,7 +1620,7 @@ static InterpretResult run()
             CASE(OP_LIST) :
             {
                 size_t argCount = READ_BYTE();
-                Value lst = vm.listClass->call->function(argCount, vm.thread->stackTop - argCount);
+                Value lst = vm.listClass->call(OBJ_VAL(vm.listClass), argCount, vm.thread->stackTop - argCount);
                 vm.thread->stackTop -= argCount;
                 PUSH(lst);
                 DISPATCH();
@@ -1628,7 +1628,7 @@ static InterpretResult run()
             CASE(OP_MAP) :
             {
                 size_t argCount = READ_BYTE();
-                Value lst = vm.mapClass->call->function(argCount, vm.thread->stackTop - argCount);
+                Value lst = vm.mapClass->call(OBJ_VAL(vm.mapClass), argCount, vm.thread->stackTop - argCount);
                 vm.thread->stackTop -= argCount;
                 PUSH(lst);
                 DISPATCH();
