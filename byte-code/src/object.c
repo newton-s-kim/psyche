@@ -959,6 +959,110 @@ static Value vector_add(Value receiver, Value operand, bool reverse)
     }
     return ret;
 }
+static Value vector_sub(Value receiver, Value operand, bool reverse)
+{
+    // TODO: reverse should be considered
+    (void)reverse;
+    Value ret = UNDEF_VAL;
+    ObjVector* a = AS_VECTOR(receiver);
+    if (IS_VECTOR(operand)) {
+        ObjVector* b = AS_VECTOR(operand);
+        if (a->isRow != b->isRow || a->size != b->size) {
+            runtimeError("Vector dimension mismatch.");
+        }
+        else {
+            ObjVector* r = duplicateVector(a);
+            // Performs): y = alpha*x + y
+            cblas_daxpy(r->size, -1.0, b->values, 1, r->values, 1);
+            ret = OBJ_VAL(r);
+        }
+    }
+    else {
+        runtimeError("Invalid operand.");
+    }
+    return ret;
+}
+static Value vector_mul(Value receiver, Value operand, bool reverse)
+{
+    // TODO: reverse should be considered
+    (void)reverse;
+    Value ret = UNDEF_VAL;
+    ObjVector* a = AS_VECTOR(receiver);
+    if (IS_NUMBER(operand)) {
+        double b = AS_NUMBER(operand);
+        ObjVector* r = duplicateVector(a);
+        cblas_dscal(r->size, b, r->values, 1);
+        ret = OBJ_VAL(r);
+    }
+    else if (IS_VECTOR(operand)) {
+        ObjVector* b = AS_VECTOR(operand);
+        if (a->size != b->size || a->isRow == b->isRow) {
+            runtimeError("Vector dimensions mismatch.");
+            return ret;
+        }
+        int M = (a->isRow) ? 1 : a->size; // rows of A
+        int N = (b->isRow) ? b->size : 1; // columns of B
+        int K = (a->isRow) ? a->size : 1; // rows of B == columns of A
+        double alpha = 1.0;
+        double beta = 0.0;
+        int lda = K;
+        int ldb = N;
+        int ldc = N;
+        ObjMatrix* r = newMatrix(M, N, 0);
+        // Perform matrix multiplication): C = alpha * A * B * beta * C
+        cblas_dgemm(CblasRowMajor,  // Layout): row-by-row storage
+                    CblasNoTrans,   // TransA): Do not transpose matrix A
+                    CblasNoTrans,   // TransB): Do not transpose matrix B
+                    M, N, K,        // Dimensions): rows of A, cols of B, cols of A
+                    alpha,          // Scalar scaling product of A and B
+                    a->values, lda, // Matrix A pointer and its leading dimension
+                    b->values, ldb, // Matrix B pointer and its leading dimension
+                    beta,           // Scalar scaling matrix C
+                    r->values, ldc  // Matrix C pointer and its leading dimension
+        );
+        ret = OBJ_VAL(r);
+    }
+    else if (IS_MATRIX(operand)) {
+        ObjMatrix* b = AS_MATRIX(operand);
+        if (a->isRow) {
+            if (b->columns != a->size) {
+                runtimeError("Matirx vs Vector dimension mismatches.");
+                return ret;
+            }
+        }
+        else {
+            if (b->rows != 1) {
+                runtimeError("Matirx vs Vector dimension mismatches.");
+                return ret;
+            }
+        }
+        int M = (a->isRow) ? 1 : a->size; // rows of A
+        int N = b->columns;               // columns of B
+        int K = (a->isRow) ? a->size : 1; // rows of B == columns of A
+        double alpha = 1.0;
+        double beta = 0.0;
+        int lda = K;
+        int ldb = N;
+        int ldc = N;
+        ObjMatrix* r = newMatrix(M, N, 0);
+        // Perform matrix multiplication): C = alpha * A * B * beta * C
+        cblas_dgemm(CblasRowMajor,  // Layout): row-by-row storage
+                    CblasNoTrans,   // TransA): Do not transpose matrix A
+                    CblasNoTrans,   // TransB): Do not transpose matrix B
+                    M, N, K,        // Dimensions): rows of A, cols of B, cols of A
+                    alpha,          // Scalar scaling product of A and B
+                    a->values, lda, // Matrix A pointer and its leading dimension
+                    b->values, ldb, // Matrix B pointer and its leading dimension
+                    beta,           // Scalar scaling matrix C
+                    r->values, ldc  // Matrix C pointer and its leading dimension
+        );
+        ret = OBJ_VAL(r);
+    }
+    else {
+        runtimeError("Operand must be numbers.");
+    }
+    return ret;
+}
 ObjClass* newVectorClass()
 {
     ObjString* name = copyString("Vector", 6);
@@ -979,6 +1083,8 @@ ObjClass* newVectorClass()
     setAtValueArray(&klass->staticMethods, method, OBJ_VAL(newNative(vector_cross)));
     klass->call = vector_new;
     klass->add = vector_add;
+    klass->sub = vector_sub;
+    klass->mul = vector_mul;
     return klass;
 }
 ObjMatrix* newMatrix(unsigned int rows, unsigned int columns, double v)
@@ -1100,6 +1206,109 @@ static Value matrix_add(Value receiver, Value operand, bool reverse)
     }
     return ret;
 }
+static Value matrix_sub(Value receiver, Value operand, bool reverse)
+{
+    // TODO: reverse should be considered
+    (void)reverse;
+    Value ret = UNDEF_VAL;
+    ObjMatrix* a = AS_MATRIX(receiver);
+    if (IS_MATRIX(operand)) {
+        ObjMatrix* b = AS_MATRIX(operand);
+        if (b->rows != a->rows || b->columns != a->columns) {
+            runtimeError("Matrix dimension mismatch.");
+            return ret;
+        }
+        ObjMatrix* r = duplicateMatrix(a);
+        // Performs): y = alpha*x + y
+        cblas_daxpy(r->rows * r->columns, -1.0, b->values, 1, r->values, 1);
+        ret = OBJ_VAL(r);
+    }
+    else {
+        runtimeError("Invalid operand.");
+    }
+    return ret;
+}
+static Value matrix_mul(Value receiver, Value operand, bool reverse)
+{
+    // TODO: reverse should be considered
+    (void)reverse;
+    Value ret = UNDEF_VAL;
+    ObjMatrix* a = AS_MATRIX(receiver);
+    if (IS_NUMBER(operand)) {
+        double b = AS_NUMBER(operand);
+        ObjMatrix* r = duplicateMatrix(a);
+        cblas_dscal(r->rows * r->columns, b, r->values, 1);
+        ret = OBJ_VAL(r);
+    }
+    else if (IS_VECTOR(operand)) {
+        ObjVector* b = AS_VECTOR(operand);
+        if (b->isRow) {
+            if (1 != a->columns) {
+                runtimeError("Matirx vs Vector dimension mismatches.");
+                return ret;
+            }
+        }
+        else {
+            if (b->size != a->columns) {
+                runtimeError("Matirx vs Vector dimension mismatches.");
+                return ret;
+            }
+        }
+        int M = a->rows;                  // rows of A
+        int N = (b->isRow) ? b->size : 1; // columns of B
+        int K = a->columns;               // rows of B == columns of A
+        double alpha = 1.0;
+        double beta = 0.0;
+        int lda = K;
+        int ldb = N;
+        int ldc = N;
+        ObjMatrix* r = newMatrix(M, N, 0);
+        // Perform matrix multiplication): C = alpha * A * B * beta * C
+        cblas_dgemm(CblasRowMajor,  // Layout): row-by-row storage
+                    CblasNoTrans,   // TransA): Do not transpose matrix A
+                    CblasNoTrans,   // TransB): Do not transpose matrix B
+                    M, N, K,        // Dimensions): rows of A, cols of B, cols of A
+                    alpha,          // Scalar scaling product of A and B
+                    a->values, lda, // Matrix A pointer and its leading dimension
+                    b->values, ldb, // Matrix B pointer and its leading dimension
+                    beta,           // Scalar scaling matrix C
+                    r->values, ldc  // Matrix C pointer and its leading dimension
+        );
+        ret = OBJ_VAL(r);
+    }
+    else if (IS_MATRIX(operand)) {
+        ObjMatrix* b = AS_MATRIX(operand);
+        if (a->columns != b->rows) {
+            runtimeError("Matirx dimension mismatches.");
+            return ret;
+        }
+        int M = a->rows;    // rows of A
+        int N = b->columns; // columns of B
+        int K = a->columns; // rows of B == columns of A
+        double alpha = 1.0;
+        double beta = 0.0;
+        int lda = K;
+        int ldb = N;
+        int ldc = N;
+        ObjMatrix* r = newMatrix(M, N, 0);
+        // Perform matrix multiplication): C = alpha * A * B * beta * C
+        cblas_dgemm(CblasRowMajor,  // Layout): row-by-row storage
+                    CblasNoTrans,   // TransA): Do not transpose matrix A
+                    CblasNoTrans,   // TransB): Do not transpose matrix B
+                    M, N, K,        // Dimensions): rows of A, cols of B, cols of A
+                    alpha,          // Scalar scaling product of A and B
+                    a->values, lda, // Matrix A pointer and its leading dimension
+                    b->values, ldb, // Matrix B pointer and its leading dimension
+                    beta,           // Scalar scaling matrix C
+                    r->values, ldc  // Matrix C pointer and its leading dimension
+        );
+        ret = OBJ_VAL(r);
+    }
+    else {
+        runtimeError("Invalid operand.");
+    }
+    return ret;
+}
 ObjClass* newMatrixClass()
 {
     ObjString* name = copyString("Matrix", 6);
@@ -1108,6 +1317,8 @@ ObjClass* newMatrixClass()
     setAtValueArray(&klass->methods, method, OBJ_VAL(newNativeBoundMethod(matrix_transpose)));
     klass->call = matrix_new;
     klass->add = matrix_add;
+    klass->sub = matrix_sub;
+    klass->mul = matrix_mul;
     return klass;
 }
 static Value num_type(Value receiver, int argc, Value* argv)
