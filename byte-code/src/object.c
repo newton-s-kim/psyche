@@ -1659,6 +1659,9 @@ void printObject(Value value)
         printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
         break;
         //< Classes and Instances print-instance
+    case OBJ_INTERFACE:
+        printf("%s interface", AS_INSTANCE(value)->klass->name->chars);
+        break;
         //> Calls and Functions print-native
     case OBJ_NATIVE:
         printf("<native fn>");

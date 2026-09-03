@@ -45,6 +45,7 @@
 #define IS_VECTOR(value) isObjType(value, OBJ_VECTOR)
 #define IS_MATRIX(value) isObjType(value, OBJ_MATRIX)
 #define IS_THREAD(value) isObjType(value, OBJ_THREAD)
+#define IS_INTERFACE(value) isObjType(value, OBJ_INTERFACE)
 
 //> Methods and Initializers as-bound-method
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
@@ -76,6 +77,7 @@
 #define AS_VECTOR(value) ((ObjVector*)AS_OBJ(value))
 #define AS_MATRIX(value) ((ObjMatrix*)AS_OBJ(value))
 #define AS_THREAD(value) ((ObjThread*)AS_OBJ(value))
+#define AS_INTERFACE(value) ((ObjInterface*)AS_OBJ(value))
 
 typedef enum {
     //> Methods and Initializers obj-type-bound-method
@@ -107,7 +109,8 @@ typedef enum {
     OBJ_ITERATOR,
     OBJ_VECTOR,
     OBJ_MATRIX,
-    OBJ_THREAD
+    OBJ_THREAD,
+    OBJ_INTERFACE
 } ObjType;
 //< obj-type
 
@@ -255,6 +258,12 @@ typedef struct {
     int columns;
     double* values;
 } ObjMatrix;
+
+typedef struct {
+    Obj obj;
+    ObjClass* klass;
+    NativeBoundMethod deinit;
+} ObjInterface;
 
 /* A Virtual Machine stack-max < Calls and Functions frame-max
 #define STACK_MAX 256

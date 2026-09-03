@@ -166,6 +166,11 @@ static void blackenObject(Obj* object)
         break;
     }
         //< Classes and Instances blacken-instance
+    case OBJ_INTERFACE: {
+        ObjInterface* interface = (ObjInterface*)object;
+        markObject((Obj*)interface->klass);
+        break;
+    }
         //> blacken-upvalue
     case OBJ_UPVALUE:
         markValue(((ObjUpvalue*)object)->closed);
@@ -259,6 +264,13 @@ static void freeObject(Obj* object)
         break;
     }
         //< Classes and Instances free-instance
+    case OBJ_INTERFACE: {
+        ObjInterface* interface = (ObjInterface*)object;
+        if (interface->deinit)
+            interface->deinit(OBJ_VAL(object), 0, NULL);
+        FREE(ObjInterface, object);
+        break;
+    }
         //> Calls and Functions free-native
     case OBJ_NATIVE:
         FREE(ObjNative, object);
