@@ -1,3 +1,5 @@
+#include "algebra";
+
 var i = Vector(1, 0);
 var j = Vector(0, 1);
 var a = Vector(4,7);

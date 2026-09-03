@@ -177,6 +177,9 @@ void initVM()
     //< Garbage Collection init-gray-stack
     //> Global Variables init-globals
 
+    vm.vectorClass = NULL;
+    vm.matrixClass = NULL;
+
     initTable(&vm.symtabGlobals);
     initTable(&vm.symtabMethods);
     initValueArray(&vm.globals);
@@ -208,14 +211,10 @@ void initVM()
     vm.listClass = newListClass();
     vm.mapClass = newMapClass();
     vm.iteratorClass = newIteratorClass();
-    vm.vectorClass = newVectorClass();
-    vm.matrixClass = newMatrixClass();
     defineValue("Number", OBJ_VAL(vm.numClass));
     defineValue("String", OBJ_VAL(vm.stringClass));
     defineValue("List", OBJ_VAL(vm.listClass));
     defineValue("Map", OBJ_VAL(vm.mapClass));
-    defineValue("Vector", OBJ_VAL(vm.vectorClass));
-    defineValue("Matrix", OBJ_VAL(vm.matrixClass));
     defineNative("range", rangeNative);
     defineNative("clock", clockNative);
     //< Calls and Functions define-native-clock

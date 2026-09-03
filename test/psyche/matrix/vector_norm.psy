@@ -1,3 +1,5 @@
+include "algebra";
+
 var a = Vector(2, -1);
 var norm = a.abs();
 print norm; // expect: 2.2360679774998

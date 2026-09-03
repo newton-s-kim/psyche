@@ -1,3 +1,5 @@
+include "algebra";
+
 var a = Vector(4,-2,5);
 var b = Vector(3,1,-1);
 

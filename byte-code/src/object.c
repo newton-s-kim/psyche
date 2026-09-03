@@ -1085,6 +1085,7 @@ ObjClass* newVectorClass()
     klass->add = vector_add;
     klass->sub = vector_sub;
     klass->mul = vector_mul;
+    vm.vectorClass = klass;
     return klass;
 }
 ObjMatrix* newMatrix(unsigned int rows, unsigned int columns, double v)
@@ -1319,6 +1320,7 @@ ObjClass* newMatrixClass()
     klass->add = matrix_add;
     klass->sub = matrix_sub;
     klass->mul = matrix_mul;
+    vm.matrixClass = klass;
     return klass;
 }
 static Value num_type(Value receiver, int argc, Value* argv)

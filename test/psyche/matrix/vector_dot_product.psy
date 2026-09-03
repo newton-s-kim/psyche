@@ -1,4 +1,6 @@
+include "algebra";
 include "math";
+
 var a = Vector(10, 2, -6);
 var b = Vector(-0.5, 4, -3);
 print Vector.dot(a, b); // expect: 21
