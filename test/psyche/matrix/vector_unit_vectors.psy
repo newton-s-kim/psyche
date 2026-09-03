@@ -1,15 +1,15 @@
-#include "algebra";
+include "algebra";
 
-var i = Vector(1, 0);
-var j = Vector(0, 1);
+var iv = Vector(1, 0);
+var jv = Vector(0, 1);
 var a = Vector(4,7);
-print a == 4 * i + 7 * j; // expect: true
+print a == 4 * iv + 7 * jv; // expect: true
 
 var b = Vector(10, 8);
-print b == (2*i - 5*j) + (8*i + 13*j) == b; // expect: true
+print b == (2*iv - 5*jv) + (8*iv + 13*jv) == b; // expect: true
 
-print (i + j).abs(); // expect: 1.4142135623731
+print (iv + jv).abs(); // expect: 1.4142135623731
 
 var c = Vector(30,-10);
-print 10*(3*i-j) == c; // expect: true
+print 10*(3*iv-jv) == c; // expect: true
 
