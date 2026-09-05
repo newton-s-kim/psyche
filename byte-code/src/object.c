@@ -1065,6 +1065,7 @@ static Value vector_mul(Value receiver, Value operand, bool reverse)
 }
 ObjClass* newVectorClass()
 {
+    if(vm.vectorClass) return vm.vectorClass;
     ObjString* name = copyString("Vector", 6);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("transpose", 9));
@@ -1312,6 +1313,7 @@ static Value matrix_mul(Value receiver, Value operand, bool reverse)
 }
 ObjClass* newMatrixClass()
 {
+    if(vm.matrixClass) return vm.matrixClass;
     ObjString* name = copyString("Matrix", 6);
     ObjClass* klass = newClass(name);
     int method = getMethodAddress(copyString("transpose", 9));
